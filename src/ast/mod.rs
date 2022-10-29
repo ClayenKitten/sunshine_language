@@ -48,39 +48,34 @@ impl Ast {
 impl TokenStream {
     fn expect_punctuation(&mut self, punc: &'static str) -> Result<(), UnexpectedTokenError> {
         match self.next()? {
-            Some(Token::Punctuation(got)) if got == Punctuation::new(punc) => Ok(()),
-            Some(got) => Err(UnexpectedTokenError::TokenMismatch {
+            Token::Punctuation(got) if got == Punctuation::new(punc) => Ok(()),
+            got => Err(UnexpectedTokenError::TokenMismatch {
                 expected: Token::Punctuation(Punctuation::new(punc)),
                 got
             }),
-            None => Err(UnexpectedTokenError::Eof),
         }
     }
 
     fn expect_keyword(&mut self, keyword: Keyword) -> Result<(), UnexpectedTokenError> {
         match self.next()? {
-            Some(Token::Keyword(got)) if got == keyword => Ok(()),
-            Some(got) => Err(UnexpectedTokenError::TokenMismatch {
+            Token::Keyword(got) if got == keyword => Ok(()),
+            got => Err(UnexpectedTokenError::TokenMismatch {
                 expected: Token::Keyword(keyword),
                 got
             }),
-            None => Err(UnexpectedTokenError::Eof),
         }
     }
 
     /// Returns error if EOF achieved.
     fn next_some(&mut self) -> Result<Token, ParserError> {
-        match self.next()? {
-            Some(token) => Ok(token),
-            None => Err(ParserError::UnexpectedEof),
-        }
+        self.next()
+            .map_err(|e| e.into())
     }
 
     fn next_expected_kind(&mut self, expected: TokenKind) -> Result<Token, UnexpectedTokenError> {
         match self.next()? {
-            Some(token) if expected == (&token).into() => Ok(token),
-            Some(token) => Err(UnexpectedTokenError::TypeMismatch { expected, got: token.into() }),
-            None => Err(UnexpectedTokenError::Eof),
+            token if expected == (&token).into() => Ok(token),
+            token => Err(UnexpectedTokenError::TypeMismatch { expected, got: token.into() }),
         }
     }
 }
@@ -93,8 +88,6 @@ pub enum UnexpectedTokenError {
     TokenMismatch { expected: Token, got: Token },
     #[error("token type mismatch")]
     TypeMismatch { expected: TokenKind, got: TokenKind },
-    #[error("unexpected end of file")]
-    Eof,
     #[error("{0}")]
     LexerError(#[from] LexerError),
 }
