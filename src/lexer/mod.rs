@@ -53,6 +53,10 @@ impl TokenStream {
         Err(LexerError::UnexpectedCharacter(ch))
     }
 
+    pub fn is_eof(&self) -> bool {
+        self.stream.is_eof()
+    }
+
     /// Remove spaces and comments beforehand.
     fn clean(&mut self) -> Option<char> {
         let stream = &mut self.stream;
