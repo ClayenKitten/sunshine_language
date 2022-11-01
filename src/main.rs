@@ -1,10 +1,10 @@
 use std::{fs::read_to_string, path::PathBuf};
 
-use ast::Ast;
+use parser::Ast;
 use clap::Parser;
 use lexer::TokenStream;
 
-mod ast;
+mod parser;
 mod input_stream;
 mod lexer;
 

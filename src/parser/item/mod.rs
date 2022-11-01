@@ -1,4 +1,4 @@
-use crate::{lexer::{TokenStream, Token, keyword::Keyword, self, punctuation::Punctuation}, ast::UnexpectedTokenError};
+use crate::{lexer::{TokenStream, Token, keyword::Keyword, self, punctuation::Punctuation}, parser::UnexpectedTokenError};
 
 use super::{expressions::Identifier, ParserError, Statement, Delimiter, Expression};
 
