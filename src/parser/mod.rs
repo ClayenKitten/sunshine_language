@@ -20,11 +20,6 @@ impl Ast {
         }
         Ok(Ast(buffer))
     }
-
-    /// Parses expression until closing delimiter met.
-    fn parse_expression_until(lexer: &mut TokenStream, until: Delimiter) -> Result<Expression, ParserError> {
-        todo!();
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
