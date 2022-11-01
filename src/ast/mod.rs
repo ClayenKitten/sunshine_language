@@ -2,74 +2,95 @@ use thiserror::Error;
 
 use crate::lexer::{TokenStream, LexerError, Token, TokenKind, keyword::Keyword, punctuation::Punctuation};
 
-use self::{expressions::*, item::Item};
+use self::{expressions::*, item::Item, statement::Statement};
 
 pub mod expressions;
 mod item;
+mod statement;
 
 #[derive(Debug)]
 pub struct Ast(Vec<Item>);
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum Statement {
-    Item(Item),
-    ExpressionStatement(Expression),
-    LetStatement(LetStatement),
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Expression {
-    WithBlock(ExpressionWithBlock),
-    WithoutBlock(ExpressionWithoutBlock),
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum ExpressionWithBlock {
-    Block(Vec<Statement>),
-    If(If),
-    While(While),
-    For(For),
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum ExpressionWithoutBlock {
-    Identifier(Identifier),
-    Literal(Literal),
-    Assignment(Assignment),
-    FunctionCall(FunctionCall),
-}
-
 impl Ast {
+    /// Parse top level of program (file).
     pub fn parse(lexer: &mut TokenStream) -> Result<Ast, ParserError> {    
+        let mut buffer = Vec::new();
+        while !lexer.is_eof() {
+            buffer.push(Item::parse(lexer)?);
+        }
+        Ok(Ast(buffer))
+    }
+
+    /// Parses expression until closing delimiter met.
+    fn parse_expression_until(lexer: &mut TokenStream, until: Delimiter) -> Result<Expression, ParserError> {
         todo!();
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Delimiter {
+    /// ( ... )
+    Parenthesis,
+    /// { ... }
+    Brace,
+    /// [ ... ]
+    Bracket,
+}
+
+impl Delimiter {
+    pub fn is_matching_closing_delimiter(&self, s: &str) -> bool {
+        match (self, s) {
+            (Delimiter::Parenthesis, ")") => true,
+            (Delimiter::Brace, "}") => true,
+            (Delimiter::Bracket, "]") => true,
+            _ => false,
+        }
+    }
+}
+
+impl TryFrom<Punctuation> for Delimiter {
+    type Error = ();
+
+    fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
+        match value.0 {            
+            "(" | ")" => Ok(Delimiter::Parenthesis),
+            "{" | "}" => Ok(Delimiter::Brace),
+            "[" | "]" => Ok(Delimiter::Bracket),
+            _ => Err(()),
+        }
+    }
+}
+
 impl TokenStream {
-    fn expect_punctuation(&mut self, punc: &'static str) -> Result<(), UnexpectedTokenError> {
+    fn expect(&mut self, criteria: impl Fn(&Token) -> bool) -> Result<(), UnexpectedTokenError> {
+        let token = self.next()?;
+        if criteria(&token) {
+            Ok(())
+        } else {
+            Err(UnexpectedTokenError::UnexpectedToken(token))
+        }
+    }
+
+    fn expect_punctuation(&mut self, punc: &'static [&'static str]) -> Result<(), UnexpectedTokenError> {
         match self.next()? {
-            Token::Punctuation(got) if got == Punctuation::new(punc) => Ok(()),
-            got => Err(UnexpectedTokenError::TokenMismatch {
-                expected: Token::Punctuation(Punctuation::new(punc)),
-                got
-            }),
+            Token::Punctuation(got) if punc.contains(&got.0) => Ok(()),
+            _ => Err(UnexpectedTokenError::TokenMismatch),
         }
     }
 
     fn expect_keyword(&mut self, keyword: Keyword) -> Result<(), UnexpectedTokenError> {
         match self.next()? {
             Token::Keyword(got) if got == keyword => Ok(()),
-            got => Err(UnexpectedTokenError::TokenMismatch {
-                expected: Token::Keyword(keyword),
-                got
-            }),
+            _ => Err(UnexpectedTokenError::TokenMismatch),
         }
     }
 
     /// Returns error if EOF achieved.
     fn next_some(&mut self) -> Result<Token, ParserError> {
-        self.next()
-            .map_err(|e| e.into())
+        match self.next()? {
+            Token::Eof => Err(ParserError::UnexpectedEof),
+            token => Ok(token),
+        }
     }
 
     fn next_expected_kind(&mut self, expected: TokenKind) -> Result<Token, UnexpectedTokenError> {
@@ -85,7 +106,7 @@ pub enum UnexpectedTokenError {
     #[error("unexpected token")]
     UnexpectedToken(Token),
     #[error("token mismatch")]
-    TokenMismatch { expected: Token, got: Token },
+    TokenMismatch,
     #[error("token type mismatch")]
     TypeMismatch { expected: TokenKind, got: TokenKind },
     #[error("{0}")]

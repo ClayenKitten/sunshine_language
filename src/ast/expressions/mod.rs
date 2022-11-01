@@ -1,7 +1,29 @@
 use strum::EnumDiscriminants;
 use crate::lexer::{punctuation::{Operator, Punctuation}, number::Number, Token, TokenKind, TokenStream};
 
-use super::{ParserError, UnexpectedTokenError, Expression, Statement};
+use super::{ParserError, UnexpectedTokenError, Statement, Delimiter};
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Expression {
+    WithBlock(ExpressionWithBlock),
+    WithoutBlock(ExpressionWithoutBlock),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum ExpressionWithBlock {
+    Block(Vec<Statement>),
+    If(If),
+    While(While),
+    For(For),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum ExpressionWithoutBlock {
+    Identifier(Identifier),
+    Literal(Literal),
+    Assignment(Assignment),
+    FunctionCall(FunctionCall),
+}
 
 /// Identifier is name of type, variable or function.
 #[derive(Debug, PartialEq, Eq)]
