@@ -42,7 +42,7 @@ impl InputStream {
     }
 
     pub fn is_eof(&self) -> bool {
-        self.data.len() == self.pos.saturating_sub(1)
+        self.data.len() == self.pos
     }
 
     pub fn skip_while<F: Fn(&InputStream) -> bool>(&mut self, condition: F) -> Option<char> {
