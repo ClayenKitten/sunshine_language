@@ -3,9 +3,9 @@ mod r#struct;
 
 use crate::{lexer::{TokenStream, Token, keyword::Keyword}, parser::UnexpectedTokenError};
 
-use self::{r#struct::Struct, function::Function};
-
 use super::ParserError;
+
+pub use self::{r#struct::{Struct, Field}, function::{Function, Parameter}};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Item {
