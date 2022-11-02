@@ -43,11 +43,11 @@ impl Function {
     fn parse_params(lexer: &mut TokenStream) -> Result<Vec<Parameter>, ParserError> {
         let mut params = Vec::new();
         loop {
-            let token = lexer.next_some()?;
-            if let Token::Punctuation(Punctuation(")")) = token {
-                break;
-            }
-            let name = Identifier::parse(lexer)?;
+            let name = match lexer.next_some()? {
+                Token::Identifier(ident) => Identifier(ident),
+                Token::Punctuation(Punctuation(")")) => break,
+                token => return Err(UnexpectedTokenError::UnexpectedToken(token).into())
+            };
             lexer.expect_punctuation(&[":"])?;
             let type_ = Identifier::parse(lexer)?;
             params.push(Parameter { name, type_ });
