@@ -66,6 +66,15 @@ impl TokenStream {
         }
     }
 
+    fn extract<T>(&mut self, extractor: impl Fn(&Token) -> Option<T>) -> Result<T, UnexpectedTokenError> {
+        let token = self.next()?;
+        if let Some(val) = extractor(&token) {
+            Ok(val)
+        } else {
+            Err(UnexpectedTokenError::UnexpectedToken(token))
+        }
+    }
+
     fn expect_punctuation(&mut self, punc: &'static [&'static str]) -> Result<(), UnexpectedTokenError> {
         match self.next()? {
             Token::Punctuation(got) if punc.contains(&got.0) => Ok(()),
