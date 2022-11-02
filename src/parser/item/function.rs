@@ -6,13 +6,13 @@ use crate::parser::{expressions::Identifier, ParserError, Statement, Delimiter};
 #[derive(Debug, PartialEq, Eq)]
 pub struct Function {
     pub name: Identifier,
-    pub params: Vec<FunctionParameter>,
+    pub params: Vec<Parameter>,
     pub return_type: Option<Identifier>,
     pub body: Vec<Statement>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct FunctionParameter {
+pub struct Parameter {
     pub name: Identifier,
     pub type_: Identifier,
 }
@@ -33,7 +33,7 @@ impl Function {
         })
     }
 
-    fn parse_params(lexer: &mut TokenStream) -> Result<Vec<FunctionParameter>, ParserError> {
+    fn parse_params(lexer: &mut TokenStream) -> Result<Vec<Parameter>, ParserError> {
         let mut params = Vec::new();
         loop {
             let token = lexer.next_some()?;
@@ -43,7 +43,7 @@ impl Function {
             let name = Identifier::parse(lexer)?;
             lexer.expect_punctuation(&[":"])?;
             let type_ = Identifier::parse(lexer)?;
-            params.push(FunctionParameter { name, type_ });
+            params.push(Parameter { name, type_ });
 
             match lexer.next_some()? {
                 Token::Punctuation(Punctuation(")")) => break,
