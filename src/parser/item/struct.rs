@@ -1,14 +1,21 @@
-use crate::ast::expressions::Identifier;
+use crate::{parser::{expressions::Identifier, ParserError}, lexer::{TokenStream, Token, punctuation::Punctuation}};
 
-/// struct NAME { FIELD: TYPE }
 #[derive(Debug, PartialEq, Eq)]
 pub struct Struct {
-    name: Identifier,
-    fields: Vec<StructField>,
+    pub name: Identifier,
+    pub fields: Vec<Field>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct StructField {
-    name: Identifier,
-    type_: Identifier,
+pub struct Field {
+    pub name: Identifier,
+    pub type_: Identifier,
+}
+
+impl Struct {
+    pub fn parse(lexer: &mut TokenStream) -> Result<Struct, ParserError> {
+        let name = Identifier::parse(lexer)?;
+        lexer.expect(|token| matches!(token, Token::Punctuation(Punctuation("{"))));
+        todo!();
+    }
 }
