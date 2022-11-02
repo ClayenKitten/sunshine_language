@@ -2,7 +2,9 @@ use crate::{lexer::{TokenStream, Token, punctuation::Punctuation}, parser::Unexp
 
 use crate::parser::{expressions::Identifier, ParserError, Statement, Delimiter};
 
-/// fn NAME(NAME: TYPE, ...) -> RETURN_TYPE
+/// A function is a set of statements to perform a specific task.
+/// 
+/// `fn NAME(NAME: TYPE, ...) -> RETURN_TYPE`
 #[derive(Debug, PartialEq, Eq)]
 pub struct Function {
     pub name: Identifier,
@@ -11,6 +13,9 @@ pub struct Function {
     pub body: Vec<Statement>,
 }
 
+/// A parameter represents a value that the function expects you to pass when you call it.
+/// 
+/// `NAME: TYPE`
 #[derive(Debug, PartialEq, Eq)]
 pub struct Parameter {
     pub name: Identifier,
@@ -18,6 +23,7 @@ pub struct Parameter {
 }
 
 impl Function {
+    /// Parse function from token stream. `fn` keyword is expected to be consumed beforehand.
     pub fn parse(lexer: &mut TokenStream) -> Result<Function, ParserError> {
         let name = Identifier::parse(lexer)?;
         lexer.expect_punctuation(&["("])?;
@@ -33,6 +39,7 @@ impl Function {
         })
     }
 
+    /// Parse parameters. Opening parenthesis (`(`) is expected to be consumed beforehand.
     fn parse_params(lexer: &mut TokenStream) -> Result<Vec<Parameter>, ParserError> {
         let mut params = Vec::new();
         loop {
@@ -54,6 +61,7 @@ impl Function {
         Ok(params)
     }
 
+    /// Try to parse return type if any. Consumes opening brace `{` which is required for function body.
     fn parse_return_type(lexer: &mut TokenStream) -> Result<Option<Identifier>, ParserError> {
         match lexer.next_some()? {
             Token::Punctuation(Punctuation("->")) => {
