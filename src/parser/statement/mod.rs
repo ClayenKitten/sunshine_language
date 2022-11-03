@@ -1,6 +1,6 @@
-use crate::lexer::{TokenStream, Token, punctuation::Punctuation};
+use crate::lexer::{TokenStream, Token, punctuation::Punctuation, keyword::Keyword};
 
-use super::{item::Item, Expression, expressions::LetStatement, ParserError, Delimiter};
+use super::{item::Item, Expression, expressions::LetStatement, ParserError, Delimiter, UnexpectedTokenError};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Statement {
@@ -14,14 +14,28 @@ impl Statement {
     pub fn parse_block(lexer: &mut TokenStream, delimiter: Delimiter) -> Result<Vec<Statement>, ParserError> {
         let mut buffer = Vec::new();
         loop {
-            let token = lexer.next()?;
-            if let Token::Punctuation(Punctuation(punc)) = token {
-                if delimiter.is_matching_closing_delimiter(punc) {
-                    break;
-                }
-            }
+            let token = lexer.peek()?;
+            let statement = match token {
+                Token::Punctuation(Punctuation(punc)) if delimiter.is_matching_closing_delimiter(punc)
+                    => { let _ = lexer.next(); break; },
+                Token::Keyword(Keyword::Fn | Keyword::Struct)
+                    => Statement::Item(Item::parse(lexer)?),
+                Token::Keyword(Keyword::Let)
+                    => Statement::LetStatement(LetStatement::parse(lexer)?),
+                Token::Eof
+                    => return Err(ParserError::UnexpectedEof),
+                _ => {
+                    let expr = Expression::parse(lexer)?;
+                    match lexer.next_some()? {
+                        Token::Punctuation(Punctuation(";")) => { },
+                        Token::Punctuation(Punctuation("}")) => break,
+                        token => return Err(UnexpectedTokenError::UnexpectedToken(token).into()),
+                    }
+                    Statement::ExpressionStatement(expr)
+                },
+            };
 
-            todo!();
+            buffer.push(statement);
         }
         Ok(buffer)
     }

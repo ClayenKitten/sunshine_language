@@ -1,12 +1,17 @@
-use strum::EnumDiscriminants;
-use crate::lexer::{punctuation::{Operator, Punctuation}, number::Number, Token, TokenKind, TokenStream};
+use crate::lexer::{number::Number, Token, TokenStream};
 
-use super::{ParserError, UnexpectedTokenError, Statement, Delimiter};
+use super::{ParserError, UnexpectedTokenError, Statement};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expression {
     WithBlock(ExpressionWithBlock),
     WithoutBlock(ExpressionWithoutBlock),
+}
+
+impl Expression {
+    pub fn parse(lexer: &mut TokenStream) -> Result<Expression, ParserError> {
+        todo!();
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -53,6 +58,12 @@ pub struct LetStatement {
     pub var: Identifier,
     pub type_: Option<Identifier>,
     pub value: Option<Box<Expression>>,
+}
+
+impl LetStatement {
+    pub fn parse(lexer: &mut TokenStream) -> Result<LetStatement, ParserError> {
+        todo!()
+    }
 }
 
 /// VAR = VALUE
