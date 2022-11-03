@@ -27,11 +27,12 @@ impl TokenStream {
 
     /// Get next token if available & succesfully parsed.
     pub fn next(&mut self) -> Result<Token, LexerError> {
-        let ch = match self.clean() {
+        self.clean();
+
+        let ch = match self.stream.peek(1) {
             Some(ch) => ch,
             None => return Ok(Token::Eof),
         };
-        self.stream.discard(1);
 
         if ch == '"' {
             return self.read_str();
@@ -58,36 +59,56 @@ impl TokenStream {
     }
 
     /// Remove spaces and comments beforehand.
-    fn clean(&mut self) -> Option<char> {
-        let stream = &mut self.stream;
+    fn clean(&mut self) {
         loop {
-            // Skip whitespaces
-            let mut ch = stream.skip_while(|stream| {
-                let ch = stream.peek(0);
-                ch.is_some() && ch.unwrap().is_whitespace()
-            })?;
-
-            // Skip one line comment
-            if ch == '/' && stream.peek(1) == Some('/') {
-                stream.skip_while(|stream| stream.peek(0) != Some('\n'));
-                ch = stream.next()?;
+            let skipped = skip_line_comment(&mut self.stream) || skip_block_comment(&mut self.stream);
+            let skipped = skipped || skip_whitespace(&mut self.stream);
+            
+            if !skipped {
+                break;
             }
+        }
 
-            // Skip block comment
-            if ch == '/' && stream.peek(1) == Some('*') {
-                stream.skip_while(|stream| {
-                    stream.peek(0) == Some('*') && stream.peek(1) == Some('/')
-                });
+        fn skip_line_comment(stream: &mut InputStream) -> bool {
+            if stream.peek(1) == Some('/') && stream.peek(2) == Some('/') {
+                loop {
+                    if let Some('\n') | None = stream.next() {
+                        return true;
+                    }
+                }
+            }
+            false
+        }
+
+        fn skip_block_comment(stream: &mut InputStream) -> bool {
+            if stream.peek(1) == Some('/') && stream.peek(2) == Some('*') {
                 stream.next();
-                ch = stream.next()?;
-            }
+                loop {
+                    if stream.next() == Some('*') && stream.peek(1) == Some('/') {
+                        stream.next();
+                        return true;
+                    }
 
-            if !ch.is_whitespace()
-                && !(ch == '/' && stream.peek(1) == Some('/'))
-                && !(ch == '/' && stream.peek(1) == Some('*'))
-            {
-                return Some(ch);
+                    if stream.is_eof() {
+                        return true;
+                    }
+                }
             }
+            false
+        }
+
+        fn skip_whitespace(stream: &mut InputStream) -> bool {
+            let mut skipped = false;
+            loop {
+                let ch = stream.peek(1);
+                if ch.is_some() && ch.unwrap().is_whitespace() {
+                    skipped = true;
+                    stream.next();
+                } else {
+                    break;
+                }
+            }
+            skipped
         }
     }
 

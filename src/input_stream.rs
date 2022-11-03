@@ -44,14 +44,6 @@ impl InputStream {
     pub fn is_eof(&self) -> bool {
         self.data.len() == self.pos
     }
-
-    pub fn skip_while<F: Fn(&InputStream) -> bool>(&mut self, condition: F) -> Option<char> {
-        let mut ch = self.next()?;
-        while condition(self) {
-            ch = self.next()?;
-        }
-        Some(ch)
-    }
 }
 
 #[cfg(test)]
@@ -64,19 +56,5 @@ mod test {
         let ch1 = stream.next();
         let ch2 = stream.peek(0);
         assert_eq!(ch1, ch2);
-    }
-
-    #[test]
-    fn test_skip_while1() {
-        let mut stream = InputStream::new("Hello\nworld");
-        let ch = stream.skip_while(|stream| stream.peek(0) != Some('\n'));
-        assert_eq!(ch, Some('\n'));
-    }
-
-    #[test]
-    fn test_skip_while2() {
-        let mut stream = InputStream::new("   Hello world");
-        let ch = stream.skip_while(|stream| stream.peek(0) == Some(' '));
-        assert_eq!(ch, Some('H'));
     }
 }
