@@ -51,28 +51,22 @@ impl Number {
     }
 
     fn parse_number(stream: &mut InputStream, base: Base) -> (String, Option<String>) {
-        let base = match base {
-            Base::Binary => 2,
-            Base::Octal => 8,
-            Base::Decimal => 10,
-            Base::Hexadecimal => 16,
-        };
-
         let mut integer = String::new();
         let mut fraction = String::new();
         let mut met_dot = false;
 
-        while let Some(ch) = stream.next() {
-            if ch.is_digit(base) {
+        while let Some(ch) = stream.peek(1) {            
+            if ch.is_digit(base.radix()) {
                 if !met_dot {
                     integer.push(ch);
                 } else {
                     fraction.push(ch);
                 }
+                stream.next();
             } else if ch == '.' && !met_dot {
                 met_dot = true;
+                stream.next();
             } else {
-                stream.discard(1);
                 break;
             }
         }
@@ -97,6 +91,18 @@ pub enum Base {
     Octal,
     Decimal,
     Hexadecimal,
+}
+
+impl Base {
+    /// Get radix of base in numerical form.
+    pub fn radix(&self) -> u32 {
+        match self {
+            Base::Binary => 2,
+            Base::Octal => 8,
+            Base::Decimal => 10,
+            Base::Hexadecimal => 16,
+        }
+    }
 }
 
 #[cfg(test)]
