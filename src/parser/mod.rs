@@ -34,12 +34,12 @@ pub enum Delimiter {
 
 impl Delimiter {
     pub fn is_matching_closing_delimiter(&self, s: &str) -> bool {
-        match (self, s) {
-            (Delimiter::Parenthesis, ")") => true,
-            (Delimiter::Brace, "}") => true,
-            (Delimiter::Bracket, "]") => true,
-            _ => false,
-        }
+        matches!(
+            (self, s),
+            (Delimiter::Parenthesis, ")") |
+            (Delimiter::Brace, "}") |
+            (Delimiter::Bracket, "]")
+        )
     }
 }
 

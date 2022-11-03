@@ -69,8 +69,8 @@ impl Function {
                 lexer.expect_punctuation(&["{"])?;
                 Ok(Some(return_type))
             },
-            Token::Punctuation(Punctuation("{")) => return Ok(None),
-            token => return Err(UnexpectedTokenError::UnexpectedToken(token).into()),
+            Token::Punctuation(Punctuation("{")) => Ok(None),
+            token => Err(UnexpectedTokenError::UnexpectedToken(token).into()),
         }
     }
 }

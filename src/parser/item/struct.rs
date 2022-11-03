@@ -21,11 +21,8 @@ impl Struct {
         let mut fields = Vec::new();
         lexer.expect_punctuation(&["{"])?;
         
-        loop {
-            match Self::parse_field(lexer)? {
-                Some(field) => fields.push(field),
-                None => break,
-            }
+        while let Some(field) = Self::parse_field(lexer)? {
+            fields.push(field);
             match lexer.next_some()? {
                 Token::Punctuation(Punctuation("}")) => break,
                 Token::Punctuation(Punctuation(",")) => { },
