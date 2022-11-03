@@ -12,7 +12,7 @@ pub struct Number {
 
 impl Number {
     pub fn parse(stream: &mut InputStream) -> Result<Number, LexerError> {
-        let base = Self::parse_base(stream)?;
+        let base = Self::parse_base(stream);
         let (integer, fraction) = Self::parse_number(stream, base);
 
         if let Some(fraction) = &fraction {
@@ -31,28 +31,23 @@ impl Number {
         })
     }
 
-    fn parse_base(stream: &mut InputStream) -> Result<Base, LexerError> {
-        Ok(match stream.next() {
-            Some('0') => match stream.next() {
-                Some('b') => Base::Binary,
-                Some('o') => Base::Octal,
-                Some('x') => Base::Hexadecimal,
-                Some(_) => {
-                    stream.discard(2);
-                    Base::Decimal
-                }
-                None => {
-                    stream.discard(1);
-                    Base::Decimal
-                }
-            },
-            Some('.' | '1'..='9') => {
-                stream.discard(1);
-                Base::Decimal
-            }
-            Some(_) => return Err(LexerError::InvalidNumber),
-            None => return Err(LexerError::UnexpectedEOF),
-        })
+    /// Check for base-defining sequence of characters and return it if found. Returns `Base::Decimal` if sequence wasn't found.
+    fn parse_base(stream: &mut InputStream) -> Base {
+        if stream.peek(1) != Some('0') {
+            return Base::Decimal;
+        }
+
+        let base = match stream.peek(2) {
+            Some('b') => Base::Binary,
+            Some('o') => Base::Octal,
+            Some('x') => Base::Hexadecimal,
+            _ => return Base::Decimal,
+        };
+
+        stream.next();
+        stream.next();
+
+        base
     }
 
     fn parse_number(stream: &mut InputStream, base: Base) -> (String, Option<String>) {
