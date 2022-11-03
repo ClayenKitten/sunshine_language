@@ -4,7 +4,7 @@ pub mod number;
 pub mod punctuation;
 pub mod keyword;
 
-use std::str::FromStr;
+use std::{str::FromStr, mem::take};
 
 use strum::EnumDiscriminants;
 use thiserror::Error;
@@ -13,20 +13,44 @@ use crate::input_stream::InputStream;
 
 use self::{number::Number, punctuation::{Operator, Punctuation, NotPunctuation}, keyword::Keyword};
 
+/// A stream that returns tokens of programming language.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TokenStream {
+    /// Cached token.
+    current: Option<Token>,
     stream: InputStream,
 }
 
 impl TokenStream {
     pub fn new(data: &str) -> Self {
         Self {
+            current: None,
             stream: InputStream::new(data),
         }
     }
 
-    /// Get next token if available & succesfully parsed.
+    /// Get next token.
     pub fn next(&mut self) -> Result<Token, LexerError> {
+        match take(&mut self.current) {
+            Some(token) => Ok(token),
+            None => self.read_token(),
+        }
+    }
+
+    /// Get next token without advancing an iterator.
+    pub fn peek(&mut self) -> Result<Token, LexerError> {
+        if self.current.is_none() {
+            self.current = Some(self.read_token()?);
+        }
+        Ok(self.current.clone().unwrap())
+    }
+
+    /// Check if last token was already yielded.
+    pub fn is_eof(&mut self) -> bool {
+        matches!(self.peek(), Ok(Token::Eof))
+    }
+    
+    fn read_token(&mut self) -> Result<Token, LexerError> {
         self.clean();
 
         let ch = match self.stream.peek(1) {
@@ -52,10 +76,6 @@ impl TokenStream {
         }
 
         Err(LexerError::UnexpectedCharacter(ch))
-    }
-
-    pub fn is_eof(&self) -> bool {
-        self.stream.is_eof()
     }
 
     /// Remove spaces and comments beforehand.
