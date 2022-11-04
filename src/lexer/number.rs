@@ -33,11 +33,11 @@ impl Number {
 
     /// Check for base-defining sequence of characters and return it if found. Returns `Base::Decimal` if sequence wasn't found.
     fn parse_base(stream: &mut InputStream) -> Base {
-        if stream.peek(1) != Some('0') {
+        if stream.peek() != Some('0') {
             return Base::Decimal;
         }
 
-        let base = match stream.peek(2) {
+        let base = match stream.peek_nth(1) {
             Some('b') => Base::Binary,
             Some('o') => Base::Octal,
             Some('x') => Base::Hexadecimal,
@@ -55,7 +55,7 @@ impl Number {
         let mut fraction = String::new();
         let mut met_dot = false;
 
-        while let Some(ch) = stream.peek(1) {            
+        while let Some(ch) = stream.peek() {            
             if ch.is_digit(base.radix()) {
                 if !met_dot {
                     integer.push(ch);

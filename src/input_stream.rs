@@ -1,65 +1,40 @@
+use std::{str::CharIndices, fmt::{Debug, Display}};
+
+use itertools::{Itertools, PeekNth, peek_nth};
+
 /// Input stream is used to preserve
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct InputStream {
-    pos: usize,
-    data: Vec<char>,
+#[derive(Debug, Clone)]
+pub struct InputStream<'a> {
+    data: PeekNth<CharIndices<'a>>,
 }
 
-impl InputStream {
-    pub fn new(data: &str) -> Self {
+impl<'a> Iterator for InputStream<'a> {
+    type Item = char;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.data.next()
+            .map(|(_, ch)| ch)
+    }
+}
+
+impl<'a> InputStream<'a> {
+    pub fn new(input: &'a str) -> Self {
         InputStream {
-            pos: 0,
-            data: data.chars().collect(),
+            data: peek_nth(input.char_indices()),
         }
     }
 
-    /// Get next character.
-    pub fn next(&mut self) -> Option<char> {
-        let val = self.data.get(self.pos).copied();
-        self.pos = self.pos.checked_add(1)?;
-        if val.is_none() {
-            self.pos -= 1;
-        }
-        val
+    pub fn peek(&mut self) -> Option<char> {
+        self.data.peek()
+            .map(|(_, ch)| *ch)
     }
 
-    pub fn skip(&mut self, n: usize) {
-        self.pos += n;
+    pub fn peek_nth(&mut self, n: usize) -> Option<char> {
+        self.data.peek_nth(n)
+            .map(|(_, ch)| *ch)
     }
 
-    /// Move n character back.
-    #[deprecated(note="replace discarding with peeking")]
-    pub fn discard(&mut self, n: usize) {
-        self.pos -= n;
-    }
-
-    /// Peek character relative to current position.
-    ///
-    /// `peek(0)` returns result of last `next()`; `peek(1)` returns result equal to `next()` call.
-    pub fn peek(&self, offset: isize) -> Option<char> {
-        let index = if offset.is_negative() {
-            self.pos.checked_sub(offset.unsigned_abs())
-        } else {
-            self.pos.checked_add(offset as usize)
-        }?
-        .checked_sub(1)?;
-        self.data.get(index).copied()
-    }
-
-    pub fn is_eof(&self) -> bool {
-        self.data.len() == self.pos
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::InputStream;
-
-    #[test]
-    fn test_next_equals_peek0() {
-        let mut stream = InputStream::new("Hi!");
-        let ch1 = stream.next();
-        let ch2 = stream.peek(0);
-        assert_eq!(ch1, ch2);
+    pub fn is_eof(&mut self) -> bool {
+        self.data.peek().is_none()
     }
 }

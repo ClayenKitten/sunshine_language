@@ -3,15 +3,15 @@ use thiserror::Error;
 
 use super::{TokenStream, Token, LexerError};
 
-impl TokenStream {
+impl<'a> TokenStream<'a> {
     /// Try to parse punctuation or operator from input stream.
     /// 
     /// Longest sequence of chars that represents punctuation is considered a token. So, `->` is returned rather than `-`.
     pub(super) fn read_punctuation(&mut self) -> Result<Token, LexerError> {
         let mut buffer = String::with_capacity(Punctuation::MAX_PUNCTUATION_LENGTH);
         let mut result = None;
-        for len in 1..=Punctuation::MAX_PUNCTUATION_LENGTH {
-            let Some(ch) = self.stream.peek(len as isize) else { break };
+        for i in 0..Punctuation::MAX_PUNCTUATION_LENGTH {
+            let Some(ch) = self.stream.peek_nth(i) else { break };
             if !ch.is_ascii_punctuation() {
                 break;
             }
@@ -22,7 +22,7 @@ impl TokenStream {
         
         result
             .map(|punc| {
-                self.stream.skip(punc.0.len());
+                self.stream.nth(punc.0.len() - 1);
                 match Operator::try_from(punc) {
                     Ok(op) => Token::Operator(op),
                     Err(_) => Token::Punctuation(punc),

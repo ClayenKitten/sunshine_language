@@ -56,7 +56,7 @@ impl TryFrom<Punctuation> for Delimiter {
     }
 }
 
-impl TokenStream {
+impl<'a> TokenStream<'a> {
     fn expect(&mut self, criteria: impl Fn(&Token) -> bool) -> Result<(), UnexpectedTokenError> {
         let token = self.next()?;
         if criteria(&token) {

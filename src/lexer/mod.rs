@@ -14,15 +14,15 @@ use crate::input_stream::InputStream;
 use self::{number::Number, punctuation::{Operator, Punctuation, NotPunctuation}, keyword::Keyword};
 
 /// A stream that returns tokens of programming language.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TokenStream {
+#[derive(Debug, Clone)]
+pub struct TokenStream<'a> {
     /// Cached token.
     current: Option<Token>,
-    stream: InputStream,
+    stream: InputStream<'a>,
 }
 
-impl TokenStream {
-    pub fn new(data: &str) -> Self {
+impl<'a> TokenStream<'a> {
+    pub fn new(data: &'a str) -> Self {
         Self {
             current: None,
             stream: InputStream::new(data),
@@ -53,7 +53,7 @@ impl TokenStream {
     fn read_token(&mut self) -> Result<Token, LexerError> {
         self.clean();
 
-        let ch = match self.stream.peek(1) {
+        let ch = match self.stream.peek() {
             Some(ch) => ch,
             None => return Ok(Token::Eof),
         };
@@ -90,7 +90,7 @@ impl TokenStream {
         }
 
         fn skip_line_comment(stream: &mut InputStream) -> bool {
-            if stream.peek(1) == Some('/') && stream.peek(2) == Some('/') {
+            if stream.peek() == Some('/') && stream.peek_nth(1) == Some('/') {
                 loop {
                     if let Some('\n') | None = stream.next() {
                         return true;
@@ -101,10 +101,10 @@ impl TokenStream {
         }
 
         fn skip_block_comment(stream: &mut InputStream) -> bool {
-            if stream.peek(1) == Some('/') && stream.peek(2) == Some('*') {
+            if stream.peek() == Some('/') && stream.peek_nth(1) == Some('*') {
                 stream.next();
                 loop {
-                    if stream.next() == Some('*') && stream.peek(1) == Some('/') {
+                    if stream.next() == Some('*') && stream.peek() == Some('/') {
                         stream.next();
                         return true;
                     }
@@ -120,7 +120,7 @@ impl TokenStream {
         fn skip_whitespace(stream: &mut InputStream) -> bool {
             let mut skipped = false;
             loop {
-                let ch = stream.peek(1);
+                let ch = stream.peek();
                 if ch.is_some() && ch.unwrap().is_whitespace() {
                     skipped = true;
                     stream.next();
@@ -166,7 +166,7 @@ impl TokenStream {
     /// Read identifier or keyword.
     fn read_identifier(&mut self) -> Result<Token, LexerError> {
         let mut buffer = String::new();
-        while let Some(ch) = self.stream.peek(1) {
+        while let Some(ch) = self.stream.peek() {
             if ch.is_ascii_alphanumeric() || ch == '_' {
                 buffer.push(self.stream.next().unwrap());
             } else if !ch.is_ascii() {
