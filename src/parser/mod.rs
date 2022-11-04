@@ -33,7 +33,8 @@ pub enum Delimiter {
 }
 
 impl Delimiter {
-    pub fn is_matching_closing_delimiter(&self, s: &str) -> bool {
+    /// Check if provided `str` contains a matching closing delimiter.
+    pub fn is_closing(&self, s: &str) -> bool {
         matches!(
             (self, s),
             (Delimiter::Parenthesis, ")") |

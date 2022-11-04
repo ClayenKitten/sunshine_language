@@ -16,7 +16,7 @@ impl Statement {
         loop {
             let token = lexer.peek()?;
             let statement = match token {
-                Token::Punctuation(Punctuation(punc)) if delimiter.is_matching_closing_delimiter(punc)
+                Token::Punctuation(Punctuation(punc)) if delimiter.is_closing(punc)
                     => { let _ = lexer.next(); break; },
                 Token::Keyword(Keyword::Fn | Keyword::Struct)
                     => Statement::Item(Item::parse(lexer)?),
