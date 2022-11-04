@@ -52,20 +52,6 @@ pub enum Literal {
     Boolean(bool),
 }
 
-/// let VAR: TYPE = VALUE
-#[derive(Debug, PartialEq, Eq)]
-pub struct LetStatement {
-    pub var: Identifier,
-    pub type_: Option<Identifier>,
-    pub value: Option<Box<Expression>>,
-}
-
-impl LetStatement {
-    pub fn parse(lexer: &mut TokenStream) -> Result<LetStatement, ParserError> {
-        todo!()
-    }
-}
-
 /// VAR = VALUE
 #[derive(Debug, PartialEq, Eq)]
 pub struct Assignment {
