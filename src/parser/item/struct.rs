@@ -23,10 +23,8 @@ impl Struct {
         
         while let Some(field) = Self::parse_field(lexer)? {
             fields.push(field);
-            match lexer.expect_punctuation(["}", ","])? {
-                "}" => break,
-                "," => { },
-                _ => unreachable!(),
+            if "}" == lexer.expect_punctuation(["}", ","])? {
+                break;
             }
         }
         Ok(Struct { name, fields })
