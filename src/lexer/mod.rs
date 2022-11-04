@@ -18,14 +18,14 @@ use self::{number::Number, punctuation::{Operator, Punctuation, NotPunctuation},
 pub struct TokenStream<'a> {
     /// Cached token.
     current: Option<Token>,
-    stream: InputStream<'a>,
+    input: InputStream<'a>,
 }
 
 impl<'a> TokenStream<'a> {
     pub fn new(data: &'a str) -> Self {
         Self {
             current: None,
-            stream: InputStream::new(data),
+            input: InputStream::new(data),
         }
     }
 
@@ -53,7 +53,7 @@ impl<'a> TokenStream<'a> {
     fn read_token(&mut self) -> Result<Token, LexerError> {
         self.clean();
 
-        let ch = match self.stream.peek() {
+        let ch = match self.input.peek() {
             Some(ch) => ch,
             None => return Ok(Token::Eof),
         };
@@ -63,7 +63,7 @@ impl<'a> TokenStream<'a> {
         }
 
         if ch.is_ascii_digit() {
-            let number = number::Number::parse(&mut self.stream)?;
+            let number = number::Number::parse(&mut self.input)?;
             return Ok(Token::Number(number));
         }
 
@@ -81,8 +81,8 @@ impl<'a> TokenStream<'a> {
     /// Remove spaces and comments beforehand.
     fn clean(&mut self) {
         loop {
-            let skipped = skip_line_comment(&mut self.stream) || skip_block_comment(&mut self.stream);
-            let skipped = skipped || skip_whitespace(&mut self.stream);
+            let skipped = skip_line_comment(&mut self.input) || skip_block_comment(&mut self.input);
+            let skipped = skipped || skip_whitespace(&mut self.input);
             
             if !skipped {
                 break;
@@ -134,12 +134,12 @@ impl<'a> TokenStream<'a> {
 
     /// Read string literal.
     fn read_str(&mut self) -> Result<Token, LexerError> {
-        self.stream.next(); // Skip opening quote mark
+        self.input.next(); // Skip opening quote mark
         let mut buffer = String::new();
         loop {
-            match self.stream.next().ok_or(LexerError::UnexpectedEOF)? {
+            match self.input.next().ok_or(LexerError::UnexpectedEOF)? {
                 '\\' => {
-                    let escaped = self.stream.next().ok_or(LexerError::UnexpectedEOF)?;
+                    let escaped = self.input.next().ok_or(LexerError::UnexpectedEOF)?;
                     let value = match escaped {
                         '\'' => '\'',
                         '"' => '"',
@@ -166,9 +166,9 @@ impl<'a> TokenStream<'a> {
     /// Read identifier or keyword.
     fn read_identifier(&mut self) -> Result<Token, LexerError> {
         let mut buffer = String::new();
-        while let Some(ch) = self.stream.peek() {
+        while let Some(ch) = self.input.peek() {
             if ch.is_ascii_alphanumeric() || ch == '_' {
-                buffer.push(self.stream.next().unwrap());
+                buffer.push(self.input.next().unwrap());
             } else if !ch.is_ascii() {
                 return Err(LexerError::InvalidIdentifier);
             } else {

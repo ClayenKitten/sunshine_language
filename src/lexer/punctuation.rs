@@ -11,7 +11,7 @@ impl<'a> TokenStream<'a> {
         let mut buffer = String::with_capacity(Punctuation::MAX_PUNCTUATION_LENGTH);
         let mut result = None;
         for i in 0..Punctuation::MAX_PUNCTUATION_LENGTH {
-            let Some(ch) = self.stream.peek_nth(i) else { break };
+            let Some(ch) = self.input.peek_nth(i) else { break };
             if !ch.is_ascii_punctuation() {
                 break;
             }
@@ -22,7 +22,7 @@ impl<'a> TokenStream<'a> {
         
         result
             .map(|punc| {
-                self.stream.nth(punc.0.len() - 1);
+                self.input.nth(punc.0.len() - 1);
                 match Operator::try_from(punc) {
                     Ok(op) => Token::Operator(op),
                     Err(_) => Token::Punctuation(punc),
