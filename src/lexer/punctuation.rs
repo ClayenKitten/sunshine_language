@@ -3,40 +3,33 @@ use thiserror::Error;
 
 use super::{TokenStream, Token, LexerError};
 
-pub fn parse(lexer: &mut TokenStream) -> Result<Token, LexerError> {
-    const MAX_LENGTH: usize = 3;
+impl TokenStream {
+    /// Try to parse punctuation or operator from input stream.
+    /// 
+    /// Longest sequence of chars that represents punctuation is considered a token. So, `->` is returned rather than `-`.
+    pub(super) fn read_punctuation(&mut self) -> Result<Token, LexerError> {
+        let mut buffer = String::with_capacity(Punctuation::MAX_PUNCTUATION_LENGTH);
+        let mut result = None;
+        for len in 1..=Punctuation::MAX_PUNCTUATION_LENGTH {
+            let Some(ch) = self.stream.peek(len as isize) else { break };
+            if !ch.is_ascii_punctuation() {
+                break;
+            }
+            buffer.push(ch);
 
-    let buffer = fill_buf_with_punc(lexer, MAX_LENGTH);    
-    
-    let first_length = usize::min(MAX_LENGTH, buffer.len());
-    for length in (0..=first_length).rev() {
-        let slice = buffer.get(0..length).unwrap();
-        if let Ok(punc) = Punctuation::from_str(slice) {
-            lexer.stream.discard(buffer.len() - slice.len());
-            let token = match Operator::try_from(punc) {
-                Ok(op) => Token::Operator(op),
-                Err(_) => Token::Punctuation(punc),
-            };
-            return Ok(token);
+            result = Punctuation::from_str(&buffer).ok().or(result);
         }
+        
+        result
+            .map(|punc| {
+                self.stream.skip(punc.0.len());
+                match Operator::try_from(punc) {
+                    Ok(op) => Token::Operator(op),
+                    Err(_) => Token::Punctuation(punc),
+                }
+            })
+            .ok_or(LexerError::UnknownPunctuation(NotPunctuation(buffer)))
     }
-    Err(LexerError::UnknownPunctuation(NotPunctuation(buffer)))
-}
-
-fn fill_buf_with_punc(lexer: &mut TokenStream, max_length: usize) -> String {
-    let mut buffer = String::with_capacity(max_length);
-    loop {
-        match lexer.stream.next() {
-            Some(ch) if ch.is_ascii_punctuation() => buffer.push(ch),
-            Some(_) => { lexer.stream.discard(1); break; },
-            _ => break,
-        }
-
-        if buffer.len() >= max_length {
-            break;
-        }
-    }
-    buffer
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,6 +41,19 @@ impl Punctuation {
         "=", "+", "+=", "-", "-=", "*", "*=", "/", "/=", "%", "%=",
         "==", "!=", ">", "<", ">=", "<=", "&&", "||"
     ];
+
+    const MAX_PUNCTUATION_LENGTH: usize = {
+        let mut max_len = 0;
+        let mut index = 0;
+        while index < Self::DICT.len() {
+            let len = Self::DICT[index].len();
+            if len > max_len {
+                max_len = len
+            }
+            index += 1;
+        }
+        max_len
+    };
 
     pub fn new(s: &'static str) -> Self {
         if Self::DICT.contains(&s) {

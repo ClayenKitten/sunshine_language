@@ -72,7 +72,7 @@ impl TokenStream {
         }
 
         if ch.is_ascii_punctuation() {
-            return punctuation::parse(self);
+            return self.read_punctuation();
         }
 
         Err(LexerError::UnexpectedCharacter(ch))
