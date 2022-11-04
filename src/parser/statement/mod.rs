@@ -26,10 +26,8 @@ impl Statement {
                     => return Err(ParserError::UnexpectedEof),
                 _ => {
                     let expr = Expression::parse(lexer)?;
-                    match lexer.next_some()? {
-                        Token::Punctuation(Punctuation(";")) => { },
-                        Token::Punctuation(Punctuation("}")) => break,
-                        token => return Err(UnexpectedTokenError::UnexpectedToken(token).into()),
+                    if "}" == lexer.expect_punctuation(["}", ";"])? {
+                        break;
                     }
                     Statement::ExpressionStatement(expr)
                 },

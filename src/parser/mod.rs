@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::lexer::{TokenStream, LexerError, Token, TokenKind, keyword::Keyword, punctuation::Punctuation};
+use crate::lexer::{TokenStream, LexerError, Token, keyword::Keyword, punctuation::Punctuation};
 
 use self::{expressions::*, item::Item, statement::Statement};
 
@@ -75,11 +75,19 @@ impl<'a> TokenStream<'a> {
         }
     }
 
-    fn expect_punctuation(&mut self, punc: &'static [&'static str]) -> Result<(), UnexpectedTokenError> {
-        match self.next()? {
-            Token::Punctuation(got) if punc.contains(&got.0) => Ok(()),
-            _ => Err(UnexpectedTokenError::TokenMismatch),
-        }
+    /// Fetch next token and check if it is one of listed punctuation.
+    /// 
+    /// # Returns
+    /// 
+    /// Returned str is guaranteed to be one of provided in `punc`.
+    fn expect_punctuation(&mut self, expected: impl IntoIterator<Item = &'static str>) -> Result<&'static str, ParserError> {
+        let Token::Punctuation(Punctuation(punc)) = self.next_some()? else {
+            return Err(UnexpectedTokenError::TokenMismatch.into());
+        };
+
+        expected.into_iter()
+            .find(|x| *x == punc)
+            .ok_or_else(|| UnexpectedTokenError::TokenMismatch.into())
     }
 
     fn expect_keyword(&mut self, keyword: Keyword) -> Result<(), UnexpectedTokenError> {
@@ -96,32 +104,21 @@ impl<'a> TokenStream<'a> {
             token => Ok(token),
         }
     }
-
-    fn next_expected_kind(&mut self, expected: TokenKind) -> Result<Token, UnexpectedTokenError> {
-        match self.next()? {
-            token if expected == (&token).into() => Ok(token),
-            token => Err(UnexpectedTokenError::TypeMismatch { expected, got: token.into() }),
-        }
-    }
 }
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum UnexpectedTokenError {
-    #[error("unexpected token")]
+    #[error("unexpected token: ")]
     UnexpectedToken(Token),
     #[error("token mismatch")]
     TokenMismatch,
-    #[error("token type mismatch")]
-    TypeMismatch { expected: TokenKind, got: TokenKind },
     #[error("{0}")]
     LexerError(#[from] LexerError),
 }
 
 #[derive(Debug, PartialEq, Eq, Error)]
 pub enum ParserError {
-    #[error("Invalid top-level token.")]
-    InvalidTopLevel,
-    #[error("Unexpected token: {0}")]
+    #[error(transparent)]
     UnexpectedToken(#[from] UnexpectedTokenError),
     #[error("Unexpected EOF")]
     UnexpectedEof,

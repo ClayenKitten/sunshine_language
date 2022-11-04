@@ -185,7 +185,6 @@ impl<'a> TokenStream<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumDiscriminants)]
-#[strum_discriminants(name(TokenKind))]
 pub enum Token {
     Punctuation(Punctuation),
     Operator(Operator),

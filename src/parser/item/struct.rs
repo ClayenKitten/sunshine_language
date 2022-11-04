@@ -19,14 +19,14 @@ impl Struct {
     pub fn parse(lexer: &mut TokenStream) -> Result<Struct, ParserError> {
         let name = Identifier::parse(lexer)?;
         let mut fields = Vec::new();
-        lexer.expect_punctuation(&["{"])?;
+        lexer.expect_punctuation(["{"])?;
         
         while let Some(field) = Self::parse_field(lexer)? {
             fields.push(field);
-            match lexer.next_some()? {
-                Token::Punctuation(Punctuation("}")) => break,
-                Token::Punctuation(Punctuation(",")) => { },
-                _ => return Err(UnexpectedTokenError::TokenMismatch.into()),
+            match lexer.expect_punctuation(["}", ","])? {
+                "}" => break,
+                "," => { },
+                _ => unreachable!(),
             }
         }
         Ok(Struct { name, fields })
@@ -39,7 +39,7 @@ impl Struct {
             Token::Punctuation(Punctuation("}")) => return Ok(None),
             _ => return Err(UnexpectedTokenError::TokenMismatch.into()),
         };
-        lexer.expect_punctuation(&[":"])?;
+        lexer.expect_punctuation([":"])?;
         let type_ = Identifier::parse(lexer)?;
 
         Ok(Some(Field { name, type_ }))
