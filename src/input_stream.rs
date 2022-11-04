@@ -23,6 +23,10 @@ impl InputStream {
         val
     }
 
+    pub fn skip(&mut self, n: usize) {
+        self.pos += n;
+    }
+
     /// Move n character back.
     #[deprecated(note="replace discarding with peeking")]
     pub fn discard(&mut self, n: usize) {
