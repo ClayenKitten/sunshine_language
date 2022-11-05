@@ -9,5 +9,6 @@ edition = "2021"
 anyhow = "1.0.65"
 clap = { version = "4.0.15", features = ["derive"] }
 itertools = "0.10.5"
+lazy_static = "1.4.0"
 strum = { version = "0.24.1", features = ["derive"] }
 thiserror = "1.0.37"

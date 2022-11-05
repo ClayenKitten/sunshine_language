@@ -1,4 +1,5 @@
-use std::str::FromStr;
+use std::{str::FromStr, collections::HashMap};
+use lazy_static::lazy_static;
 use thiserror::Error;
 
 use super::{TokenStream, Token, LexerError};
@@ -8,9 +9,9 @@ impl<'a> TokenStream<'a> {
     /// 
     /// Longest sequence of chars that represents punctuation is considered a token. So, `->` is returned rather than `-`.
     pub(super) fn read_punctuation(&mut self) -> Result<Token, LexerError> {
-        let mut buffer = String::with_capacity(Punctuation::MAX_PUNCTUATION_LENGTH);
+        let mut buffer = String::with_capacity(*MAX_PUNCTUATION_LENGTH);
         let mut result = None;
-        for i in 0..Punctuation::MAX_PUNCTUATION_LENGTH {
+        for i in 0..*MAX_PUNCTUATION_LENGTH {
             let Some(ch) = self.input.peek_nth(i) else { break };
             if !ch.is_ascii_punctuation() {
                 break;
@@ -32,28 +33,43 @@ impl<'a> TokenStream<'a> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Punctuation(pub &'static str);
 
-impl Punctuation {
-    const DICT: [&'static str; 29] = [
-        ";", ":", "{", "}", "(", ")", "[", "]", ",", "->",
-        "=", "+", "+=", "-", "-=", "*", "*=", "/", "/=", "%", "%=",
-        "==", "!=", ">", "<", ">=", "<=", "&&", "||"
-    ];
+/// A list of properties of punctuation token.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct PuncProps {
+    pub is_unary_op: bool,
+    pub is_binary_op: bool,
+}
 
-    const MAX_PUNCTUATION_LENGTH: usize = {
-        let mut max_len = 0;
-        let mut index = 0;
-        while index < Self::DICT.len() {
-            let len = Self::DICT[index].len();
-            if len > max_len {
-                max_len = len
-            }
-            index += 1;
-        }
-        max_len
+lazy_static! {
+    static ref DICT: HashMap<&'static str, PuncProps> = {
+        let punc = [";", ":", "{", "}", "(", ")", "[", "]", ",", "->"]
+            .into_iter()
+            .map(|s| (s, PuncProps { is_unary_op: false, is_binary_op: false }));
+        
+        let unary = ["+", "-", "!"];
+        let binary = ["=", "+", "+=", "-", "-=", "*", "*=", "/", "/=", "%", "%=", "==", "!=", ">", "<", ">=", "<=", "&&", "||"];
+        let ops = unary.iter().chain(&binary)
+            .map(|s| {
+                (*s, PuncProps {
+                    is_unary_op: unary.contains(s),
+                    is_binary_op: binary.contains(s),
+                })
+            });
+        
+        punc.chain(ops).collect()
     };
 
+    static ref MAX_PUNCTUATION_LENGTH: usize = {
+        DICT.keys()
+            .map(|k| k.len())
+            .max()
+            .unwrap_or_default()
+    };
+}
+
+impl Punctuation {
     pub fn new(s: &'static str) -> Self {
-        if Self::DICT.contains(&s) {
+        if DICT.contains_key(s) {
             Self(s)
         } else {
             panic!("Invalid punctuation");
@@ -61,11 +77,15 @@ impl Punctuation {
     }
 
     pub fn is_unary_operator(&self) -> bool {
-        todo!()
+        DICT.get(self.0)
+            .map(|prop| prop.is_unary_op)
+            .unwrap_or_default()
     }
 
     pub fn is_binary_operator(&self) -> bool {
-        todo!()
+        DICT.get(self.0)
+            .map(|prop| prop.is_binary_op)
+            .unwrap_or_default()
     }
 }
 
@@ -73,10 +93,9 @@ impl FromStr for Punctuation {
     type Err = NotPunctuation;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match Self::DICT.iter().position(|i| *i == s) {
-            Some(index) => Ok(Punctuation(Self::DICT[index])),
-            None => Err(NotPunctuation(s.to_string())),
-        }
+        DICT.get_key_value(s)
+            .map(|(key, _)| Punctuation(key))
+            .ok_or_else(|| NotPunctuation(s.to_string()))
     }
 }
 
