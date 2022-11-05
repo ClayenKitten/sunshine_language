@@ -4,7 +4,6 @@ use super::LexerError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Number {
-    pub sign: Sign,
     pub integer: String,
     pub fraction: Option<String>,
     pub base: Base,
@@ -24,7 +23,6 @@ impl Number {
         }
 
         Ok(Number {
-            sign: Sign::Positive,
             base,
             integer,
             fraction,
@@ -80,12 +78,6 @@ impl Number {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Sign {
-    Positive,
-    Negative,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Base {
     Binary,
     Octal,
@@ -109,7 +101,7 @@ impl Base {
 mod test {
     use crate::{
         input_stream::InputStream,
-        lexer::number::{Base, Sign},
+        lexer::number::Base,
     };
 
     use super::Number;
@@ -121,7 +113,6 @@ mod test {
         assert_eq!(
             sign,
             Ok(Number {
-                sign: Sign::Positive,
                 base: Base::Decimal,
                 integer: String::from("0"),
                 fraction: None,
@@ -133,7 +124,6 @@ mod test {
         assert_eq!(
             sign,
             Ok(Number {
-                sign: Sign::Positive,
                 base: Base::Decimal,
                 integer: String::from("1234"),
                 fraction: None,
@@ -145,7 +135,6 @@ mod test {
         assert_eq!(
             sign,
             Ok(Number {
-                sign: Sign::Positive,
                 base: Base::Hexadecimal,
                 integer: String::from("F422"),
                 fraction: None,
@@ -160,7 +149,6 @@ mod test {
         assert_eq!(
             sign,
             Ok(Number {
-                sign: Sign::Positive,
                 base: Base::Decimal,
                 integer: String::from("1234"),
                 fraction: Some(String::from("56789")),
@@ -172,7 +160,6 @@ mod test {
         assert_eq!(
             sign,
             Ok(Number {
-                sign: Sign::Positive,
                 base: Base::Hexadecimal,
                 integer: String::from("ABC"),
                 fraction: Some(String::from("DEF")),
@@ -208,7 +195,6 @@ mod test {
         assert_eq!(
             sign,
             Ok(Number {
-                sign: Sign::Positive,
                 base: Base::Decimal,
                 integer: String::from("1234"),
                 fraction: Some(String::new()),
@@ -220,7 +206,6 @@ mod test {
         assert_eq!(
             sign,
             Ok(Number {
-                sign: Sign::Positive,
                 base: Base::Decimal,
                 integer: String::new(),
                 fraction: Some(String::from("1234")),
@@ -232,7 +217,6 @@ mod test {
         assert_eq!(
             sign,
             Ok(Number {
-                sign: Sign::Positive,
                 base: Base::Hexadecimal,
                 integer: String::from("ABCD"),
                 fraction: Some(String::new()),
@@ -244,7 +228,6 @@ mod test {
         assert_eq!(
             sign,
             Ok(Number {
-                sign: Sign::Positive,
                 base: Base::Hexadecimal,
                 integer: String::new(),
                 fraction: Some(String::from("001B")),

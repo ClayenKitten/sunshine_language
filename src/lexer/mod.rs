@@ -213,7 +213,7 @@ pub enum LexerError {
 #[cfg(test)]
 mod test {
     use crate::lexer::{
-        number::{Base, Number, Sign},
+        number::{Base, Number},
         punctuation::{Operator, Punctuation},
         keyword::Keyword, Token,
     };
@@ -257,7 +257,6 @@ mod test {
         assert_eq!(
             lexer.next(),
             Ok(Token::Number(Number {
-                    sign: Sign::Positive,
                     base: Base::Decimal,
                     integer: String::from("123"),
                     fraction: None,
@@ -278,7 +277,6 @@ mod test {
         let _return = Ok(Token::Keyword(Keyword::Return));
         let semicolon = Ok(Token::Punctuation(Punctuation::new(";")));
         let zero = Ok(Token::Number(Number {
-                sign: Sign::Positive,
                 base: Base::Decimal,
                 integer: String::from("0"),
                 fraction: Some(String::new()),
