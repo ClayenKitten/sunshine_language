@@ -23,10 +23,7 @@ impl<'a> TokenStream<'a> {
         result
             .map(|punc| {
                 self.input.nth(punc.0.len() - 1);
-                match Operator::try_from(punc) {
-                    Ok(op) => Token::Operator(op),
-                    Err(_) => Token::Punctuation(punc),
-                }
+                Token::Punctuation(punc)
             })
             .ok_or(LexerError::UnknownPunctuation(NotPunctuation(buffer)))
     }
@@ -62,6 +59,14 @@ impl Punctuation {
             panic!("Invalid punctuation");
         }
     }
+
+    pub fn is_unary_operator(&self) -> bool {
+        todo!()
+    }
+
+    pub fn is_binary_operator(&self) -> bool {
+        todo!()
+    }
 }
 
 impl FromStr for Punctuation {
@@ -75,72 +80,6 @@ impl FromStr for Punctuation {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Operator {
-    Assign,
-
-    Plus,
-    PlusAssign,
-
-    Minus,
-    MinusAssign,
-
-    Multiply,
-    MultiplyAssign,
-
-    Divide,
-    DivideAssign,
-
-    Modulo,
-    ModuloAssign,
-
-    Equal,
-    NotEqual,
-    More,
-    Less,
-    MoreOrEqual,
-    LessOrEqual,
-
-    And,
-    Or,
-    // TODO: Bitwise logic & shift operators
-}
-
-impl TryFrom<Punctuation> for Operator {
-    type Error = NotAnOperator;
-
-    fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
-        use Operator::*;
-
-        Ok(match value.0 {
-            "=" => Assign,
-            "+" => Plus,
-            "+=" => PlusAssign,
-            "-" => Minus,
-            "-=" => MinusAssign,
-            "*" => Multiply,
-            "*=" => MultiplyAssign,
-            "/" => Divide,
-            "/=" => DivideAssign,
-            "%" => Modulo,
-            "%=" => ModuloAssign,
-            "==" => Equal,
-            "!=" => NotEqual,
-            ">" => More,
-            "<" => Less,
-            ">=" => MoreOrEqual,
-            "<=" => LessOrEqual,
-            "&&" => And,
-            "||" => Or,
-            s => return Err(NotAnOperator(s)),
-        })
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 #[error("provided string is not punctuation")]
 pub struct NotPunctuation(String);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
-#[error("attempt to parse punctuation `{0}` as an operator failed")]
-pub struct NotAnOperator(&'static str);

@@ -10,7 +10,7 @@ use thiserror::Error;
 
 use crate::input_stream::InputStream;
 
-use self::{number::Number, punctuation::{Operator, Punctuation, NotPunctuation}, keyword::Keyword};
+use self::{number::Number, punctuation::{Punctuation, NotPunctuation}, keyword::Keyword};
 
 /// A stream that returns tokens of programming language.
 #[derive(Debug, Clone)]
@@ -186,7 +186,6 @@ impl<'a> TokenStream<'a> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Token {
     Punctuation(Punctuation),
-    Operator(Operator),
     Number(Number),
     String(String),
     Keyword(Keyword),
@@ -214,7 +213,7 @@ pub enum LexerError {
 mod test {
     use crate::lexer::{
         number::{Base, Number},
-        punctuation::{Operator, Punctuation},
+        punctuation::Punctuation,
         keyword::Keyword, Token,
     };
 
@@ -250,9 +249,10 @@ mod test {
             lexer.next(),
             Ok(Token::Identifier(String::from("x"))),
         );
+
         assert_eq!(
             lexer.next(),
-            Ok(Token::Operator(Operator::Assign)),
+            Ok(Token::Punctuation(Punctuation::new("="))),
         );
         assert_eq!(
             lexer.next(),
@@ -290,7 +290,7 @@ mod test {
         assert_eq!(lexer.next(), x);
         assert_eq!(
             lexer.next(),
-            Ok(Token::Operator(Operator::More))
+            Ok(Token::Punctuation(Punctuation::new(">"))),
         );
         assert_eq!(lexer.next(), zero);
 
