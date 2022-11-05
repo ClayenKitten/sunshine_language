@@ -15,12 +15,12 @@ pub enum Statement {
 
 impl Statement {
     /// Parse statements until closing delimiter met.
-    pub fn parse_block(lexer: &mut TokenStream, delimiter: Delimiter) -> Result<Vec<Statement>, ParserError> {
+    pub fn parse_block(lexer: &mut TokenStream) -> Result<Vec<Statement>, ParserError> {
         let mut buffer = Vec::new();
         loop {
             let token = lexer.peek()?;
             let statement = match token {
-                Token::Punctuation(Punctuation(punc)) if delimiter.is_closing(punc)
+                Token::Punctuation(Punctuation("}"))
                     => { let _ = lexer.next(); break; },
                 Token::Keyword(Keyword::Fn | Keyword::Struct)
                     => Statement::Item(Item::parse(lexer)?),

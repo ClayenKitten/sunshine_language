@@ -29,7 +29,7 @@ impl Function {
         lexer.expect_punctuation(["("])?;
         let params = Self::parse_params(lexer)?;
         let return_type = Self::parse_return_type(lexer)?;
-        let body = Statement::parse_block(lexer, Delimiter::Brace)?;
+        let body = Statement::parse_block(lexer)?;
         
         Ok(Function {
             name,
