@@ -6,7 +6,6 @@ pub mod keyword;
 
 use std::{str::FromStr, mem::take};
 
-use strum::EnumDiscriminants;
 use thiserror::Error;
 
 use crate::input_stream::InputStream;
@@ -184,7 +183,7 @@ impl<'a> TokenStream<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, EnumDiscriminants)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Token {
     Punctuation(Punctuation),
     Operator(Operator),
