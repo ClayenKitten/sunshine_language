@@ -1,33 +1,27 @@
-use crate::lexer::{number::Number, Token, TokenStream};
+use crate::lexer::{number::Number, Token, TokenStream, punctuation::Punctuation, keyword::Keyword};
 
 use super::{ParserError, UnexpectedTokenError, Statement};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expression {
-    WithBlock(ExpressionWithBlock),
-    WithoutBlock(ExpressionWithoutBlock),
-}
-
-impl Expression {
-    pub fn parse(lexer: &mut TokenStream) -> Result<Expression, ParserError> {
-        todo!();
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum ExpressionWithBlock {
+    /// Block is a set of statements surrounded by opening and closing brace.
     Block(Vec<Statement>),
+    /// Group is a single parenthized expression.
+    Group(Box<Expression>),
+
     If(If),
     While(While),
     For(For),
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum ExpressionWithoutBlock {
     Identifier(Identifier),
     Literal(Literal),
     Assignment(Assignment),
     FunctionCall(FunctionCall),
+}
+
+impl Expression {
+    pub fn parse(lexer: &mut TokenStream) -> Result<Expression, ParserError> {
+        todo!()
+    }
 }
 
 /// Identifier is name of type, variable or function.
