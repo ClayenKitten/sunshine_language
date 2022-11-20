@@ -34,12 +34,14 @@ impl<'a> TokenStream<'a> {
 pub struct Punctuation(pub &'static str);
 
 /// A list of properties of punctuation token.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 struct PuncProps {
     /// Does that punctuation represent prefixed unary operator
     pub is_unary_op: bool,
-    /// Does that punctuation represent binary operator
-    pub is_binary_op: bool,
+    /// Priority of binary operator
+    pub binary_priority: Option<u8>,
+    /// Assignment operator may only appear once in an expression
+    pub is_assign: bool,
     /// Should that punctuation stop parsing of binary expressions
     pub is_stopper: bool,
 }
@@ -48,20 +50,52 @@ static DICT: Lazy<HashMap<&'static str, PuncProps>> = Lazy::new(|| {
     let punc = [";", ":", "{", "}", "(", ")", "[", "]", ",", "->"];
 
     let unary = ["+", "-", "!"];
-    let binary = ["=", "+", "+=", "-", "-=", "*", "*=", "/", "/=", "%", "%=", "==", "!=", ">", "<", ">=", "<=", "&&", "||"];
     let stopper = [";", ",", ")", "]", "}"];
+    let assign = ["=", "+=", "-=", "*=", "/="];
+    let binary = [
+        ("*", 128),
+        ("/", 128),
+        ("%", 128),
+        
+        ("+",  96),
+        ("-",  96),
+        
+        (">>", 64),
+        ("<<", 64),
+        
+        ("&", 50),
+        ("^", 49),
+        ("|", 48),
+        
+        ("&&", 32),
+        ("||", 32),
+        
+        ("==", 16),
+        ("!=", 16),
+        (">",  16),
+        ("<",  16),
+        (">=", 16),
+        ("<=", 16),
+    ]
+        .into_iter()
+        .map(|(s, p)| (
+           s,
+          PuncProps { binary_priority: Some(p), ..Default::default() }
+        ));
     
     punc.into_iter()
         .chain(unary)
-        .chain(binary)
         .chain(stopper)
+        .chain(assign)
         .map(|s| {
             (s, PuncProps {
                 is_unary_op: unary.contains(&s),
-                is_binary_op: binary.contains(&s),
                 is_stopper: stopper.contains(&s),
+                binary_priority: None,
+                is_assign: assign.contains(&s)
             })
         })
+        .chain(binary)
         .collect()
 });
 
@@ -77,7 +111,7 @@ impl Punctuation {
         if DICT.contains_key(s) {
             Self(s)
         } else {
-            panic!("Invalid punctuation");
+            panic!("Invalid punctuation `{s}`");
         }
     }
 
@@ -89,8 +123,13 @@ impl Punctuation {
 
     pub fn is_binary_operator(&self) -> bool {
         DICT.get(self.0)
-            .map(|prop| prop.is_binary_op)
+            .map(|prop| prop.binary_priority.is_some())
             .unwrap_or_default()
+    }
+
+    pub fn binary_priority(&self) -> Option<u8> {
+        DICT.get(self.0)
+            .and_then(|prop| prop.binary_priority)
     }
 
     pub fn is_stopper(&self) -> bool {
