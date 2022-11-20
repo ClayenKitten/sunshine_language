@@ -1,5 +1,5 @@
 use std::{str::FromStr, collections::HashMap};
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use thiserror::Error;
 
 use super::{TokenStream, Token, LexerError};
@@ -40,32 +40,28 @@ struct PuncProps {
     pub is_binary_op: bool,
 }
 
-lazy_static! {
-    static ref DICT: HashMap<&'static str, PuncProps> = {
-        let punc = [";", ":", "{", "}", "(", ")", "[", "]", ",", "->"]
-            .into_iter()
-            .map(|s| (s, PuncProps { is_unary_op: false, is_binary_op: false }));
-        
-        let unary = ["+", "-", "!"];
-        let binary = ["=", "+", "+=", "-", "-=", "*", "*=", "/", "/=", "%", "%=", "==", "!=", ">", "<", ">=", "<=", "&&", "||"];
-        let ops = unary.iter().chain(&binary)
-            .map(|s| {
-                (*s, PuncProps {
-                    is_unary_op: unary.contains(s),
-                    is_binary_op: binary.contains(s),
-                })
-            });
-        
-        punc.chain(ops).collect()
-    };
+static DICT: Lazy<HashMap<&'static str, PuncProps>> = Lazy::new(|| {
+    let punc = [";", ":", "{", "}", "(", ")", "[", "]", ",", "->"]
+        .into_iter()
+        .map(|s| (s, PuncProps { is_unary_op: false, is_binary_op: false }));
+    let unary = ["+", "-", "!"];
+    let binary = ["=", "+", "+=", "-", "-=", "*", "*=", "/", "/=", "%", "%=", "==", "!=", ">", "<", ">=", "<=", "&&", "||"];
+    let ops = unary.iter().chain(&binary)
+        .map(|s| {
+            (*s, PuncProps {
+                is_unary_op: unary.contains(s),
+                is_binary_op: binary.contains(s),
+            })
+        });
+    punc.chain(ops).collect()
+});
 
-    static ref MAX_PUNCTUATION_LENGTH: usize = {
-        DICT.keys()
-            .map(|k| k.len())
-            .max()
-            .unwrap_or_default()
-    };
-}
+static MAX_PUNCTUATION_LENGTH: Lazy<usize> = Lazy::new(|| {
+    DICT.keys()
+        .map(|punc| punc.len())
+        .max()
+        .unwrap_or_default()
+});
 
 impl Punctuation {
     pub fn new(s: &'static str) -> Self {
