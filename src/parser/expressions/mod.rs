@@ -1,4 +1,8 @@
-use crate::lexer::{number::Number, Token, TokenStream, punctuation::Punctuation, keyword::Keyword};
+mod operator;
+
+pub use operator::{UnaryOp, BinaryOp};
+
+use crate::lexer::{number::Number, Token, TokenStream};
 
 use super::{ParserError, UnexpectedTokenError, Statement};
 
@@ -9,6 +13,9 @@ pub enum Expression {
     /// Group is a single parenthized expression.
     Group(Box<Expression>),
 
+    Unary(UnaryOp),
+    Binary(BinaryOp),
+    
     If(If),
     While(While),
     For(For),
