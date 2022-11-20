@@ -2,7 +2,7 @@ mod operator;
 
 pub use operator::{UnaryOp, BinaryOp};
 
-use crate::lexer::{number::Number, Token, TokenStream};
+use crate::lexer::{number::Number, Token, TokenStream, punctuation::Punctuation, keyword::Keyword};
 
 use super::{ParserError, UnexpectedTokenError, Statement};
 
@@ -19,6 +19,7 @@ pub enum Expression {
     If(If),
     While(While),
     For(For),
+
     Identifier(Identifier),
     Literal(Literal),
     Assignment(Assignment),
@@ -27,6 +28,69 @@ pub enum Expression {
 
 impl Expression {
     pub fn parse(lexer: &mut TokenStream) -> Result<Expression, ParserError> {
+        Ok(match lexer.next_some()? {
+            Token::Punctuation(Punctuation("{")) => {
+                Expression::Block(Statement::parse_block(lexer)?)
+            }
+
+            Token::Punctuation(Punctuation("(")) => {
+                Expression::parse_delimited_parenthesis(lexer)?
+            }
+
+            Token::Punctuation(punc) => {
+                if punc.is_unary_operator() {
+                    let operand = Expression::parse(lexer)?;
+                    Expression::Unary(UnaryOp {
+                        operator: punc,
+                        operand: Box::new(operand),
+                    })
+                } else {
+                    return Err(UnexpectedTokenError::UnexpectedToken(Token::Punctuation(punc)).into())
+                }
+            }
+
+            Token::Number(num) => Expression::Literal(Literal::Number(num)),
+            Token::String(str) => Expression::Literal(Literal::String(str)),
+
+            Token::Keyword(kw) => {
+                match kw {
+                    Keyword::If => todo!(),
+                    Keyword::While => todo!(),
+                    Keyword::For => todo!(),
+                    Keyword::True => Expression::Literal(Literal::Boolean(true)),
+                    Keyword::False => Expression::Literal(Literal::Boolean(false)),
+                    _ => unreachable!(),
+                }
+            }
+            
+            Token::Identifier(ident) => {
+                Self::parse_combined(lexer)?.0
+            },
+
+            Token::Eof => unreachable!(),
+        })
+    }
+
+    /// Parse non-primitive expression that combines function calls, paths, binary operators, etc.
+    /// 
+    /// Parsing continues until "stopper" punctuation met or error occur.
+    /// 
+    /// # Returns
+    /// 
+    /// Both parsed expression and stopper are returned.
+    fn parse_combined(lexer: &mut TokenStream) -> Result<(Expression, Punctuation), ParserError> {
+        enum StackEntry {
+            Operator(Punctuation),
+            Operand(Expression),
+        }
+
+        let mut stack = Vec::<StackEntry>::new();
+
+        todo!();
+    }
+
+    /// Parse expressions delimited by commas (`,`) until closing parenthesis (`)`) met.
+    fn parse_delimited_parenthesis(lexer: &mut TokenStream) -> Result<Expression, ParserError> {
         todo!()
     }
 }
