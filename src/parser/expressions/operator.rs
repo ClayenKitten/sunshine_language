@@ -4,13 +4,13 @@ use super::Expression;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct UnaryOp {
-    operator: Punctuation,
-    operand: Box<Expression>,
+    pub operator: Punctuation,
+    pub operand: Box<Expression>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BinaryOp {
-    operator: Punctuation,
-    left: Box<Expression>,
-    right: Box<Expression>,
+    pub operator: Punctuation,
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
 }
