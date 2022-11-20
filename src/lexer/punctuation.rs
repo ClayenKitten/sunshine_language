@@ -36,24 +36,33 @@ pub struct Punctuation(pub &'static str);
 /// A list of properties of punctuation token.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct PuncProps {
+    /// Does that punctuation represent prefixed unary operator
     pub is_unary_op: bool,
+    /// Does that punctuation represent binary operator
     pub is_binary_op: bool,
+    /// Should that punctuation stop parsing of binary expressions
+    pub is_stopper: bool,
 }
 
 static DICT: Lazy<HashMap<&'static str, PuncProps>> = Lazy::new(|| {
-    let punc = [";", ":", "{", "}", "(", ")", "[", "]", ",", "->"]
-        .into_iter()
-        .map(|s| (s, PuncProps { is_unary_op: false, is_binary_op: false }));
+    let punc = [";", ":", "{", "}", "(", ")", "[", "]", ",", "->"];
+
     let unary = ["+", "-", "!"];
     let binary = ["=", "+", "+=", "-", "-=", "*", "*=", "/", "/=", "%", "%=", "==", "!=", ">", "<", ">=", "<=", "&&", "||"];
-    let ops = unary.iter().chain(&binary)
+    let stopper = [";", ",", ")", "]", "}"];
+    
+    punc.into_iter()
+        .chain(unary)
+        .chain(binary)
+        .chain(stopper)
         .map(|s| {
-            (*s, PuncProps {
-                is_unary_op: unary.contains(s),
-                is_binary_op: binary.contains(s),
+            (s, PuncProps {
+                is_unary_op: unary.contains(&s),
+                is_binary_op: binary.contains(&s),
+                is_stopper: stopper.contains(&s),
             })
-        });
-    punc.chain(ops).collect()
+        })
+        .collect()
 });
 
 static MAX_PUNCTUATION_LENGTH: Lazy<usize> = Lazy::new(|| {
@@ -81,6 +90,12 @@ impl Punctuation {
     pub fn is_binary_operator(&self) -> bool {
         DICT.get(self.0)
             .map(|prop| prop.is_binary_op)
+            .unwrap_or_default()
+    }
+
+    pub fn is_stopper(&self) -> bool {
+        DICT.get(self.0)
+            .map(|prop| prop.is_stopper)
             .unwrap_or_default()
     }
 }
