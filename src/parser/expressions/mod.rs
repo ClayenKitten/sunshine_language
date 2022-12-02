@@ -1,5 +1,9 @@
+mod shunting_yard;
+
 use std::collections::VecDeque;
 use crate::lexer::{number::Number, Token, TokenStream, punctuation::Punctuation, keyword::Keyword};
+
+use self::shunting_yard::ReversePolishExpr;
 
 use super::{ParserError, UnexpectedTokenError, Statement};
 
@@ -9,7 +13,7 @@ pub enum Expression {
     Block(Vec<Statement>),
     
     /// Expression with operators stored in reverse polish notation.
-    Polish(VecDeque<PolishEntry>),
+    Polish(ReversePolishExpr),
     
     If(If),
     While(While),
@@ -23,100 +27,10 @@ pub enum Expression {
     Variable(Identifier),
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum PolishEntry {
-    Operand(Expression),
-    Operator(Operator),
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct Operator { punc: Punctuation, arity: u8 }
-
 impl Expression {
     pub fn parse(lexer: &mut TokenStream) -> Result<Expression, ParserError> {
-        Self::parse_binary(lexer)
-            .map(|expr| expr.0)
-    }
-
-    /// Parse binary expression.
-    /// 
-    /// Parsing continues until "stopper" punctuation met or error occur.
-    /// 
-    /// # Returns
-    /// 
-    /// Both parsed expression and stopper are returned.
-    fn parse_binary(lexer: &mut TokenStream) -> Result<(Expression, Punctuation), ParserError> {
-        let mut output = VecDeque::<PolishEntry>::new();
-        let mut op_stack = Vec::<Operator>::new();
-
-        let mut is_last_token_an_operand = false;
-
-        let stopper = loop {
-            match lexer.peek()? {
-                Token::Punctuation(punc) if punc.0 == "(" => {
-                    lexer.next()?;
-                    op_stack.push(Operator { punc, arity: 0 })
-                }
-                Token::Punctuation(punc) if punc.0 == ")" => {
-                    lexer.next()?;
-                    while let Some(top_op) = op_stack.last() {
-                        if top_op.punc == Punctuation("(") {
-                            break;
-                        }
-                        output.push_back(PolishEntry::Operator(op_stack.pop().unwrap()));
-                    }
-
-                    // Either `op_stack` is empty or left parenthesis is on the top at that point.
-                    if op_stack.pop().is_none() {
-                        // Expected left parenthesis
-                        return Err(UnexpectedTokenError::TokenMismatch.into())
-                    }
-                }
-                Token::Punctuation(punc) if punc.is_stopper() => {
-                    lexer.next()?;
-                    break punc;
-                }
-                Token::Punctuation(punc) if punc.is_operator() => {
-                    lexer.next()?;
-
-                    let arity = Self::operator_arity(punc, is_last_token_an_operand)?;
-                    is_last_token_an_operand = false;
-                    let priority = punc.binary_priority().unwrap_or(u8::MAX);
-    
-                    while let Some(top_op) = op_stack.last() {
-                        if top_op.punc == Punctuation("(") {
-                            break;
-                        }
-                        if top_op.punc.binary_priority().unwrap() < priority {
-                            break;
-                        }
-                        output.push_back(PolishEntry::Operator(op_stack.pop().unwrap()));
-                    }
-                    op_stack.push(Operator { punc, arity })
-                }
-                _ => {
-                    let operand = Self::parse_operand(lexer)?;
-                    output.push_back(PolishEntry::Operand(operand));
-                    is_last_token_an_operand = true;
-                }
-            }
-        };
-
-        while let Some(op) = op_stack.pop() {
-            output.push_back(PolishEntry::Operator(op));
-        }
-        
-        Ok((Expression::Polish(output), stopper))
-    }
-
-    fn operator_arity(op: Punctuation, is_last_token_an_operand: bool) -> Result<u8, ParserError> {
-        if is_last_token_an_operand && op.is_binary_operator() {
-            Ok(2)
-        } else if !is_last_token_an_operand && op.is_unary_operator() {
-            Ok(1)
-        } else {
-            Err(UnexpectedTokenError::TokenMismatch.into())
-        }
+        shunting_yard::ReversePolishExpr::parse(lexer)
+            .map(|expr| Self::Polish(expr.0))
     }
 
     /// Parse a single operand
@@ -158,7 +72,8 @@ impl Expression {
         if lexer.expect_punctuation(["("]).is_ok() {
             let mut params = Vec::new();
             loop {
-                let (expr, stopper) = Self::parse_binary(lexer)?;
+                let (expr, stopper) = shunting_yard::ReversePolishExpr::parse(lexer)
+                    .map(|expr| (Self::Polish(expr.0), expr.1))?;
                 params.push(expr);
 
                 match stopper.0 {
