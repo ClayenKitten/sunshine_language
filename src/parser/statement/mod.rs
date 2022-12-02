@@ -30,13 +30,9 @@ impl Statement {
                     => return Err(ParserError::UnexpectedEof),
                 _ => {
                     let expr = Expression::parse(lexer)?;
-                    if "}" == lexer.expect_punctuation(["}", ";"])? {
-                        break;
-                    }
                     Statement::ExpressionStatement(expr)
                 },
             };
-
             buffer.push(statement);
         }
         Ok(buffer)

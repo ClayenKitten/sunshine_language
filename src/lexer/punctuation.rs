@@ -115,6 +115,10 @@ impl Punctuation {
         }
     }
 
+    pub fn is_operator(&self) -> bool {
+        self.is_unary_operator() || self.is_binary_operator()
+    }
+
     pub fn is_unary_operator(&self) -> bool {
         DICT.get(self.0)
             .map(|prop| prop.is_unary_op)
