@@ -49,7 +49,7 @@ impl Expression {
         let mut output = VecDeque::<PolishEntry>::new();
         let mut op_stack = Vec::<Operator>::new();
 
-        let mut last_token_is_operand = false;
+        let mut is_last_token_an_operand = false;
 
         let stopper = loop {
             match lexer.peek()? {
@@ -79,14 +79,8 @@ impl Expression {
                 Token::Punctuation(punc) if punc.is_operator() => {
                     lexer.next()?;
 
-                    let arity = if last_token_is_operand && punc.is_binary_operator() {
-                        2
-                    } else if !last_token_is_operand && punc.is_unary_operator() {
-                        1
-                    } else {
-                        return Err(UnexpectedTokenError::TokenMismatch.into())
-                    };
-                    last_token_is_operand = false;
+                    let arity = Self::operator_arity(punc, is_last_token_an_operand)?;
+                    is_last_token_an_operand = false;
                     let priority = punc.binary_priority().unwrap_or(u8::MAX);
     
                     while let Some(top_op) = op_stack.last() {
@@ -103,7 +97,7 @@ impl Expression {
                 _ => {
                     let operand = Self::parse_operand(lexer)?;
                     output.push_back(PolishEntry::Operand(operand));
-                    last_token_is_operand = true;
+                    is_last_token_an_operand = true;
                 }
             }
         };
@@ -113,6 +107,16 @@ impl Expression {
         }
         
         Ok((Expression::Polish(output), stopper))
+    }
+
+    fn operator_arity(op: Punctuation, is_last_token_an_operand: bool) -> Result<u8, ParserError> {
+        if is_last_token_an_operand && op.is_binary_operator() {
+            Ok(2)
+        } else if !is_last_token_an_operand && op.is_unary_operator() {
+            Ok(1)
+        } else {
+            Err(UnexpectedTokenError::TokenMismatch.into())
+        }
     }
 
     /// Parse a single operand
