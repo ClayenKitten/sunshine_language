@@ -43,13 +43,16 @@ impl ReversePolishExpr {
                     }
                     is_last_token_an_operand = true;
                 }
-                Token::Punctuation(punc) if punc.is_stopper() => {
-                    break;
-                }
                 Token::Punctuation(punc) if punc.is_operator() => {
+                    let arity = if is_last_token_an_operand && punc.is_binary_operator() {
+                        2
+                    } else if !is_last_token_an_operand && punc.is_unary_operator() {
+                        1
+                    } else {
+                        break;
+                    };
                     lexer.next()?;
-
-                    let arity = Self::operator_arity(punc, is_last_token_an_operand)?;
+                    
                     is_last_token_an_operand = false;
                     let priority = punc.binary_priority().unwrap_or(u8::MAX);
     
@@ -71,6 +74,9 @@ impl ReversePolishExpr {
                     }
                 }
                 _ => {
+                    if is_last_token_an_operand {
+                        break;
+                    }
                     let operand = Expression::parse_operand(lexer)?;
                     output.push_back(PolishEntry::Operand(operand));
                     is_last_token_an_operand = true;
@@ -85,15 +91,7 @@ impl ReversePolishExpr {
         Ok(ReversePolishExpr(output))
     }
 
-    fn operator_arity(op: Punctuation, is_last_token_an_operand: bool) -> Result<u8, ParserError> {
-        if is_last_token_an_operand && op.is_binary_operator() {
-            Ok(2)
-        } else if !is_last_token_an_operand && op.is_unary_operator() {
-            Ok(1)
-        } else {
-            Err(UnexpectedTokenError::TokenMismatch.into())
-        }
-    }
+    
 }
 
 #[derive(Debug, PartialEq, Eq)]

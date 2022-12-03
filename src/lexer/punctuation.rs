@@ -42,15 +42,12 @@ struct PuncProps {
     pub binary_priority: Option<u8>,
     /// Assignment operator may only appear once in an expression
     pub is_assign: bool,
-    /// Should that punctuation stop parsing of binary expressions
-    pub is_stopper: bool,
 }
 
 static DICT: Lazy<HashMap<&'static str, PuncProps>> = Lazy::new(|| {
     let punc = [";", ":", "{", "}", "(", ")", "[", "]", ",", "->"];
 
     let unary = ["+", "-", "!"];
-    let stopper = [";", ",", ")", "]", "}"];
     let assign = ["=", "+=", "-=", "*=", "/="];
     let binary = [
         ("*", 128),
@@ -85,12 +82,10 @@ static DICT: Lazy<HashMap<&'static str, PuncProps>> = Lazy::new(|| {
     
     punc.into_iter()
         .chain(unary)
-        .chain(stopper)
         .chain(assign)
         .map(|s| {
             (s, PuncProps {
                 is_unary_op: unary.contains(&s),
-                is_stopper: stopper.contains(&s),
                 binary_priority: None,
                 is_assign: assign.contains(&s)
             })
@@ -134,12 +129,6 @@ impl Punctuation {
     pub fn binary_priority(&self) -> Option<u8> {
         DICT.get(self.0)
             .and_then(|prop| prop.binary_priority)
-    }
-
-    pub fn is_stopper(&self) -> bool {
-        DICT.get(self.0)
-            .map(|prop| prop.is_stopper)
-            .unwrap_or_default()
     }
 }
 
