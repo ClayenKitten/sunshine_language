@@ -69,7 +69,7 @@ impl Expression {
 
     /// Try to wrap provided identifier in function call.
     fn maybe_function_call(lexer: &mut TokenStream, name: Identifier) -> Result<Expression, ParserError> {
-        if lexer.expect_punctuation(["("]).is_ok() {
+        if lexer.peek()? == Token::Punctuation(Punctuation::new("(")) {
             let mut params = Vec::new();
             loop {
                 let expr = Expression::parse(lexer)?;
