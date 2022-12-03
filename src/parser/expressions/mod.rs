@@ -30,7 +30,7 @@ pub enum Expression {
 impl Expression {
     pub fn parse(lexer: &mut TokenStream) -> Result<Expression, ParserError> {
         shunting_yard::ReversePolishExpr::parse(lexer)
-            .map(|expr| Self::Polish(expr.0))
+            .map(|expr| Self::Polish(expr))
     }
 
     /// Parse a single operand
@@ -72,14 +72,11 @@ impl Expression {
         if lexer.expect_punctuation(["("]).is_ok() {
             let mut params = Vec::new();
             loop {
-                let (expr, stopper) = shunting_yard::ReversePolishExpr::parse(lexer)
-                    .map(|expr| (Self::Polish(expr.0), expr.1))?;
+                let expr = Expression::parse(lexer)?;
                 params.push(expr);
 
-                match stopper.0 {
-                    ")" => return Ok(Expression::FunctionCall(FunctionCall { name, params })),
-                    "," => { },
-                    _ => return Err(UnexpectedTokenError::TokenMismatch.into()),
+                if ")" == lexer.expect_punctuation([")", ","])? {
+                    return Ok(Expression::FunctionCall(FunctionCall { name, params }));
                 }
             }
         } else {

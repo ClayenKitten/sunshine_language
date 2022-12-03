@@ -12,17 +12,13 @@ impl ReversePolishExpr {
     /// Parse binary expression.
     /// 
     /// Parsing continues until "stopper" punctuation met or error occur.
-    /// 
-    /// # Returns
-    /// 
-    /// Both parsed expression and stopper are returned.
-    pub fn parse(lexer: &mut TokenStream) -> Result<(Self, Punctuation), ParserError> {
+    pub fn parse(lexer: &mut TokenStream) -> Result<Self, ParserError> {
         let mut output = VecDeque::<PolishEntry>::new();
         let mut op_stack = Vec::<Operator>::new();
 
         let mut is_last_token_an_operand = false;
 
-        let stopper = loop {
+        loop {
             match lexer.peek()? {
                 Token::Punctuation(punc) if punc.0 == "(" => {
                     lexer.next()?;
@@ -48,8 +44,7 @@ impl ReversePolishExpr {
                     is_last_token_an_operand = true;
                 }
                 Token::Punctuation(punc) if punc.is_stopper() => {
-                    lexer.next()?;
-                    break punc;
+                    break;
                 }
                 Token::Punctuation(punc) if punc.is_operator() => {
                     lexer.next()?;
@@ -87,7 +82,7 @@ impl ReversePolishExpr {
             output.push_back(PolishEntry::Operator(op));
         }
         
-        Ok((ReversePolishExpr(output), stopper))
+        Ok(ReversePolishExpr(output))
     }
 
     fn operator_arity(op: Punctuation, is_last_token_an_operand: bool) -> Result<u8, ParserError> {
