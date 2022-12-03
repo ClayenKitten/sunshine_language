@@ -49,7 +49,7 @@ impl Expression {
 
             Token::Keyword(kw) => {
                 match kw {
-                    Keyword::If => todo!(),
+                    Keyword::If => Expression::If(If::parse(lexer)?),
                     Keyword::While => todo!(),
                     Keyword::For => todo!(),
                     Keyword::True => Expression::Literal(Literal::Boolean(true)),
@@ -127,6 +127,21 @@ pub struct If {
     pub condition: Box<Expression>,
     pub body: Vec<Statement>,
     pub else_body: Option<Vec<Statement>>,
+}
+
+impl If {
+    pub fn parse(lexer: &mut TokenStream) -> Result<If, ParserError> {
+        let condition = Box::new(Expression::parse(lexer)?);
+        lexer.expect_punctuation(["{"])?;
+        let body = Statement::parse_block(lexer)?;
+        let else_body = if let Token::Keyword(Keyword::Else) = lexer.peek()? {
+            lexer.expect_punctuation(["{"])?;
+            Some(Statement::parse_block(lexer)?)
+        } else {
+            None
+        };
+        Ok(If { condition, body, else_body })
+    }
 }
 
 /// while CONDITION { BODY }
