@@ -44,6 +44,19 @@ impl Delimiter {
     }
 }
 
+impl TryFrom<char> for Delimiter {
+    type Error = ();
+
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        match value {
+            '(' | ')' => Ok(Delimiter::Parenthesis),
+            '{' | '}' => Ok(Delimiter::Brace),
+            '[' | ']' => Ok(Delimiter::Bracket),
+            _ => Err(()),
+        }
+    }
+}
+
 impl TryFrom<Punctuation> for Delimiter {
     type Error = ();
 
