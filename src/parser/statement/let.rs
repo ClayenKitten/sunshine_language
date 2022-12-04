@@ -1,4 +1,4 @@
-use crate::{parser::{ParserError, expressions::{Expression, Identifier}}, lexer::{TokenStream, keyword::Keyword}};
+use crate::{parser::{ParserError, expressions::{Expression, Identifier}}, lexer::{Lexer, keyword::Keyword}};
 
 /// let VAR: TYPE = VALUE;
 #[derive(Debug, PartialEq, Eq)]
@@ -9,7 +9,7 @@ pub struct LetStatement {
 }
 
 impl LetStatement {
-    pub fn parse(lexer: &mut TokenStream) -> Result<LetStatement, ParserError> {
+    pub fn parse(lexer: &mut Lexer) -> Result<LetStatement, ParserError> {
         lexer.expect_keyword(Keyword::Let)?;
         let mut statement = LetStatement {
             name: Identifier::parse(lexer)?,

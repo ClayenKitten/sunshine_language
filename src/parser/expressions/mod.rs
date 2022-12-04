@@ -1,7 +1,7 @@
 mod shunting_yard;
 
 use std::collections::VecDeque;
-use crate::lexer::{number::Number, Token, TokenStream, punctuation::Punctuation, keyword::Keyword};
+use crate::lexer::{number::Number, Token, Lexer, punctuation::Punctuation, keyword::Keyword};
 
 use self::shunting_yard::ReversePolishExpr;
 
@@ -28,13 +28,13 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn parse(lexer: &mut TokenStream) -> Result<Expression, ParserError> {
+    pub fn parse(lexer: &mut Lexer) -> Result<Expression, ParserError> {
         shunting_yard::ReversePolishExpr::parse(lexer)
             .map(|expr| Self::Polish(expr))
     }
 
     /// Parse a single operand
-    fn parse_operand(lexer: &mut TokenStream) -> Result<Expression, ParserError> {
+    fn parse_operand(lexer: &mut Lexer) -> Result<Expression, ParserError> {
         let token = match lexer.next()? {
             Token::Punctuation(Punctuation("{")) => {
                 Expression::Block(Statement::parse_block(lexer)?)
@@ -68,7 +68,7 @@ impl Expression {
     }
 
     /// Try to wrap provided identifier in function call.
-    fn maybe_function_call(lexer: &mut TokenStream, name: Identifier) -> Result<Expression, ParserError> {
+    fn maybe_function_call(lexer: &mut Lexer, name: Identifier) -> Result<Expression, ParserError> {
         if lexer.peek()? == Token::Punctuation(Punctuation::new("(")) {
             let mut params = Vec::new();
             loop {
@@ -90,7 +90,7 @@ impl Expression {
 pub struct Identifier(pub String);
 
 impl Identifier {
-    pub fn parse(lexer: &mut TokenStream) -> Result<Identifier, ParserError> {
+    pub fn parse(lexer: &mut Lexer) -> Result<Identifier, ParserError> {
         let token = lexer.next_some()?;
         if let Token::Identifier(ident) = token {
             Ok(Identifier(ident))
@@ -130,7 +130,7 @@ pub struct If {
 }
 
 impl If {
-    pub fn parse(lexer: &mut TokenStream) -> Result<If, ParserError> {
+    pub fn parse(lexer: &mut Lexer) -> Result<If, ParserError> {
         let condition = Box::new(Expression::parse(lexer)?);
         lexer.expect_punctuation(["{"])?;
         let body = Statement::parse_block(lexer)?;

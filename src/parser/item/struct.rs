@@ -1,4 +1,4 @@
-use crate::{parser::{expressions::Identifier, ParserError, UnexpectedTokenError}, lexer::{TokenStream, Token, punctuation::Punctuation}};
+use crate::{parser::{expressions::Identifier, ParserError, UnexpectedTokenError}, lexer::{Lexer, Token, punctuation::Punctuation}};
 
 /// A type that is composed of other types.
 #[derive(Debug, PartialEq, Eq)]
@@ -16,7 +16,7 @@ pub struct Field {
 
 impl Struct {
     /// Parse structure from token stream. `struct` keyword is expected to be consumed beforehand.
-    pub fn parse(lexer: &mut TokenStream) -> Result<Struct, ParserError> {
+    pub fn parse(lexer: &mut Lexer) -> Result<Struct, ParserError> {
         let name = Identifier::parse(lexer)?;
         let mut fields = Vec::new();
         lexer.expect_punctuation(["{"])?;
@@ -31,7 +31,7 @@ impl Struct {
     }
     
     /// Parse a single field of struct. Returns `None` if closing brace met instead.
-    fn parse_field(lexer: &mut TokenStream) -> Result<Option<Field>, ParserError> {
+    fn parse_field(lexer: &mut Lexer) -> Result<Option<Field>, ParserError> {
         let name = match lexer.next_some()? {
             Token::Identifier(ident) => Identifier(ident),
             Token::Punctuation(Punctuation("}")) => return Ok(None),
@@ -46,13 +46,13 @@ impl Struct {
 
 #[cfg(test)]
 mod test {
-    use crate::{lexer::TokenStream, parser::expressions::Identifier};
+    use crate::{lexer::Lexer, parser::expressions::Identifier};
 
     use super::{Struct, Field};
 
     #[test]
     fn parse_empty_struct() {
-        let mut lexer = TokenStream::new("struct name {}");
+        let mut lexer = Lexer::new("struct name {}");
         let _ = lexer.next();
         let expected = Struct {
             name: Identifier(String::from("name")),
@@ -64,7 +64,7 @@ mod test {
 
     #[test]
     fn parse_struct_with_comma() {
-        let mut lexer = TokenStream::new("struct name { field1: type1, field2: type2, }");
+        let mut lexer = Lexer::new("struct name { field1: type1, field2: type2, }");
         let _ = lexer.next();
         let expected = Struct {
             name: Identifier(String::from("name")),
@@ -79,7 +79,7 @@ mod test {
 
     #[test]
     fn parse_struct_without_comma() {
-        let mut lexer = TokenStream::new("struct name { field1: type1, field2: type2 }");
+        let mut lexer = Lexer::new("struct name { field1: type1, field2: type2 }");
         let _ = lexer.next();
         let expected = Struct {
             name: Identifier(String::from("name")),

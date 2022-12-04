@@ -1,4 +1,4 @@
-use crate::{lexer::{TokenStream, Token, punctuation::Punctuation}, parser::UnexpectedTokenError};
+use crate::{lexer::{Lexer, Token, punctuation::Punctuation}, parser::UnexpectedTokenError};
 
 use crate::parser::{expressions::Identifier, ParserError, Statement, Delimiter};
 
@@ -24,7 +24,7 @@ pub struct Parameter {
 
 impl Function {
     /// Parse function from token stream. `fn` keyword is expected to be consumed beforehand.
-    pub fn parse(lexer: &mut TokenStream) -> Result<Function, ParserError> {
+    pub fn parse(lexer: &mut Lexer) -> Result<Function, ParserError> {
         let name = Identifier::parse(lexer)?;
         lexer.expect_punctuation(["("])?;
         let params = Self::parse_params(lexer)?;
@@ -40,7 +40,7 @@ impl Function {
     }
 
     /// Parse parameters. Opening parenthesis (`(`) is expected to be consumed beforehand.
-    fn parse_params(lexer: &mut TokenStream) -> Result<Vec<Parameter>, ParserError> {
+    fn parse_params(lexer: &mut Lexer) -> Result<Vec<Parameter>, ParserError> {
         let mut params = Vec::new();
         loop {
             let name = match lexer.next_some()? {
@@ -60,7 +60,7 @@ impl Function {
     }
 
     /// Try to parse return type if any. Consumes opening brace `{` which is required for function body.
-    fn parse_return_type(lexer: &mut TokenStream) -> Result<Option<Identifier>, ParserError> {
+    fn parse_return_type(lexer: &mut Lexer) -> Result<Option<Identifier>, ParserError> {
         match lexer.next_some()? {
             Token::Punctuation(Punctuation("->")) => {
                 let return_type = Identifier::parse(lexer)?;

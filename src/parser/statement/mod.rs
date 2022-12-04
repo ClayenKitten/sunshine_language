@@ -1,6 +1,6 @@
 mod r#let;
 
-use crate::lexer::{TokenStream, Token, punctuation::Punctuation, keyword::Keyword};
+use crate::lexer::{Lexer, Token, punctuation::Punctuation, keyword::Keyword};
 
 use self::r#let::LetStatement;
 
@@ -15,7 +15,7 @@ pub enum Statement {
 
 impl Statement {
     /// Parse statements until right brace met.
-    pub fn parse_block(lexer: &mut TokenStream) -> Result<Vec<Statement>, ParserError> {
+    pub fn parse_block(lexer: &mut Lexer) -> Result<Vec<Statement>, ParserError> {
         let mut buffer = Vec::new();
         loop {
             let token = lexer.peek()?;

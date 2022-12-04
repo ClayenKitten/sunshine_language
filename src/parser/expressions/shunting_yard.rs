@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::{lexer::{punctuation::Punctuation, Token, TokenStream}, parser::ParserError};
+use crate::{lexer::{punctuation::Punctuation, Token, Lexer}, parser::ParserError};
 
 use super::Expression;
 
@@ -12,7 +12,7 @@ impl ReversePolishExpr {
     /// Parse binary expression.
     /// 
     /// Parsing continues until "stopper" punctuation met or error occur.
-    pub fn parse(lexer: &mut TokenStream) -> Result<Self, ParserError> {
+    pub fn parse(lexer: &mut Lexer) -> Result<Self, ParserError> {
         let mut output = VecDeque::<PolishEntry>::new();
         let mut op_stack = Vec::<Operator>::new();
 

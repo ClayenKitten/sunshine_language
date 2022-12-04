@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::lexer::{TokenStream, LexerError, Token, keyword::Keyword, punctuation::Punctuation};
+use crate::lexer::{Lexer, LexerError, Token, keyword::Keyword, punctuation::Punctuation};
 
 use self::{expressions::*, item::Item, statement::Statement};
 
@@ -13,7 +13,7 @@ pub struct Ast(Vec<Item>);
 
 impl Ast {
     /// Parse top level of program (file).
-    pub fn parse(lexer: &mut TokenStream) -> Result<Ast, ParserError> {    
+    pub fn parse(lexer: &mut Lexer) -> Result<Ast, ParserError> {    
         let mut buffer = Vec::new();
         while !lexer.is_eof() {
             buffer.push(Item::parse(lexer)?);
@@ -70,7 +70,7 @@ impl TryFrom<Punctuation> for Delimiter {
     }
 }
 
-impl<'a> TokenStream<'a> {
+impl<'a> Lexer<'a> {
     fn expect(&mut self, criteria: impl Fn(&Token) -> bool) -> Result<(), UnexpectedTokenError> {
         let token = self.next()?;
         if criteria(&token) {

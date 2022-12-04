@@ -14,13 +14,13 @@ use self::{number::Number, punctuation::{Punctuation, NotPunctuation}, keyword::
 
 /// A stream that returns tokens of programming language.
 #[derive(Debug, Clone)]
-pub struct TokenStream<'a> {
+pub struct Lexer<'a> {
     /// Cached token.
     current: Option<Token>,
     input: InputStream<'a>,
 }
 
-impl<'a> TokenStream<'a> {
+impl<'a> Lexer<'a> {
     pub fn new(data: &'a str) -> Self {
         Self {
             current: None,
@@ -217,11 +217,11 @@ mod test {
         keyword::Keyword, Token,
     };
 
-    use super::TokenStream;
+    use super::Lexer;
 
     #[test]
     fn return_string() {
-        let mut lexer = TokenStream::new("return \"x > 0\";");
+        let mut lexer = Lexer::new("return \"x > 0\";");
 
         assert_eq!(
             lexer.next(),
@@ -239,7 +239,7 @@ mod test {
 
     #[test]
     fn assign_num_to_var() {
-        let mut lexer = TokenStream::new("let x = 123;");
+        let mut lexer = Lexer::new("let x = 123;");
 
         assert_eq!(
             lexer.next(),
@@ -271,7 +271,7 @@ mod test {
 
     #[test]
     fn if_with_else() {
-        let mut lexer = TokenStream::new("if x > 0. { return x; } else { return 0.; }");
+        let mut lexer = Lexer::new("if x > 0. { return x; } else { return 0.; }");
 
         let x = Ok(Token::Identifier(String::from("x")));
         let _return = Ok(Token::Keyword(Keyword::Return));

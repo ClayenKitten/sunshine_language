@@ -2,9 +2,9 @@ use std::{str::FromStr, collections::HashMap};
 use once_cell::sync::Lazy;
 use thiserror::Error;
 
-use super::{TokenStream, Token, LexerError};
+use super::{Lexer, Token, LexerError};
 
-impl<'a> TokenStream<'a> {
+impl<'a> Lexer<'a> {
     /// Try to parse punctuation or operator from input stream.
     /// 
     /// Longest sequence of chars that represents punctuation is considered a token. So, `->` is returned rather than `-`.
