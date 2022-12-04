@@ -1,6 +1,6 @@
-use crate::{lexer::{Lexer, Token, punctuation::Punctuation}, parser::UnexpectedTokenError};
+use crate::{lexer::{Lexer, Token, punctuation::Punctuation}, parser::{UnexpectedTokenError, statement::Block}};
 
-use crate::parser::{expressions::Identifier, ParserError, Statement, Delimiter};
+use crate::parser::{expressions::Identifier, ParserError};
 
 /// A function is a set of statements to perform a specific task.
 /// 
@@ -10,7 +10,7 @@ pub struct Function {
     pub name: Identifier,
     pub params: Vec<Parameter>,
     pub return_type: Option<Identifier>,
-    pub body: Vec<Statement>,
+    pub body: Block,
 }
 
 /// A parameter represents a value that the function expects you to pass when you call it.
@@ -29,7 +29,7 @@ impl Function {
         lexer.expect_punctuation(["("])?;
         let params = Self::parse_params(lexer)?;
         let return_type = Self::parse_return_type(lexer)?;
-        let body = Statement::parse_block(lexer)?;
+        let body = Block::parse(lexer)?;
         
         Ok(Function {
             name,

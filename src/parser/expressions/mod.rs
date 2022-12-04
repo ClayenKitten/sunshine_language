@@ -1,16 +1,15 @@
 mod shunting_yard;
 
-use std::collections::VecDeque;
 use crate::lexer::{number::Number, Token, Lexer, punctuation::Punctuation, keyword::Keyword};
 
 use self::shunting_yard::ReversePolishExpr;
 
-use super::{ParserError, UnexpectedTokenError, Statement};
+use super::{ParserError, UnexpectedTokenError, Statement, statement::Block};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expression {
     /// Block is a set of statements surrounded by opening and closing brace.
-    Block(Vec<Statement>),
+    Block(Block),
     
     /// Expression with operators stored in reverse polish notation.
     Polish(ReversePolishExpr),
@@ -37,7 +36,7 @@ impl Expression {
     fn parse_operand(lexer: &mut Lexer) -> Result<Expression, ParserError> {
         let token = match lexer.next()? {
             Token::Punctuation(Punctuation("{")) => {
-                Expression::Block(Statement::parse_block(lexer)?)
+                Expression::Block(Block::parse(lexer)?)
             }
 
             Token::Punctuation(_) => {
@@ -139,18 +138,18 @@ pub struct FunctionCall {
 #[derive(Debug, PartialEq, Eq)]
 pub struct If {
     pub condition: Box<Expression>,
-    pub body: Vec<Statement>,
-    pub else_body: Option<Vec<Statement>>,
+    pub body: Block,
+    pub else_body: Option<Block>,
 }
 
 impl If {
     pub fn parse(lexer: &mut Lexer) -> Result<If, ParserError> {
         let condition = Box::new(Expression::parse(lexer)?);
         lexer.expect_punctuation(["{"])?;
-        let body = Statement::parse_block(lexer)?;
+        let body = Block::parse(lexer)?;
         let else_body = if let Token::Keyword(Keyword::Else) = lexer.peek()? {
             lexer.expect_punctuation(["{"])?;
-            Some(Statement::parse_block(lexer)?)
+            Some(Block::parse(lexer)?)
         } else {
             None
         };
