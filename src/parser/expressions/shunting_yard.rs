@@ -6,9 +6,9 @@ use super::Expression;
 
 /// An expression that stores a sequence of operands and operators.
 #[derive(Debug, PartialEq, Eq)]
-pub struct ReversePolishExpr(VecDeque<PolishEntry>);
+pub struct ReversePolishNotation(VecDeque<PolishEntry>);
 
-impl ReversePolishExpr {
+impl ReversePolishNotation {
     /// Parse binary expression.
     /// 
     /// Parsing continues until "stopper" punctuation met or error occur.
@@ -85,7 +85,7 @@ impl ReversePolishExpr {
             output.push_back(PolishEntry::Operator(op));
         }
         
-        Ok(ReversePolishExpr(output))
+        Ok(ReversePolishNotation(output))
     }
 }
 

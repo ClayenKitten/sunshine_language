@@ -2,7 +2,7 @@ mod shunting_yard;
 
 use crate::lexer::{number::Number, Token, Lexer, punctuation::Punctuation, keyword::Keyword};
 
-use self::shunting_yard::ReversePolishExpr;
+use self::shunting_yard::ReversePolishNotation;
 
 use super::{ParserError, UnexpectedTokenError, Statement, statement::Block};
 
@@ -12,7 +12,7 @@ pub enum Expression {
     Block(Block),
     
     /// Expression with operators stored in reverse polish notation.
-    Polish(ReversePolishExpr),
+    Polish(ReversePolishNotation),
     
     If(If),
     While(While),
@@ -28,7 +28,7 @@ pub enum Expression {
 
 impl Expression {
     pub fn parse(lexer: &mut Lexer) -> Result<Expression, ParserError> {
-        shunting_yard::ReversePolishExpr::parse(lexer)
+        shunting_yard::ReversePolishNotation::parse(lexer)
             .map(|expr| Self::Polish(expr))
     }
 
