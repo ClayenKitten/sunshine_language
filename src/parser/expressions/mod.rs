@@ -2,18 +2,13 @@ mod shunting_yard;
 
 use crate::lexer::{number::Number, Token, Lexer, punctuation::Punctuation, keyword::Keyword};
 
-use self::shunting_yard::ReversePolishNotation;
-
 use super::{ParserError, UnexpectedTokenError, Statement, statement::Block};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expression {
     /// Block is a set of statements surrounded by opening and closing brace.
     Block(Block),
-    
-    /// Expression with operators stored in reverse polish notation.
-    Polish(ReversePolishNotation),
-    
+
     If(If),
     While(While),
     For(For),
@@ -21,6 +16,16 @@ pub enum Expression {
     Identifier(Identifier),
     Literal(Literal),
     Assignment(Assignment),
+
+    Unary {
+        op: Punctuation,
+        value: Box<Expression>
+    },
+    Binary {
+        op: Punctuation,
+        left: Box<Expression>,
+        right: Box<Expression>,
+    },
     
     FunctionCall(FunctionCall),
     Variable(Identifier),
@@ -29,7 +34,7 @@ pub enum Expression {
 impl Expression {
     pub fn parse(lexer: &mut Lexer) -> Result<Expression, ParserError> {
         shunting_yard::ReversePolishNotation::parse(lexer)
-            .map(|expr| Self::Polish(expr))
+            .map(|expr| expr.into_tree())
     }
 
     /// Parse a single operand

@@ -87,6 +87,31 @@ impl ReversePolishNotation {
         
         Ok(ReversePolishNotation(output))
     }
+
+    /// Convert an RPN to expression tree.
+    pub fn into_tree(mut self) -> Expression {
+        Self::get_node(&mut self.0)
+    }
+
+    fn get_node(buf: &mut VecDeque<PolishEntry>) -> Expression {
+        match buf.pop_back().unwrap() {
+            PolishEntry::Operand(expr) => {
+                expr
+            }
+            PolishEntry::Operator(Operator::Unary { punc }) => {
+                let value = Box::new(Self::get_node(buf));
+                Expression::Unary { op: punc, value }
+            }
+            PolishEntry::Operator(Operator::Binary { punc, .. }) => {
+                let right = Box::new(Self::get_node(buf));
+                let left = Box::new(Self::get_node(buf));
+                Expression::Binary { op: punc, left, right }
+            }
+            PolishEntry::Operator(Operator::LeftParenthesis) => {
+                unreachable!();
+            }
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
