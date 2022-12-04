@@ -74,6 +74,7 @@ impl Expression {
     /// Try to wrap provided identifier in function call.
     fn maybe_function_call(lexer: &mut Lexer, name: Identifier) -> Result<Expression, ParserError> {
         if lexer.peek()? == Token::Punctuation(Punctuation::new("(")) {
+            lexer.next()?;
             let mut params = Vec::new();
             loop {
                 let expr = Expression::parse(lexer)?;
