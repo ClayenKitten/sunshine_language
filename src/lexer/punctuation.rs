@@ -122,6 +122,12 @@ impl Punctuation {
             .unwrap_or_default()
     }
 
+    pub fn is_assignment_operator(&self) -> bool {
+        DICT.get(self.0)
+            .map(|prop| prop.is_assign)
+            .unwrap_or_default()
+    }
+
     pub fn binary_priority(&self) -> Option<u8> {
         DICT.get(self.0)
             .and_then(|prop| prop.binary_priority)
