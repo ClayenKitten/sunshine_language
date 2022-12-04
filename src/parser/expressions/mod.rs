@@ -146,6 +146,7 @@ impl If {
         lexer.expect_punctuation(["{"])?;
         let body = Block::parse(lexer)?;
         let else_body = if let Token::Keyword(Keyword::Else) = lexer.peek()? {
+            let _ = lexer.next();
             lexer.expect_punctuation(["{"])?;
             Some(Block::parse(lexer)?)
         } else {
