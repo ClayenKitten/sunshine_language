@@ -83,6 +83,20 @@ impl Expression {
             Ok(Expression::Variable(name))
         }
     }
+
+    /// Check if that expression is block expression.
+    /// 
+    /// Block expressions end with a right brace and don't require to be followed by a semicolon to
+    /// be accounted as expression statement.
+    pub fn is_block_expression(&self) -> bool {
+        match self {
+            Expression::Block(_) => true,
+            Expression::If(_) => true,
+            Expression::While(_) => true,
+            Expression::For(_) => true,
+            _ => false,
+        }
+    }
 }
 
 /// Identifier is name of type, variable or function.
