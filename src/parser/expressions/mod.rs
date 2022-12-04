@@ -15,7 +15,6 @@ pub enum Expression {
 
     Identifier(Identifier),
     Literal(Literal),
-    Assignment(Assignment),
 
     Unary {
         op: Punctuation,
@@ -124,13 +123,6 @@ pub enum Literal {
     Number(Number),
     String(String),
     Boolean(bool),
-}
-
-/// VAR = VALUE
-#[derive(Debug, PartialEq, Eq)]
-pub struct Assignment {
-    pub var: Identifier,
-    pub value: Box<Expression>,
 }
 
 /// NAME(PARAMS, ...)
