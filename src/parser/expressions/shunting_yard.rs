@@ -51,7 +51,7 @@ impl ReversePolishNotation {
                     lexer.next()?;
                     
                     is_last_token_an_operand = false;
-                    let priority = punc.binary_priority().unwrap_or(u8::MAX);
+                    let priority = punc.priority();
     
                     while let Some(top_op) = op_stack.last() {
                         if top_op == &Operator::LeftParenthesis {
@@ -65,7 +65,7 @@ impl ReversePolishNotation {
                         output.push_back(PolishEntry::Operator(op_stack.pop().unwrap()));
                     }
                     if arity == 2 {
-                        op_stack.push(Operator::Binary { punc, priority: punc.binary_priority().unwrap() })
+                        op_stack.push(Operator::Binary { punc, priority: punc.priority() })
                     } else if arity == 1 {
                         op_stack.push(Operator::Unary { punc })
                     }
