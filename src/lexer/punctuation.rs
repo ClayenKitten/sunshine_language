@@ -73,24 +73,20 @@ static DICT: Lazy<HashMap<&'static str, PuncProps>> = Lazy::new(|| {
         ("<",  16),
         (">=", 16),
         ("<=", 16),
-    ]
-        .into_iter()
-        .map(|(s, p)| (
-           s,
-          PuncProps { binary_priority: Some(p), ..Default::default() }
-        ));
+    ];
     
     punc.into_iter()
         .chain(unary)
         .chain(assign)
+        .chain(binary.map(|b| b.0))
         .map(|s| {
             (s, PuncProps {
                 is_unary_op: unary.contains(&s),
-                binary_priority: None,
+                binary_priority: binary.into_iter()
+                    .find_map(|bin| (bin.0 == s).then_some(bin.1)),
                 is_assign: assign.contains(&s)
             })
         })
-        .chain(binary)
         .collect()
 });
 
