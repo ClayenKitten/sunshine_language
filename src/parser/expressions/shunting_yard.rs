@@ -30,7 +30,7 @@ impl ReversePolishNotation {
                         if top_op == &Operator::LeftParenthesis {
                             break;
                         }
-                        output.push_back(PolishEntry::Operator(op_stack.pop().unwrap()));
+                        output.push_back(op_stack.pop().unwrap().try_into().unwrap());
                     }
                     
                     // Either `op_stack` is empty or left parenthesis is on the top at that point.
@@ -62,7 +62,7 @@ impl ReversePolishNotation {
                                 break;
                             }
                         }
-                        output.push_back(PolishEntry::Operator(op_stack.pop().unwrap()));
+                        output.push_back(op_stack.pop().unwrap().try_into().unwrap());
                     }
                     if arity == 2 {
                         op_stack.push(Operator::Binary { punc, priority: punc.priority() })
@@ -82,7 +82,7 @@ impl ReversePolishNotation {
         };
 
         while let Some(op) = op_stack.pop() {
-            output.push_back(PolishEntry::Operator(op));
+            output.push_back(op.try_into().unwrap());
         }
         
         Ok(ReversePolishNotation(output))
@@ -98,17 +98,14 @@ impl ReversePolishNotation {
             PolishEntry::Operand(expr) => {
                 expr
             }
-            PolishEntry::Operator(Operator::Unary { punc }) => {
+            PolishEntry::UnaryOperator(punc) => {
                 let value = Box::new(Self::get_node(buf));
                 Expression::Unary { op: punc, value }
             }
-            PolishEntry::Operator(Operator::Binary { punc, .. }) => {
+            PolishEntry::BinaryOperator(punc) => {
                 let right = Box::new(Self::get_node(buf));
                 let left = Box::new(Self::get_node(buf));
                 Expression::Binary { op: punc, left, right }
-            }
-            PolishEntry::Operator(Operator::LeftParenthesis) => {
-                unreachable!();
             }
         }
     }
@@ -117,7 +114,8 @@ impl ReversePolishNotation {
 #[derive(Debug, PartialEq, Eq)]
 enum PolishEntry {
     Operand(Expression),
-    Operator(Operator),
+    UnaryOperator(Punctuation),
+    BinaryOperator(Punctuation),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -125,4 +123,16 @@ pub enum Operator {
     Unary { punc: Punctuation },
     Binary { punc: Punctuation, priority: u8 },
     LeftParenthesis,
+}
+
+impl TryFrom<Operator> for PolishEntry {
+    type Error = ();
+
+    fn try_from(value: Operator) -> Result<Self, Self::Error> {
+        match value {
+            Operator::Unary { punc } => Ok(PolishEntry::UnaryOperator(punc)),
+            Operator::Binary { punc, .. } => Ok(PolishEntry::BinaryOperator(punc)),
+            Operator::LeftParenthesis => Err(()),
+        }
+    }
 }
