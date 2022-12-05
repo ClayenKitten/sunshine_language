@@ -72,15 +72,16 @@ impl Expression {
 
     /// Try to wrap provided identifier in function call.
     fn maybe_function_call(lexer: &mut Lexer, name: Identifier) -> Result<Expression, ParserError> {
-        if lexer.peek()? == Token::Punctuation(Punctuation::new("(")) {
-            lexer.next()?;
+        if lexer.consume_punctuation("(")? {
             let mut params = Vec::new();
             loop {
-                let expr = Expression::parse(lexer)?;
-                params.push(expr);
-
-                if ")" == lexer.expect_punctuation([")", ","])? {
+                params.push(Expression::parse(lexer)?);
+                if lexer.consume_punctuation(")")? {
                     return Ok(Expression::FunctionCall(FunctionCall { name, params }));
+                } else if lexer.consume_punctuation(",")? {
+                    
+                } else {
+                    return Err(UnexpectedTokenError::TokenMismatch.into());
                 }
             }
         } else {
