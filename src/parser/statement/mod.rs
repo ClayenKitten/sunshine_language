@@ -40,21 +40,22 @@ impl Block {
                     => return Err(ParserError::UnexpectedEof),
                 _ => {
                     let expr = Expression::parse(lexer)?;
-                    match lexer.peek()? {
-                        Token::Punctuation(Punctuation("}")) => {
-                            let _ = lexer.next();
+
+                    if expr.is_block_expression() {
+                        if lexer.consume_punctuation("}")? {
                             break Some(expr);
                         }
-                        Token::Punctuation(Punctuation(";")) => {
-                            let _ = lexer.next();
-                        },
-                        _ if expr.is_block_expression() && lexer.peek()? == Token::Punctuation(Punctuation("}")) => {
-                            let _ = lexer.next();
+                        lexer.consume_punctuation(";")?;
+                    } else {
+                        if lexer.consume_punctuation("}")? {
                             break Some(expr);
-                        },
-                        _ if expr.is_block_expression() => { },
-                        token => return Err(UnexpectedTokenError::UnexpectedToken(token).into()),
+                        } else if lexer.consume_punctuation(";")? {
+
+                        } else {
+                            return Err(UnexpectedTokenError::UnexpectedToken(lexer.peek()?).into())
+                        }
                     }
+                    
                     Statement::ExpressionStatement(expr)
                 },
             };

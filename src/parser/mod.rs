@@ -89,6 +89,20 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /// Checks if next token is provided punctuation and consumes it if so.
+    /// 
+    /// # Returns
+    /// 
+    /// Returns `true` if provided punctuation matches.
+    fn consume_punctuation(&mut self, punc: &'static str) -> Result<bool, ParserError> {
+        if Token::Punctuation(Punctuation(punc)) == self.peek()? {
+            let _ = self.next();
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
     /// Fetch next token and check if it is one of listed punctuation.
     /// 
     /// # Returns
