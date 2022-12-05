@@ -10,6 +10,7 @@ pub enum Keyword {
     While,
     For,
     In,
+    Break,
     Return,
     Struct,
     True,
