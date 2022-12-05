@@ -4,18 +4,13 @@ use crate::lexer::{Lexer, Token, punctuation::Punctuation, keyword::Keyword};
 
 use self::r#let::LetStatement;
 
-use super::{item::Item, Expression, ParserError, UnexpectedTokenError, expressions::Identifier};
+use super::{item::Item, Expression, ParserError};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Statement {
     Item(Item),
     ExpressionStatement(Expression),
     LetStatement(LetStatement),
-    Assignment {
-        op: Punctuation,
-        left: Identifier,
-        right: Box<Expression>,
-    },
 }
 
 /// Block is an expression that consists of a number of statements and an optional final expression.
