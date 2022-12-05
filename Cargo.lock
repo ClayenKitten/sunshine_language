@@ -93,18 +93,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "language"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "itertools",
- "once_cell",
- "strum",
- "thiserror",
-]
-
-[[package]]
 name = "libc"
 version = "0.2.135"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -196,6 +184,18 @@ dependencies = [
  "quote",
  "rustversion",
  "syn",
+]
+
+[[package]]
+name = "sunshine_lang"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "itertools",
+ "once_cell",
+ "strum",
+ "thiserror",
 ]
 
 [[package]]
