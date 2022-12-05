@@ -16,19 +16,12 @@ impl LetStatement {
             type_: None,
             value: None,
         };
-        
-        match lexer.expect_punctuation([":", ";"])? {
-            ":" => statement.type_ = Some(Identifier::parse(lexer)?),
-            ";" => return Ok(statement),
-            _ => unreachable!(),
+        if lexer.consume_punctuation(":")? {
+            statement.type_ = Some(Identifier::parse(lexer)?);
         }
-
-        match lexer.expect_punctuation(["=", ";"])? {
-            "=" => statement.value = Some(Box::new(Expression::parse(lexer)?)),
-            ";" => return Ok(statement),
-            _ => unreachable!(),
+        if lexer.consume_punctuation("=")? {
+            statement.value = Some(Box::new(Expression::parse(lexer)?));
         }
-
         lexer.expect_punctuation([";"])?;
         Ok(statement)
     }
