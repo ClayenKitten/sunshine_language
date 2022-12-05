@@ -9,6 +9,7 @@ pub enum Keyword {
     Else,
     While,
     For,
+    In,
     Return,
     Struct,
     True,

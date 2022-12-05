@@ -53,8 +53,8 @@ impl Expression {
             Token::Keyword(kw) => {
                 match kw {
                     Keyword::If => Expression::If(If::parse(lexer)?),
-                    Keyword::While => todo!(),
-                    Keyword::For => todo!(),
+                    Keyword::While => Expression::While(While::parse(lexer)?),
+                    Keyword::For => Expression::For(For::parse(lexer)?),
                     Keyword::True => Expression::Literal(Literal::Boolean(true)),
                     Keyword::False => Expression::Literal(Literal::Boolean(false)),
                     _ => return Err(UnexpectedTokenError::TokenMismatch.into()),
@@ -160,7 +160,16 @@ impl If {
 #[derive(Debug, PartialEq, Eq)]
 pub struct While {
     pub condition: Box<Expression>,
-    pub body: Vec<Statement>,
+    pub body: Block,
+}
+
+impl While {
+    pub fn parse(lexer: &mut Lexer) -> Result<While, ParserError> {
+        let condition = Box::new(Expression::parse(lexer)?);
+        lexer.expect_punctuation(["{"])?;
+        let body = Block::parse(lexer)?;
+        Ok(While { condition, body })
+    }
 }
 
 /// for VAR in EXPR { BODY }
@@ -168,5 +177,16 @@ pub struct While {
 pub struct For {
     pub var: Identifier,
     pub expr: Box<Expression>,
-    pub body: Vec<Statement>,
+    pub body: Block,
+}
+
+impl For {
+    pub fn parse(lexer: &mut Lexer) -> Result<For, ParserError> {
+        let var = Identifier::parse(lexer)?;
+        lexer.expect_keyword(Keyword::In)?;
+        let expr = Box::new(Expression::parse(lexer)?);
+        lexer.expect_punctuation(["{"])?;
+        let body = Block::parse(lexer)?;
+        Ok(For { var, expr, body })
+    }
 }
