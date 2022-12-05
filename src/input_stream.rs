@@ -2,12 +2,16 @@ use std::{str::CharIndices, fmt::Debug};
 
 use itertools::{PeekNth, peek_nth};
 
-/// Input stream is used to preserve
+/// Input stream provides compiler with characters of input and tracks their location.
 #[derive(Debug, Clone)]
 pub struct InputStream<'a> {
     src: &'a str,
     pos: Option<usize>,
     iter: PeekNth<CharIndices<'a>>,
+    // Line of next character.
+    line: usize,
+    // Column of next character.
+    column: usize,
 }
 
 impl<'a> Iterator for InputStream<'a> {
@@ -17,6 +21,12 @@ impl<'a> Iterator for InputStream<'a> {
         self.iter.next()
             .map(|(pos, ch)| {
                 self.pos = Some(pos);
+                if ch == '\n' {
+                    self.line += 1;
+                    self.column = 0;
+                } else {
+                    self.column += 1;
+                }
                 ch
             })
     }
@@ -28,6 +38,8 @@ impl<'a> InputStream<'a> {
             src,
             pos: None,
             iter: peek_nth(src.char_indices()),
+            line: 0,
+            column: 0,
         }
     }
 
@@ -81,6 +93,26 @@ pub struct SliceStartMarker(usize);
 #[cfg(test)]
 mod test {
     use crate::input_stream::InputStream;
+
+    #[test]
+    fn location() {
+        let mut stream = InputStream::new("x = 5;\ny = 2;");
+        assert_eq!(0, stream.line);
+        
+        assert_eq!(Some('x'), stream.next());
+        assert_eq!(1, stream.column);
+        
+        assert_eq!(Some(';'), stream.nth(4));
+        assert_eq!(6, stream.column);
+        
+        assert_eq!(Some('\n'), stream.next());
+        assert_eq!(1, stream.line);
+        assert_eq!(0, stream.column);
+        
+        assert_eq!(Some('y'), stream.next());
+        assert_eq!(1, stream.line);
+        assert_eq!(1, stream.column);
+    }
 
     #[test]
     fn slice() {
