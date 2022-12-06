@@ -6,7 +6,6 @@ use itertools::{PeekNth, peek_nth};
 #[derive(Debug, Clone)]
 pub struct InputStream<'a> {
     src: &'a str,
-    pos: Option<usize>,
     iter: PeekNth<CharIndices<'a>>,
     // Location of next character.
     location: Location,
@@ -18,7 +17,7 @@ impl<'a> Iterator for InputStream<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next()
             .map(|(pos, ch)| {
-                self.pos = Some(pos);
+                self.location.pos = pos + ch.len_utf8();
                 if ch == '\n' {
                     self.location.line += 1;
                     self.location.column = 0;
@@ -34,9 +33,8 @@ impl<'a> InputStream<'a> {
     pub fn new(src: &'a str) -> Self {
         InputStream {
             src,
-            pos: None,
             iter: peek_nth(src.char_indices()),
-            location: Location { line: 0, column: 0 },
+            location: Location { pos: 0, line: 0, column: 0 },
         }
     }
 
@@ -54,32 +52,10 @@ impl<'a> InputStream<'a> {
         self.iter.peek().is_none()
     }
 
-    /// Store current index in marker.
-    /// 
-    /// # Returns
-    /// 
-    /// Returns `None` if iterator wasn't ever advanced yet.
-    pub fn mark(&mut self) -> Option<SliceStartMarker> {
-        self.pos
-            .map(SliceStartMarker)
-    }
-
     /// Create slice of source code.
-    /// 
-    /// Slice includes both char that was yielded before mark creation
-    /// and char that will be yielded on iterator advancement.
-    pub fn slice(&mut self, marker: SliceStartMarker) -> &'a str {
-        let end_pos = self.iter.peek().copied();
-        match end_pos {
-            Some((end_pos, _)) => {
-                self.src.get(marker.0 ..= end_pos)
-                    .expect("slice should be in boundaries")
-            },
-            None => {
-                self.src.get(marker.0..)
-                    .expect("slice should be in boundaries")
-            },
-        }
+    pub fn slice(&mut self, from: Location, to: Location) -> &'a str {
+        self.src.get(from.pos .. to.pos)
+            .expect("slice is expected to be in boundaries")
     }
 
     /// Get location of next character.
@@ -88,13 +64,10 @@ impl<'a> InputStream<'a> {
     }
 }
 
-/// An index of source that indicates beggining of the slice.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SliceStartMarker(usize);
-
 /// Location of character at source code.
 #[derive(Debug, Clone, Copy,PartialEq, Eq, Ord)]
 pub struct Location {
+    pos: usize,
     pub line: usize,
     pub column: usize,
 }
@@ -141,13 +114,43 @@ mod test {
     }
 
     #[test]
+    fn slice_one() {
+        let mut stream = InputStream::new("123");
+        assert_eq!(Some('1'), stream.next());
+        let from = stream.location();
+        assert_eq!(Some('2'), stream.next());
+        let to = stream.location();
+        assert_eq!("2", stream.slice(from, to));
+    }
+
+    #[test]
     fn slice() {
-        let mut stream = InputStream::new("print(\"Hello world\")");
-        assert_eq!(Some('"'), stream.nth(6));
-        let marker = stream.mark().unwrap();
-        while stream.peek() != Some('"') {
-            stream.next();
-        }
-        assert_eq!("\"Hello world\"", stream.slice(marker));
+        let mut stream = InputStream::new("print(\"Hello world\");");
+        assert_eq!(Some('('), stream.nth(5));
+        let from = stream.location();
+        assert_eq!(Some('"'), stream.nth(12));
+        let to = stream.location();
+        assert_eq!("\"Hello world\"", stream.slice(from, to));
+    }
+    
+    #[test]
+    fn slice_unicode() {
+        let mut stream = InputStream::new("Привет!:) 😀😀✨! 祝你好运!");
+        let location1 = stream.location();
+        assert_eq!(Some('!'), stream.nth(6));
+        let location2 = stream.location();
+        assert_eq!("Привет!", stream.slice(location1, location2));
+
+        assert_eq!(Some(' '), stream.nth(2));
+        let location1 = stream.location();
+        assert_eq!(Some('!'), stream.nth(3));
+        let location2 = stream.location();
+        assert_eq!("😀😀✨!", stream.slice(location1, location2));
+
+        assert_eq!(Some(' '), stream.next());
+        let location1 = stream.location();
+        assert_eq!(Some('!'), stream.nth(4));
+        let location2 = stream.location();
+        assert_eq!("祝你好运!", stream.slice(location1, location2));
     }
 }
