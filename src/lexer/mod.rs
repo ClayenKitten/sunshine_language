@@ -156,7 +156,7 @@ impl<'a> Lexer<'a> {
         self.input.next(); // Skip opening quote mark
         let mut buffer = String::new();
         loop {
-            match self.input.next().ok_or(LexerError::UnexpectedEOF)? {
+            match self.input.next().ok_or(LexerError::UnterminatedString)? {
                 '\\' => {
                     let escaped = self.input.next().ok_or(LexerError::UnexpectedEOF)?;
                     let value = match escaped {
@@ -217,6 +217,8 @@ pub enum Token {
 pub enum LexerError {
     #[error("Unexpected EOF.")]
     UnexpectedEOF,
+    #[error("String literal wasn't terminated.")]
+    UnterminatedString,
     #[error("Identifier must contain only ascii alphanumeric and underscore characters.")]
     InvalidIdentifier,
     #[error("Invalid escape sentence.")]
