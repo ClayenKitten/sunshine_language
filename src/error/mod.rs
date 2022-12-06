@@ -1,6 +1,6 @@
 //! Error reporting
 
-use std::cmp::Ordering;
+use crate::input_stream::Location;
 
 /// Interface to report errors conveniently.
 pub struct ErrorReporter {
@@ -85,23 +85,6 @@ impl<'a> ErrorBuilder<'a> {
             Severity::Warning => self.reporter.warnings.push(error),
             Severity::Error => self.reporter.errors.push(error),
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy,PartialEq, Eq, Ord)]
-struct Location {
-    line: usize,
-    column: usize,
-}
-
-impl PartialOrd for Location {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(match self.line.cmp(&other.line) {
-            Ordering::Equal => {
-                self.column.cmp(&other.column).reverse()
-            },
-            ord => ord.reverse(),
-        })
     }
 }
 

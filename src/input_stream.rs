@@ -1,4 +1,4 @@
-use std::{str::CharIndices, fmt::Debug};
+use std::{str::CharIndices, fmt::Debug, cmp::Ordering};
 
 use itertools::{PeekNth, peek_nth};
 
@@ -8,10 +8,8 @@ pub struct InputStream<'a> {
     src: &'a str,
     pos: Option<usize>,
     iter: PeekNth<CharIndices<'a>>,
-    // Line of next character.
-    line: usize,
-    // Column of next character.
-    column: usize,
+    // Location of next character.
+    location: Location,
 }
 
 impl<'a> Iterator for InputStream<'a> {
@@ -22,10 +20,10 @@ impl<'a> Iterator for InputStream<'a> {
             .map(|(pos, ch)| {
                 self.pos = Some(pos);
                 if ch == '\n' {
-                    self.line += 1;
-                    self.column = 0;
+                    self.location.line += 1;
+                    self.location.column = 0;
                 } else {
-                    self.column += 1;
+                    self.location.column += 1;
                 }
                 ch
             })
@@ -38,8 +36,7 @@ impl<'a> InputStream<'a> {
             src,
             pos: None,
             iter: peek_nth(src.char_indices()),
-            line: 0,
-            column: 0,
+            location: Location { line: 0, column: 0 },
         }
     }
 
@@ -84,11 +81,34 @@ impl<'a> InputStream<'a> {
             },
         }
     }
+
+    /// Get location of next character.
+    pub fn location(&self) -> Location {
+        self.location
+    }
 }
 
 /// An index of source that indicates beggining of the slice.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SliceStartMarker(usize);
+
+/// Location of character at source code.
+#[derive(Debug, Clone, Copy,PartialEq, Eq, Ord)]
+pub struct Location {
+    pub line: usize,
+    pub column: usize,
+}
+
+impl PartialOrd for Location {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(match self.line.cmp(&other.line) {
+            Ordering::Equal => {
+                self.column.cmp(&other.column).reverse()
+            },
+            ord => ord.reverse(),
+        })
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -97,21 +117,21 @@ mod test {
     #[test]
     fn location() {
         let mut stream = InputStream::new("x = 5;\ny = 2;");
-        assert_eq!(0, stream.line);
+        assert_eq!(0, stream.location.line);
         
         assert_eq!(Some('x'), stream.next());
-        assert_eq!(1, stream.column);
+        assert_eq!(1, stream.location.column);
         
         assert_eq!(Some(';'), stream.nth(4));
-        assert_eq!(6, stream.column);
+        assert_eq!(6, stream.location.column);
         
         assert_eq!(Some('\n'), stream.next());
-        assert_eq!(1, stream.line);
-        assert_eq!(0, stream.column);
+        assert_eq!(1, stream.location.line);
+        assert_eq!(0, stream.location.column);
         
         assert_eq!(Some('y'), stream.next());
-        assert_eq!(1, stream.line);
-        assert_eq!(1, stream.column);
+        assert_eq!(1, stream.location.line);
+        assert_eq!(1, stream.location.column);
     }
 
     #[test]
