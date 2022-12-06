@@ -1,5 +1,7 @@
 //! Error reporting
 
+use std::fmt::Display;
+
 use crate::input_stream::Location;
 
 /// Interface to report errors conveniently.
@@ -21,13 +23,31 @@ impl<'a> ErrorReporter {
     }
 
     /// Build warning.
-    pub fn warn(&'a mut self, line: usize, column: usize) -> ErrorBuilder<'a> {
+    pub fn warn(&'a mut self) -> ErrorBuilder<'a> {
         ErrorBuilder::new(self, Severity::Warning)
     }
 
     /// Build error.
-    pub fn error(&'a mut self, line: usize, column: usize) -> ErrorBuilder<'a> {
+    pub fn error(&'a mut self) -> ErrorBuilder<'a> {
         ErrorBuilder::new(self, Severity::Error)
+    }
+
+    /// Check if any fatal error occurred.
+    pub fn compilation_failed(&self) -> bool {
+        !self.errors.is_empty()
+    }
+}
+
+impl Display for ErrorReporter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for warning in self.warnings.iter() {
+            writeln!(f, "Warning at {}:\n\t{}", warning.start, warning.message)?;
+        }
+        for error in self.errors.iter() {
+            writeln!(f, "Error at {}:\n\t{}", error.start, error.message)?;
+        }
+        writeln!(f, "{} warning(s), {} error(s)", self.warnings.len(), self.errors.len())?;
+        Ok(())
     }
 }
 
@@ -59,18 +79,21 @@ impl<'a> ErrorBuilder<'a> {
     }
 
     /// Set message of error. Required.
-    pub fn message(&mut self, msg: String) {
+    pub fn message(mut self, msg: String) -> ErrorBuilder<'a> {
         self.message = Some(msg);
+        self
     }
 
     /// Set starting location of error. Required.
-    pub fn starts_at(&mut self, line: usize, column: usize) {
-        self.start = Some(Location { line, column })
+    pub fn starts_at(mut self, location: Location) -> ErrorBuilder<'a> {
+        self.start = Some(location);
+        self
     }
 
     /// Set ending location of error. Defaults to starting location.
-    pub fn ends_at(&mut self, line: usize, column: usize) {
-        self.end = Some(Location { line, column })
+    pub fn ends_at(mut self, location: Location) -> ErrorBuilder<'a> {
+        self.end = Some(location);
+        self
     }
 
     /// Build error and store it in `ErrorReporter`.
