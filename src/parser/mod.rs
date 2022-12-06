@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use crate::lexer::{Lexer, LexerError, Token, keyword::Keyword, punctuation::Punctuation};
 
-use self::{expressions::*, item::Item, statement::Statement};
+use self::{expressions::*, item::Item};
 
 pub mod expressions;
 mod item;
@@ -37,6 +37,17 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /// Checks if next token is identifier and consumes it if so.
+    fn consume_identifier(&mut self) -> Result<Option<Identifier>, LexerError> {
+        let token = self.peek()?;
+        if let Token::Identifier(ident) = token {
+            let _ = self.next();
+            Ok(Some(Identifier(ident)))
+        } else {
+            Ok(None)
+        }
+    }
+
     /// Check if next token is provided punctuation or error otherwise.
     fn expect_punctuation(&mut self, expected: &'static str) -> Result<(), ParserError> {
         let start = self.location;
@@ -62,6 +73,22 @@ impl<'a> Lexer<'a> {
         } else {
             self.error_reporter.error()
                 .message(format!("Expected keyword `{keyword}`, found {found:?}"))
+                .starts_at(start)
+                .ends_at(self.location)
+                .report();
+            Err(UnexpectedTokenError::TokenMismatch.into())
+        }
+    }
+
+    /// Check if next token is identifier or error otherwise.
+    fn expect_identifier(&mut self) -> Result<Identifier, ParserError> {
+        let start = self.location;
+        let found = self.next()?;
+        if let Token::Identifier(ident) = found {
+            Ok(Identifier(ident))
+        } else {
+            self.error_reporter.error()
+                .message(format!("Expected identifier, found {found:?}"))
                 .starts_at(start)
                 .ends_at(self.location)
                 .report();

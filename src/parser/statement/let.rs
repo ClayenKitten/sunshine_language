@@ -11,13 +11,14 @@ pub struct LetStatement {
 impl LetStatement {
     pub fn parse(lexer: &mut Lexer) -> Result<LetStatement, ParserError> {
         lexer.expect_keyword(Keyword::Let)?;
+        let name = lexer.expect_identifier()?;
         let mut statement = LetStatement {
-            name: Identifier::parse(lexer)?,
+            name,
             type_: None,
             value: None,
         };
         if lexer.consume_punctuation(":")? {
-            statement.type_ = Some(Identifier::parse(lexer)?);
+            statement.type_ = Some(lexer.expect_identifier()?);
         }
         if lexer.consume_punctuation("=")? {
             statement.value = Some(Box::new(Expression::parse(lexer)?));

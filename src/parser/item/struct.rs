@@ -17,7 +17,7 @@ pub struct Field {
 impl Struct {
     /// Parse structure from token stream. `struct` keyword is expected to be consumed beforehand.
     pub fn parse(lexer: &mut Lexer) -> Result<Struct, ParserError> {
-        let name = Identifier::parse(lexer)?;
+        let name = lexer.expect_identifier()?;
         let mut fields = Vec::new();
         lexer.expect_punctuation("{")?;
         
@@ -34,13 +34,12 @@ impl Struct {
     
     /// Parse a single field of struct. Returns `None` if closing brace met instead.
     fn parse_field(lexer: &mut Lexer) -> Result<Option<Field>, ParserError> {
-        let name = match lexer.next()? {
-            Token::Identifier(ident) => Identifier(ident),
-            Token::Punctuation(Punctuation("}")) => return Ok(None),
-            _ => return Err(UnexpectedTokenError::TokenMismatch.into()),
+        let Some(name) = lexer.consume_identifier()? else {
+            lexer.expect_punctuation("}")?;
+            return Ok(None);
         };
         lexer.expect_punctuation(":")?;
-        let type_ = Identifier::parse(lexer)?;
+        let type_ = lexer.expect_identifier()?;
 
         Ok(Some(Field { name, type_ }))
     }

@@ -25,7 +25,7 @@ pub struct Parameter {
 impl Function {
     /// Parse function from token stream. `fn` keyword is expected to be consumed beforehand.
     pub fn parse(lexer: &mut Lexer) -> Result<Function, ParserError> {
-        let name = Identifier::parse(lexer)?;
+        let name = lexer.expect_identifier()?;
         lexer.expect_punctuation("(")?;
         let params = Self::parse_params(lexer)?;
         let return_type = Self::parse_return_type(lexer)?;
@@ -49,7 +49,7 @@ impl Function {
                 token => return Err(UnexpectedTokenError::UnexpectedToken(token).into())
             };
             lexer.expect_punctuation(":")?;
-            let type_ = Identifier::parse(lexer)?;
+            let type_ = lexer.expect_identifier()?;
             params.push(Parameter { name, type_ });
 
             if lexer.consume_punctuation(")")? {
@@ -65,7 +65,7 @@ impl Function {
     fn parse_return_type(lexer: &mut Lexer) -> Result<Option<Identifier>, ParserError> {
         match lexer.next()? {
             Token::Punctuation(Punctuation("->")) => {
-                let return_type = Identifier::parse(lexer)?;
+                let return_type = lexer.expect_identifier()?;
                 lexer.expect_punctuation("{")?;
                 Ok(Some(return_type))
             },

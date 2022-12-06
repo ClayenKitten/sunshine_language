@@ -2,7 +2,7 @@ mod shunting_yard;
 
 use crate::lexer::{number::Number, Token, Lexer, punctuation::Punctuation, keyword::Keyword};
 
-use super::{ParserError, UnexpectedTokenError, Statement, statement::Block};
+use super::{ParserError, UnexpectedTokenError, statement::Block};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expression {
@@ -108,17 +108,6 @@ impl Expression {
 #[derive(Debug, PartialEq, Eq)]
 pub struct Identifier(pub String);
 
-impl Identifier {
-    pub fn parse(lexer: &mut Lexer) -> Result<Identifier, ParserError> {
-        let token = lexer.next()?;
-        if let Token::Identifier(ident) = token {
-            Ok(Identifier(ident))
-        } else {
-            Err(UnexpectedTokenError::UnexpectedToken(token).into())
-        }
-    }
-}
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum Literal {
     Number(Number),
@@ -183,7 +172,7 @@ pub struct For {
 
 impl For {
     pub fn parse(lexer: &mut Lexer) -> Result<For, ParserError> {
-        let var = Identifier::parse(lexer)?;
+        let var = lexer.expect_identifier()?;
         lexer.expect_keyword(Keyword::In)?;
         let expr = Box::new(Expression::parse(lexer)?);
         lexer.expect_punctuation("{")?;
