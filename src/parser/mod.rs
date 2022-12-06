@@ -22,54 +22,6 @@ impl Ast {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Delimiter {
-    /// ( ... )
-    Parenthesis,
-    /// { ... }
-    Brace,
-    /// [ ... ]
-    Bracket,
-}
-
-impl Delimiter {
-    /// Check if provided `str` contains a matching closing delimiter.
-    pub fn is_closing(&self, s: &str) -> bool {
-        matches!(
-            (self, s),
-            (Delimiter::Parenthesis, ")") |
-            (Delimiter::Brace, "}") |
-            (Delimiter::Bracket, "]")
-        )
-    }
-}
-
-impl TryFrom<char> for Delimiter {
-    type Error = ();
-
-    fn try_from(value: char) -> Result<Self, Self::Error> {
-        match value {
-            '(' | ')' => Ok(Delimiter::Parenthesis),
-            '{' | '}' => Ok(Delimiter::Brace),
-            '[' | ']' => Ok(Delimiter::Bracket),
-            _ => Err(()),
-        }
-    }
-}
-
-impl TryFrom<Punctuation> for Delimiter {
-    type Error = ();
-
-    fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
-        match value.0 {            
-            "(" | ")" => Ok(Delimiter::Parenthesis),
-            "{" | "}" => Ok(Delimiter::Brace),
-            "[" | "]" => Ok(Delimiter::Bracket),
-            _ => Err(()),
-        }
-    }
-}
-
 impl<'a> Lexer<'a> {
     fn expect(&mut self, criteria: impl Fn(&Token) -> bool) -> Result<(), UnexpectedTokenError> {
         let token = self.next()?;
