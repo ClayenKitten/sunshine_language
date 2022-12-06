@@ -110,7 +110,7 @@ pub struct Identifier(pub String);
 
 impl Identifier {
     pub fn parse(lexer: &mut Lexer) -> Result<Identifier, ParserError> {
-        let token = lexer.next_some()?;
+        let token = lexer.next()?;
         if let Token::Identifier(ident) = token {
             Ok(Identifier(ident))
         } else {

@@ -34,7 +34,7 @@ impl Struct {
     
     /// Parse a single field of struct. Returns `None` if closing brace met instead.
     fn parse_field(lexer: &mut Lexer) -> Result<Option<Field>, ParserError> {
-        let name = match lexer.next_some()? {
+        let name = match lexer.next()? {
             Token::Identifier(ident) => Identifier(ident),
             Token::Punctuation(Punctuation("}")) => return Ok(None),
             _ => return Err(UnexpectedTokenError::TokenMismatch.into()),

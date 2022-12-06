@@ -43,7 +43,7 @@ impl Function {
     fn parse_params(lexer: &mut Lexer) -> Result<Vec<Parameter>, ParserError> {
         let mut params = Vec::new();
         loop {
-            let name = match lexer.next_some()? {
+            let name = match lexer.next()? {
                 Token::Identifier(ident) => Identifier(ident),
                 Token::Punctuation(Punctuation(")")) => break,
                 token => return Err(UnexpectedTokenError::UnexpectedToken(token).into())
@@ -63,7 +63,7 @@ impl Function {
 
     /// Try to parse return type if any. Consumes opening brace `{` which is required for function body.
     fn parse_return_type(lexer: &mut Lexer) -> Result<Option<Identifier>, ParserError> {
-        match lexer.next_some()? {
+        match lexer.next()? {
             Token::Punctuation(Punctuation("->")) => {
                 let return_type = Identifier::parse(lexer)?;
                 lexer.expect_punctuation("{")?;

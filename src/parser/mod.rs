@@ -68,14 +68,6 @@ impl<'a> Lexer<'a> {
             Err(UnexpectedTokenError::TokenMismatch.into())
         }
     }
-
-    /// Returns error if EOF achieved.
-    fn next_some(&mut self) -> Result<Token, ParserError> {
-        match self.next()? {
-            Token::Eof => Err(ParserError::UnexpectedEof),
-            token => Ok(token),
-        }
-    }
 }
 
 #[derive(Debug, Error, PartialEq, Eq)]
