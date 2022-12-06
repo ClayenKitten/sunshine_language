@@ -3,6 +3,7 @@
 use crate::input_stream::Location;
 
 /// Interface to report errors conveniently.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ErrorReporter {
     /// Valid code that looks suspicious to compiler.
     warnings: Vec<Error>,
@@ -30,12 +31,14 @@ impl<'a> ErrorReporter {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Error {
     message: String,
     start: Location,
     end: Location,
 }
 
+#[derive(Debug)]
 pub struct ErrorBuilder<'a> {
     reporter: &'a mut ErrorReporter,
     severity: Severity,
