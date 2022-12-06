@@ -23,24 +23,6 @@ impl Ast {
 }
 
 impl<'a> Lexer<'a> {
-    fn expect(&mut self, criteria: impl Fn(&Token) -> bool) -> Result<(), UnexpectedTokenError> {
-        let token = self.next()?;
-        if criteria(&token) {
-            Ok(())
-        } else {
-            Err(UnexpectedTokenError::UnexpectedToken(token))
-        }
-    }
-
-    fn extract<T>(&mut self, extractor: impl Fn(&Token) -> Option<T>) -> Result<T, UnexpectedTokenError> {
-        let token = self.next()?;
-        if let Some(val) = extractor(&token) {
-            Ok(val)
-        } else {
-            Err(UnexpectedTokenError::UnexpectedToken(token))
-        }
-    }
-
     /// Checks if next token is provided punctuation and consumes it if so.
     /// 
     /// # Returns
@@ -64,10 +46,10 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn expect_keyword(&mut self, keyword: Keyword) -> Result<(), UnexpectedTokenError> {
+    fn expect_keyword(&mut self, keyword: Keyword) -> Result<(), ParserError> {
         match self.next()? {
             Token::Keyword(got) if got == keyword => Ok(()),
-            _ => Err(UnexpectedTokenError::TokenMismatch),
+            _ => Err(UnexpectedTokenError::TokenMismatch.into()),
         }
     }
 
@@ -86,8 +68,6 @@ pub enum UnexpectedTokenError {
     UnexpectedToken(Token),
     #[error("token mismatch")]
     TokenMismatch,
-    #[error("{0}")]
-    LexerError(#[from] LexerError),
 }
 
 #[derive(Debug, PartialEq, Eq, Error)]
