@@ -18,6 +18,7 @@ fn main() -> anyhow::Result<()> {
     let ast = Ast::parse(&mut lexer);
     
     println!("{:#?}", ast);
+    println!("{}", lexer.error_reporter());
 
     Ok(())
 }

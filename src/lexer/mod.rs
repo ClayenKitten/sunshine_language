@@ -8,7 +8,7 @@ use std::{str::FromStr, mem::take};
 
 use thiserror::Error;
 
-use crate::input_stream::InputStream;
+use crate::{input_stream::InputStream, error::ErrorReporter};
 
 use self::{number::Number, punctuation::{Punctuation, NotPunctuation}, keyword::Keyword};
 
@@ -18,6 +18,7 @@ pub struct Lexer<'a> {
     /// Cached token.
     current: Option<Token>,
     input: InputStream<'a>,
+    error_reporter: ErrorReporter,
 }
 
 impl<'a> Lexer<'a> {
@@ -25,7 +26,12 @@ impl<'a> Lexer<'a> {
         Self {
             current: None,
             input: InputStream::new(data),
+            error_reporter: ErrorReporter::new(),
         }
+    }
+
+    pub fn error_reporter(&self) -> &ErrorReporter {
+        &self.error_reporter
     }
 
     /// Get next token.
@@ -48,10 +54,24 @@ impl<'a> Lexer<'a> {
     pub fn is_eof(&mut self) -> bool {
         matches!(self.peek(), Ok(Token::Eof))
     }
-    
+
     fn read_token(&mut self) -> Result<Token, LexerError> {
         self.clean();
-
+        let start = self.input.location();
+        match self.read_token_inner() {
+            Ok(token) => Ok(token),
+            Err(err) => {
+                self.error_reporter.error()
+                    .starts_at(start)
+                    .ends_at(self.input.location())
+                    .message(err.to_string())
+                    .report();
+                Err(err)
+            },
+        }
+    }
+    
+    fn read_token_inner(&mut self) -> Result<Token, LexerError> {
         let ch = match self.input.peek() {
             Some(ch) => ch,
             None => return Ok(Token::Eof),
