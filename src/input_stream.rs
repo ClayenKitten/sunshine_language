@@ -1,4 +1,4 @@
-use std::{str::CharIndices, fmt::Debug, cmp::Ordering};
+use std::{str::CharIndices, fmt::{Debug, Display}, cmp::Ordering};
 
 use itertools::{PeekNth, peek_nth};
 
@@ -97,6 +97,12 @@ pub struct SliceStartMarker(usize);
 pub struct Location {
     pub line: usize,
     pub column: usize,
+}
+
+impl Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.line, self.column)
+    }
 }
 
 impl PartialOrd for Location {
