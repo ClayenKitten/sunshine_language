@@ -8,7 +8,7 @@ use std::{str::FromStr, mem::take};
 
 use thiserror::Error;
 
-use crate::{input_stream::InputStream, error::ErrorReporter};
+use crate::{input_stream::{InputStream, Location}, error::ErrorReporter};
 
 use self::{number::Number, punctuation::{Punctuation, NotPunctuation}, keyword::Keyword};
 
@@ -18,14 +18,18 @@ pub struct Lexer<'a> {
     /// Cached token.
     current: Option<Token>,
     input: InputStream<'a>,
-    error_reporter: ErrorReporter,
+    pub location: Location,
+    pub error_reporter: ErrorReporter,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(data: &'a str) -> Self {
+        let input = InputStream::new(data);
+        let location = input.location();
         Self {
             current: None,
-            input: InputStream::new(data),
+            input,
+            location,
             error_reporter: ErrorReporter::new(),
         }
     }
@@ -36,6 +40,7 @@ impl<'a> Lexer<'a> {
 
     /// Get next token.
     pub fn next(&mut self) -> Result<Token, LexerError> {
+        self.location = self.input.location();
         match take(&mut self.current) {
             Some(token) => Ok(token),
             None => self.read_token(),

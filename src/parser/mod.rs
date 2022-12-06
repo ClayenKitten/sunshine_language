@@ -39,17 +39,33 @@ impl<'a> Lexer<'a> {
 
     /// Check if next token is provided punctuation or error otherwise.
     fn expect_punctuation(&mut self, expected: &'static str) -> Result<(), ParserError> {
-        if self.next()? == Token::Punctuation(Punctuation(expected)) {
+        let start = self.location;
+        let found = self.next()?;
+        if found == Token::Punctuation(Punctuation(expected)) {
             Ok(())
         } else {
+            self.error_reporter.error()
+                .message(format!("Expected punctuation `{expected}`, found {found:?}"))
+                .starts_at(start)
+                .ends_at(self.location)
+                .report();
             Err(UnexpectedTokenError::TokenMismatch.into())
         }
     }
 
+    /// Check if next token is provided punctuation or error otherwise.
     fn expect_keyword(&mut self, keyword: Keyword) -> Result<(), ParserError> {
-        match self.next()? {
-            Token::Keyword(got) if got == keyword => Ok(()),
-            _ => Err(UnexpectedTokenError::TokenMismatch.into()),
+        let start = self.location;
+        let found = self.next()?;
+        if found == Token::Keyword(keyword) {
+            Ok(())
+        } else {
+            self.error_reporter.error()
+                .message(format!("Expected keyword `{keyword}`, found {found:?}"))
+                .starts_at(start)
+                .ends_at(self.location)
+                .report();
+            Err(UnexpectedTokenError::TokenMismatch.into())
         }
     }
 
