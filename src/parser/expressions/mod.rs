@@ -144,11 +144,11 @@ pub struct If {
 impl If {
     pub fn parse(lexer: &mut Lexer) -> Result<If, ParserError> {
         let condition = Box::new(Expression::parse(lexer)?);
-        lexer.expect_punctuation(["{"])?;
+        lexer.expect_punctuation("{")?;
         let body = Block::parse(lexer)?;
         let else_body = if let Token::Keyword(Keyword::Else) = lexer.peek()? {
             let _ = lexer.next();
-            lexer.expect_punctuation(["{"])?;
+            lexer.expect_punctuation("{")?;
             Some(Block::parse(lexer)?)
         } else {
             None
@@ -167,7 +167,7 @@ pub struct While {
 impl While {
     pub fn parse(lexer: &mut Lexer) -> Result<While, ParserError> {
         let condition = Box::new(Expression::parse(lexer)?);
-        lexer.expect_punctuation(["{"])?;
+        lexer.expect_punctuation("{")?;
         let body = Block::parse(lexer)?;
         Ok(While { condition, body })
     }
@@ -186,7 +186,7 @@ impl For {
         let var = Identifier::parse(lexer)?;
         lexer.expect_keyword(Keyword::In)?;
         let expr = Box::new(Expression::parse(lexer)?);
-        lexer.expect_punctuation(["{"])?;
+        lexer.expect_punctuation("{")?;
         let body = Block::parse(lexer)?;
         Ok(For { var, expr, body })
     }

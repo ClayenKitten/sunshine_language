@@ -22,7 +22,7 @@ impl LetStatement {
         if lexer.consume_punctuation("=")? {
             statement.value = Some(Box::new(Expression::parse(lexer)?));
         }
-        lexer.expect_punctuation([";"])?;
+        lexer.expect_punctuation(";")?;
         Ok(statement)
     }
 }

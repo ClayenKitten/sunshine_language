@@ -95,7 +95,7 @@ impl<'a> Lexer<'a> {
     /// 
     /// Returns `true` if provided punctuation matches.
     fn consume_punctuation(&mut self, punc: &'static str) -> Result<bool, ParserError> {
-        if Token::Punctuation(Punctuation(punc)) == self.peek()? {
+        if self.peek()? == Token::Punctuation(Punctuation(punc)) {
             let _ = self.next();
             Ok(true)
         } else {
@@ -103,19 +103,13 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    /// Fetch next token and check if it is one of listed punctuation.
-    /// 
-    /// # Returns
-    /// 
-    /// Returned str is guaranteed to be one of provided in `punc`.
-    fn expect_punctuation(&mut self, expected: impl IntoIterator<Item = &'static str>) -> Result<&'static str, ParserError> {
-        let Token::Punctuation(Punctuation(punc)) = self.next_some()? else {
-            return Err(UnexpectedTokenError::TokenMismatch.into());
-        };
-
-        expected.into_iter()
-            .find(|x| *x == punc)
-            .ok_or_else(|| UnexpectedTokenError::TokenMismatch.into())
+    /// Check if next token is provided punctuation or error otherwise.
+    fn expect_punctuation(&mut self, expected: &'static str) -> Result<(), ParserError> {
+        if self.next()? == Token::Punctuation(Punctuation(expected)) {
+            Ok(())
+        } else {
+            Err(UnexpectedTokenError::TokenMismatch.into())
+        }
     }
 
     fn expect_keyword(&mut self, keyword: Keyword) -> Result<(), UnexpectedTokenError> {

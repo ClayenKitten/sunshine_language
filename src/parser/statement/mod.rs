@@ -36,7 +36,7 @@ impl Block {
                     => Statement::LetStatement(LetStatement::parse(lexer)?),
                 Token::Keyword(Keyword::Break) => {
                     let _ = lexer.next();
-                    lexer.expect_punctuation([";"])?;
+                    lexer.expect_punctuation(";")?;
                     Statement::Break
                 },
                 Token::Eof
@@ -49,7 +49,7 @@ impl Block {
                     if expr.is_block_expression() {
                         lexer.consume_punctuation(";")?;
                     } else {
-                        lexer.expect_punctuation([";"])?;
+                        lexer.expect_punctuation(";")?;
                     }
                     Statement::ExpressionStatement(expr)
                 },
