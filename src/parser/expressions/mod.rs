@@ -105,10 +105,10 @@ impl Expression {
 }
 
 /// Identifier is name of type, variable or function.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Identifier(pub String);
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Literal {
     Number(Number),
     String(String),
