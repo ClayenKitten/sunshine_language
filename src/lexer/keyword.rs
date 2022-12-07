@@ -13,6 +13,7 @@ pub enum Keyword {
     Break,
     Return,
     Struct,
+    Mod,
     True,
     False,
 }

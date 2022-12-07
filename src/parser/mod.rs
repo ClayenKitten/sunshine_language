@@ -2,23 +2,20 @@ use thiserror::Error;
 
 use crate::lexer::{Lexer, LexerError, Token, keyword::Keyword, punctuation::Punctuation};
 
-use self::{expressions::*, item::Item};
+use self::{expressions::*, item::Module};
 
 pub mod expressions;
 mod item;
 mod statement;
 
 #[derive(Debug)]
-pub struct Ast(Vec<Item>);
+pub struct Ast(Module);
 
 impl Ast {
     /// Parse top level of program (file).
     pub fn parse(lexer: &mut Lexer) -> Result<Ast, ParserError> {    
-        let mut buffer = Vec::new();
-        while !lexer.is_eof() {
-            buffer.push(Item::parse(lexer)?);
-        }
-        Ok(Ast(buffer))
+        Module::parse_toplevel(lexer)
+            .map(|module| Ast(module))
     }
 }
 
