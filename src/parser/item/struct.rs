@@ -1,4 +1,4 @@
-use crate::{parser::{expressions::Identifier, ParserError, UnexpectedTokenError}, lexer::{Lexer, Token, punctuation::Punctuation}};
+use crate::{parser::{expressions::Identifier, ParserError}, lexer::Lexer};
 
 /// A type that is composed of other types.
 #[derive(Debug, PartialEq, Eq)]
@@ -47,13 +47,15 @@ impl Struct {
 
 #[cfg(test)]
 mod test {
-    use crate::{lexer::Lexer, parser::expressions::Identifier};
+    use crate::{lexer::Lexer, parser::expressions::Identifier, input_stream::InputStream};
 
     use super::{Struct, Field};
 
     #[test]
     fn parse_empty_struct() {
-        let mut lexer = Lexer::new("struct name {}");
+        let input = InputStream::new("struct name {}");
+        let mut lexer = Lexer::new(input);
+
         let _ = lexer.next();
         let expected = Struct {
             name: Identifier(String::from("name")),
@@ -65,7 +67,9 @@ mod test {
 
     #[test]
     fn parse_struct_with_comma() {
-        let mut lexer = Lexer::new("struct name { field1: type1, field2: type2, }");
+        let input = InputStream::new("struct name { field1: type1, field2: type2, }");
+        let mut lexer = Lexer::new(input);
+
         let _ = lexer.next();
         let expected = Struct {
             name: Identifier(String::from("name")),
@@ -80,7 +84,9 @@ mod test {
 
     #[test]
     fn parse_struct_without_comma() {
-        let mut lexer = Lexer::new("struct name { field1: type1, field2: type2 }");
+        let input = InputStream::new("struct name { field1: type1, field2: type2 }");
+        let mut lexer = Lexer::new(input);
+
         let _ = lexer.next();
         let expected = Struct {
             name: Identifier(String::from("name")),

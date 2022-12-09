@@ -23,8 +23,7 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(data: &'a str) -> Self {
-        let input = InputStream::new(data);
+    pub fn new(input: InputStream<'a>) -> Self {
         let location = input.location();
         Self {
             current: None,
@@ -238,17 +237,18 @@ pub enum LexerError {
 
 #[cfg(test)]
 mod test {
-    use crate::lexer::{
+    use crate::{lexer::{
         number::{Base, Number},
         punctuation::Punctuation,
         keyword::Keyword, Token,
-    };
+    }, input_stream::InputStream};
 
     use super::Lexer;
 
     #[test]
     fn return_string() {
-        let mut lexer = Lexer::new("return \"x > 0\";");
+        let input = InputStream::new("return \"x > 0\";");
+        let mut lexer = Lexer::new(input);
 
         assert_eq!(
             lexer.next(),
@@ -266,7 +266,8 @@ mod test {
 
     #[test]
     fn assign_num_to_var() {
-        let mut lexer = Lexer::new("let x = 123;");
+        let input = InputStream::new("let x = 123;");
+        let mut lexer = Lexer::new(input);
 
         assert_eq!(
             lexer.next(),
@@ -298,7 +299,8 @@ mod test {
 
     #[test]
     fn if_with_else() {
-        let mut lexer = Lexer::new("if x > 0. { return x; } else { return 0.; }");
+        let input = InputStream::new("if x > 0. { return x; } else { return 0.; }");
+        let mut lexer = Lexer::new(input);
 
         let x = Ok(Token::Identifier(String::from("x")));
         let _return = Ok(Token::Keyword(Keyword::Return));
