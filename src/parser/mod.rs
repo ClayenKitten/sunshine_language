@@ -1,11 +1,25 @@
-use crate::{lexer::{Lexer, Token, punctuation::Punctuation, LexerError, keyword::Keyword}, error::ErrorReporter, ast::{ParserError, expressions::Identifier, UnexpectedTokenError}};
+use crate::{lexer::{Lexer, Token, punctuation::Punctuation, LexerError, keyword::Keyword}, error::ErrorReporter, ast::{ParserError, expressions::Identifier, UnexpectedTokenError, Ast, item::Module}};
 
 pub struct Parser<'s> {
-    error_reporter: ErrorReporter,
-    lexer: Lexer<'s>,
+    pub error_reporter: ErrorReporter,
+    pub lexer: Lexer<'s>,
 }
 
-impl<'a> Lexer<'a> {
+impl<'s> Parser<'s> {
+    pub fn new(lexer: Lexer<'s>) -> Self {
+        Self {
+            error_reporter: ErrorReporter::new(),
+            lexer,
+        }
+    }
+
+    pub fn parse(&mut self) -> Result<Ast, ParserError> {
+        Module::parse_toplevel(&mut self.lexer)
+            .map(|module| Ast(module))
+    }
+}
+
+impl<'s> Lexer<'s> {
     /// Checks if next token is provided punctuation and consumes it if so.
     /// 
     /// # Returns

@@ -1,9 +1,9 @@
 use std::{fs::read_to_string, path::PathBuf};
 
-use clap::Parser;
-use compiler::{lexer::Lexer, ast::Ast, input_stream::InputStream};
+use clap::Parser as ArgParser;
+use compiler::{lexer::Lexer, ast::Ast, input_stream::InputStream, parser::Parser};
 
-#[derive(Parser, Debug)]
+#[derive(ArgParser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
     #[arg(short, long)]
@@ -15,11 +15,12 @@ fn main() -> anyhow::Result<()> {
 
     let program = read_to_string(args.path)?;
     let input = InputStream::new(&program);
-    let mut lexer = Lexer::new(input);
-    let ast = Ast::parse(&mut lexer);
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let ast = parser.parse();
     
     println!("{:#?}", ast);
-    println!("{}", lexer.error_reporter());
+    println!("{}", parser.error_reporter);
 
     Ok(())
 }

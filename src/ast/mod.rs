@@ -1,23 +1,15 @@
 use thiserror::Error;
 
-use crate::lexer::{Lexer, LexerError, Token};
+use crate::lexer::{LexerError, Token};
 
 use self::{expressions::*, item::Module};
 
 pub mod expressions;
-mod item;
-mod statement;
+pub mod item;
+pub mod statement;
 
 #[derive(Debug)]
-pub struct Ast(Module);
-
-impl Ast {
-    /// Parse top level of program (file).
-    pub fn parse(lexer: &mut Lexer) -> Result<Ast, ParserError> {    
-        Module::parse_toplevel(lexer)
-            .map(|module| Ast(module))
-    }
-}
+pub struct Ast(pub Module);
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum UnexpectedTokenError {
