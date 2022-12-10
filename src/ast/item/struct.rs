@@ -1,4 +1,4 @@
-use crate::{parser::{expressions::Identifier, ParserError}, lexer::Lexer};
+use crate::{ast::{expressions::Identifier, ParserError}, lexer::Lexer};
 
 /// A type that is composed of other types.
 #[derive(Debug, PartialEq, Eq)]
@@ -47,7 +47,7 @@ impl Struct {
 
 #[cfg(test)]
 mod test {
-    use crate::{lexer::Lexer, parser::expressions::Identifier, input_stream::InputStream};
+    use crate::{lexer::Lexer, ast::expressions::Identifier, input_stream::InputStream};
 
     use super::{Struct, Field};
 

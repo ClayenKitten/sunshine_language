@@ -1,4 +1,4 @@
-use crate::{parser::{ParserError, expressions::{Expression, Identifier}}, lexer::{Lexer, keyword::Keyword}};
+use crate::{ast::{ParserError, expressions::{Expression, Identifier}}, lexer::{Lexer, keyword::Keyword}};
 
 /// let VAR: TYPE = VALUE;
 #[derive(Debug, PartialEq, Eq)]
