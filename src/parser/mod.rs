@@ -56,6 +56,16 @@ impl<'s> Lexer<'s> {
         }
     }
 
+    /// Checks if next token is provided keyword and consumes it if so.
+    pub fn consume_keyword(&mut self, kw: Keyword) -> Result<bool, ParserError> {
+        if self.peek()? == Token::Keyword(kw) {
+            let _ = self.next();
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
     /// Checks if next token is identifier and consumes it if so.
     pub fn consume_identifier(&mut self) -> Result<Option<Identifier>, LexerError> {
         let token = self.peek()?;
