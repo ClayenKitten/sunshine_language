@@ -1,6 +1,6 @@
-use crate::{lexer::{Lexer, Token, punctuation::Punctuation}, ast::{UnexpectedTokenError, statement::Block}};
+use crate::{lexer::{Lexer, Token, punctuation::Punctuation}, ast::{statement::Block}, parser::{ParserError, UnexpectedTokenError}};
 
-use crate::ast::{expressions::Identifier, ParserError};
+use crate::ast::{expressions::Identifier};
 
 /// A function is a set of statements to perform a specific task.
 /// 

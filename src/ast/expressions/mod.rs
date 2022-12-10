@@ -1,8 +1,8 @@
 mod shunting_yard;
 
-use crate::lexer::{number::Number, Token, Lexer, punctuation::Punctuation, keyword::Keyword};
+use crate::{lexer::{number::Number, Token, Lexer, punctuation::Punctuation, keyword::Keyword}, parser::{ParserError, UnexpectedTokenError}};
 
-use super::{ParserError, UnexpectedTokenError, statement::Block};
+use super::{statement::Block};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expression {

@@ -2,9 +2,7 @@ mod module;
 mod function;
 mod r#struct;
 
-use crate::{lexer::{Lexer, Token, keyword::Keyword}, ast::UnexpectedTokenError};
-
-use super::ParserError;
+use crate::{lexer::{Lexer, Token, keyword::Keyword}, parser::{UnexpectedTokenError, ParserError}};
 
 pub use self::{module::Module, r#struct::{Struct, Field}, function::{Function, Parameter}};
 

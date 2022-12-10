@@ -1,7 +1,7 @@
 use std::{fs::read_to_string, path::PathBuf};
 
 use clap::Parser as ArgParser;
-use compiler::{lexer::Lexer, ast::Ast, input_stream::InputStream, parser::Parser};
+use compiler::{lexer::Lexer, input_stream::InputStream, parser::Parser};
 
 #[derive(ArgParser, Debug)]
 #[command(author, version, about, long_about = None)]

@@ -1,4 +1,4 @@
-use crate::{lexer::Lexer, ast::{ParserError, expressions::Identifier}};
+use crate::{lexer::Lexer, ast::{expressions::Identifier}, parser::ParserError};
 
 use super::Item;
 

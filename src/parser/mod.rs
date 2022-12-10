@@ -1,4 +1,8 @@
-use crate::{lexer::{Lexer, Token, punctuation::Punctuation, LexerError, keyword::Keyword}, error::ErrorReporter, ast::{ParserError, expressions::Identifier, UnexpectedTokenError, Ast, item::Module}};
+use thiserror::Error;
+
+use crate::ast::{expressions::Identifier, Ast, item::Module};
+use crate::error::ErrorReporter;
+use crate::lexer::{Lexer, Token, punctuation::Punctuation, LexerError, keyword::Keyword};
 
 pub struct Parser<'s> {
     pub error_reporter: ErrorReporter,
@@ -17,6 +21,24 @@ impl<'s> Parser<'s> {
         Module::parse_toplevel(&mut self.lexer)
             .map(|module| Ast(module))
     }
+}
+
+#[derive(Debug, Error, PartialEq, Eq)]
+pub enum UnexpectedTokenError {
+    #[error("unexpected token: ")]
+    UnexpectedToken(Token),
+    #[error("token mismatch")]
+    TokenMismatch,
+}
+
+#[derive(Debug, PartialEq, Eq, Error)]
+pub enum ParserError {
+    #[error(transparent)]
+    UnexpectedToken(#[from] UnexpectedTokenError),
+    #[error("Unexpected EOF")]
+    UnexpectedEof,
+    #[error("Lexer error occured: {0}.")]
+    LexerError(#[from] LexerError),
 }
 
 impl<'s> Lexer<'s> {

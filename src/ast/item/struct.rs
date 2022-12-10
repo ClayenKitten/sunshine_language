@@ -1,4 +1,4 @@
-use crate::{ast::{expressions::Identifier, ParserError}, lexer::Lexer};
+use crate::{ast::{expressions::Identifier}, lexer::Lexer, parser::ParserError};
 
 /// A type that is composed of other types.
 #[derive(Debug, PartialEq, Eq)]

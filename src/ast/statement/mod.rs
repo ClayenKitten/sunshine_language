@@ -1,10 +1,10 @@
 mod r#let;
 
-use crate::lexer::{Lexer, Token, punctuation::Punctuation, keyword::Keyword};
+use crate::{lexer::{Lexer, Token, punctuation::Punctuation, keyword::Keyword}, parser::ParserError};
 
 use self::r#let::LetStatement;
 
-use super::{item::Item, Expression, ParserError};
+use super::{item::Item, Expression};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Statement {
