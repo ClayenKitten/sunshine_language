@@ -15,6 +15,7 @@ pub enum Item {
 }
 
 impl Item {
+    #[deprecated = "use Parser::parse_item"]
     pub fn parse(lexer: &mut Lexer) -> Result<Item, ParserError> {
         let start = lexer.location;
         Ok(match lexer.next()? {

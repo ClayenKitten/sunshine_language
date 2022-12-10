@@ -11,6 +11,7 @@ pub struct Module {
 
 impl Module {
     /// Parse module. Keyword `mod` is expected to be consumed beforehand.
+    #[deprecated = "use Parser::parse_module"]
     pub fn parse(lexer: &mut Lexer) -> Result<Module, ParserError> {
         let name = lexer.expect_identifier()?;
         lexer.expect_punctuation("{")?;
@@ -25,6 +26,7 @@ impl Module {
     }
 
     /// Parse toplevel module.
+    #[deprecated = "use Parser::parse_top_module"]
     pub fn parse_toplevel(lexer: &mut Lexer) -> Result<Module, ParserError> {
         let mut content = Vec::new();
         while !lexer.is_eof() {

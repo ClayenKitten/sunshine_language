@@ -24,6 +24,7 @@ pub struct Parameter {
 
 impl Function {
     /// Parse function from token stream. `fn` keyword is expected to be consumed beforehand.
+    #[deprecated = "use Parser::parse_fn"]
     pub fn parse(lexer: &mut Lexer) -> Result<Function, ParserError> {
         let name = lexer.expect_identifier()?;
         lexer.expect_punctuation("(")?;

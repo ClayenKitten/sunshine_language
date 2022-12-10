@@ -16,6 +16,7 @@ pub struct Field {
 
 impl Struct {
     /// Parse structure from token stream. `struct` keyword is expected to be consumed beforehand.
+    #[deprecated = "use Parser::parse_struct"]
     pub fn parse(lexer: &mut Lexer) -> Result<Struct, ParserError> {
         let name = lexer.expect_identifier()?;
         let mut fields = Vec::new();
