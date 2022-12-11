@@ -65,7 +65,7 @@ impl<'a> InputStream<'a> {
 }
 
 /// Location of character at source code.
-#[derive(Debug, Clone, Copy,PartialEq, Eq, Ord)]
+#[derive(Debug, Clone, Copy,PartialEq, Eq)]
 pub struct Location {
     pos: usize,
     pub line: usize,
@@ -78,14 +78,20 @@ impl Display for Location {
     }
 }
 
-impl PartialOrd for Location {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(match self.line.cmp(&other.line) {
+impl Ord for Location {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.line.cmp(&other.line) {
             Ordering::Equal => {
                 self.column.cmp(&other.column).reverse()
             },
             ord => ord.reverse(),
-        })
+        }
+    }
+}
+
+impl PartialOrd for Location {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
