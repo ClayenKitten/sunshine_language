@@ -1,4 +1,4 @@
-use crate::{ast::{statement::{Block, Statement, r#let::LetStatement}, expressions::Expression}, lexer::{keyword::Keyword}};
+use crate::{ast::{statement::{Block, Statement, r#let::LetStatement}}, lexer::{keyword::Keyword}};
 
 use super::{Parser, ParserError};
 
@@ -26,7 +26,7 @@ impl<'s> Parser<'s> {
                 continue;
             }
 
-            let expr = Expression::parse(&mut self.lexer)?;
+            let expr = self.parse_expr()?;
             if self.lexer.consume_punctuation("}")? {
                 break Some(expr);
             }

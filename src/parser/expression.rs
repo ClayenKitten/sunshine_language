@@ -1,14 +1,72 @@
 use crate::{
-    ast::expressions::{Expression, For, If, While},
-    lexer::keyword::Keyword,
+    ast::{expressions::{Expression, For, If, While, Literal, Identifier, FunctionCall}},
+    lexer::{keyword::Keyword, Token, punctuation::Punctuation}, parser::UnexpectedTokenError,
 };
 
-use super::{Parser, ParserError};
+use super::{Parser, ParserError, shunting_yard};
 
 impl<'s> Parser<'s> {
+    pub fn parse_expr(&mut self) -> Result<Expression, ParserError> {
+        shunting_yard::ReversePolishNotation::parse(self)
+            .map(|expr| expr.into_tree())
+    }
+
+    /// Parse a single operand
+    pub(super) fn parse_operand(&mut self) -> Result<Expression, ParserError> {
+        let token = match self.lexer.next()? {
+            Token::Punctuation(Punctuation("{")) => {
+                Expression::Block(self.parse_block()?)
+            }
+
+            Token::Punctuation(_) => {
+                return Err(UnexpectedTokenError::TokenMismatch.into())
+            }
+
+            Token::Number(num) => Expression::Literal(Literal::Number(num)),
+            Token::String(str) => Expression::Literal(Literal::String(str)),
+
+            Token::Keyword(kw) => {
+                match kw {
+                    Keyword::If => Expression::If(self.parse_if()?),
+                    Keyword::While => Expression::While(self.parse_while()?),
+                    Keyword::For => Expression::For(self.parse_for()?),
+                    Keyword::True => Expression::Literal(Literal::Boolean(true)),
+                    Keyword::False => Expression::Literal(Literal::Boolean(false)),
+                    _ => return Err(UnexpectedTokenError::TokenMismatch.into()),
+                }
+            }
+
+            Token::Identifier(ident) => {
+                self.maybe_function_call(Identifier(ident))?
+            },
+
+            Token::Eof => return Err(ParserError::UnexpectedEof),
+        };
+        Ok(token)
+    }
+
+    /// Try to wrap provided identifier in function call.
+    fn maybe_function_call(&mut self, name: Identifier) -> Result<Expression, ParserError> {
+        if self.lexer.consume_punctuation("(")? {
+            let mut params = Vec::new();
+            loop {
+                params.push(self.parse_expr()?);
+                if self.lexer.consume_punctuation(")")? {
+                    return Ok(Expression::FunctionCall(FunctionCall { name, params }));
+                } else if self.lexer.consume_punctuation(",")? {
+                    
+                } else {
+                    return Err(UnexpectedTokenError::TokenMismatch.into());
+                }
+            }
+        } else {
+            Ok(Expression::Variable(name))
+        }
+    }
+
     /// Parse if loop. Keyword `if` is expected to be consumed beforehand.
     pub fn parse_if(&mut self) -> Result<If, ParserError> {
-        let condition = Box::new(Expression::parse(&mut self.lexer)?);
+        let condition = Box::new(self.parse_expr()?);
         self.lexer.expect_punctuation("{")?;
         let body = self.parse_block()?;
 
@@ -28,7 +86,7 @@ impl<'s> Parser<'s> {
 
     /// Parse while loop. Keyword `while` is expected to be consumed beforehand.
     pub fn parse_while(&mut self) -> Result<While, ParserError> {
-        let condition = Box::new(Expression::parse(&mut self.lexer)?);
+        let condition = Box::new(self.parse_expr()?);
         self.lexer.expect_punctuation("{")?;
         let body = self.parse_block()?;
         Ok(While { condition, body })
@@ -38,7 +96,7 @@ impl<'s> Parser<'s> {
     pub fn parse_for(&mut self) -> Result<For, ParserError> {
         let var = self.lexer.expect_identifier()?;
         self.lexer.expect_keyword(Keyword::In)?;
-        let expr = Box::new(Expression::parse(&mut self.lexer)?);
+        let expr = Box::new(self.parse_expr()?);
         self.lexer.expect_punctuation("{")?;
         let body = self.parse_block()?;
         Ok(For { var, expr, body })

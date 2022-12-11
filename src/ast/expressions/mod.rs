@@ -1,5 +1,3 @@
-mod shunting_yard;
-
 use crate::{lexer::{number::Number, Token, Lexer, punctuation::Punctuation, keyword::Keyword}, parser::{ParserError, UnexpectedTokenError}};
 
 use super::{statement::Block};
@@ -31,62 +29,9 @@ pub enum Expression {
 }
 
 impl Expression {
+    #[deprecated = "use `Parser::parse_expr`"]
     pub fn parse(lexer: &mut Lexer) -> Result<Expression, ParserError> {
-        shunting_yard::ReversePolishNotation::parse(lexer)
-            .map(|expr| expr.into_tree())
-    }
-
-    /// Parse a single operand
-    fn parse_operand(lexer: &mut Lexer) -> Result<Expression, ParserError> {
-        let token = match lexer.next()? {
-            Token::Punctuation(Punctuation("{")) => {
-                Expression::Block(Block::parse(lexer)?)
-            }
-
-            Token::Punctuation(_) => {
-                return Err(UnexpectedTokenError::TokenMismatch.into())
-            }
-
-            Token::Number(num) => Expression::Literal(Literal::Number(num)),
-            Token::String(str) => Expression::Literal(Literal::String(str)),
-
-            Token::Keyword(kw) => {
-                match kw {
-                    Keyword::If => Expression::If(If::parse(lexer)?),
-                    Keyword::While => Expression::While(While::parse(lexer)?),
-                    Keyword::For => Expression::For(For::parse(lexer)?),
-                    Keyword::True => Expression::Literal(Literal::Boolean(true)),
-                    Keyword::False => Expression::Literal(Literal::Boolean(false)),
-                    _ => return Err(UnexpectedTokenError::TokenMismatch.into()),
-                }
-            }
-
-            Token::Identifier(ident) => {
-                Self::maybe_function_call(lexer, Identifier(ident))?
-            },
-
-            Token::Eof => return Err(ParserError::UnexpectedEof),
-        };
-        Ok(token)
-    }
-
-    /// Try to wrap provided identifier in function call.
-    fn maybe_function_call(lexer: &mut Lexer, name: Identifier) -> Result<Expression, ParserError> {
-        if lexer.consume_punctuation("(")? {
-            let mut params = Vec::new();
-            loop {
-                params.push(Expression::parse(lexer)?);
-                if lexer.consume_punctuation(")")? {
-                    return Ok(Expression::FunctionCall(FunctionCall { name, params }));
-                } else if lexer.consume_punctuation(",")? {
-                    
-                } else {
-                    return Err(UnexpectedTokenError::TokenMismatch.into());
-                }
-            }
-        } else {
-            Ok(Expression::Variable(name))
-        }
+        panic!("To be removed");
     }
 
     /// Check if that expression is block expression.

@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 
-use crate::{lexer::{punctuation::Punctuation, Token, Lexer}, parser::ParserError};
+use crate::{lexer::{punctuation::Punctuation, Token}, parser::ParserError, ast::expressions::Expression};
 
-use super::Expression;
+use super::Parser;
 
 /// An expression that stores a sequence of operands and operators.
 #[derive(Debug, PartialEq, Eq)]
@@ -12,16 +12,16 @@ impl ReversePolishNotation {
     /// Parse binary expression.
     /// 
     /// Parsing continues until "stopper" punctuation met or error occur.
-    pub fn parse(lexer: &mut Lexer) -> Result<Self, ParserError> {
+    pub fn parse(parser: &mut Parser) -> Result<Self, ParserError> {
         let mut output = VecDeque::<PolishEntry>::new();
         let mut op_stack = Vec::<Operator>::new();
 
         let mut is_last_token_an_operand = false;
 
         loop {
-            match lexer.peek()? {
+            match parser.lexer.peek()? {
                 Token::Punctuation(punc) if punc.0 == "(" => {
-                    lexer.next()?;
+                    parser.lexer.next()?;
                     is_last_token_an_operand = false;
                     op_stack.push(Operator::LeftParenthesis);
                 }
@@ -38,7 +38,7 @@ impl ReversePolishNotation {
                         break;
                     }
                     is_last_token_an_operand = true;
-                    lexer.next()?;
+                    parser.lexer.next()?;
                 }
                 Token::Punctuation(punc) if punc.is_operator() => {
                     let arity = if is_last_token_an_operand && punc.is_binary_operator() {
@@ -48,7 +48,7 @@ impl ReversePolishNotation {
                     } else {
                         break;
                     };
-                    lexer.next()?;
+                    parser.lexer.next()?;
                     
                     is_last_token_an_operand = false;
                     let priority = punc.priority();
@@ -74,7 +74,7 @@ impl ReversePolishNotation {
                     if is_last_token_an_operand {
                         break;
                     }
-                    let operand = Expression::parse_operand(lexer)?;
+                    let operand = parser.parse_operand()?;
                     output.push_back(PolishEntry::Operand(operand));
                     is_last_token_an_operand = true;
                 }
