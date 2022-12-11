@@ -6,7 +6,7 @@ use self::r#let::LetStatement;
 
 use super::{item::Item, Expression};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
     Item(Item),
     ExpressionStatement(Expression),
@@ -15,7 +15,7 @@ pub enum Statement {
 }
 
 /// Block is an expression that consists of a number of statements and an optional final expression.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Block {
     statements: Vec<Statement>,
     expression: Option<Box<Expression>>,

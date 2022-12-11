@@ -1,14 +1,14 @@
 use crate::{ast::{expressions::Identifier}, lexer::Lexer, parser::ParserError};
 
 /// A type that is composed of other types.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Struct {
     pub name: Identifier,
     pub fields: Vec<Field>,
 }
 
 /// Field 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Field {
     pub name: Identifier,
     pub type_: Identifier,

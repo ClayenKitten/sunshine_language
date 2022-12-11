@@ -1,7 +1,7 @@
 use crate::{ast::{expressions::{Expression, Identifier}}, lexer::{Lexer, keyword::Keyword}, parser::ParserError};
 
 /// let VAR: TYPE = VALUE;
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LetStatement {
     pub name: Identifier,
     pub type_: Option<Identifier>,

@@ -4,7 +4,7 @@ use crate::{lexer::{number::Number, Token, Lexer, punctuation::Punctuation, keyw
 
 use super::{statement::Block};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expression {
     /// Block is a set of statements surrounded by opening and closing brace.
     Block(Block),
@@ -116,14 +116,14 @@ pub enum Literal {
 }
 
 /// NAME(PARAMS, ...)
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionCall {
     pub name: Identifier,
     pub params: Vec<Expression>,
 }
 
 /// if CONDITION { BODY } else { ELSE_BODY }
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct If {
     pub condition: Box<Expression>,
     pub body: Block,
@@ -147,7 +147,7 @@ impl If {
 }
 
 /// while CONDITION { BODY }
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct While {
     pub condition: Box<Expression>,
     pub body: Block,
@@ -163,7 +163,7 @@ impl While {
 }
 
 /// for VAR in EXPR { BODY }
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct For {
     pub var: Identifier,
     pub expr: Box<Expression>,

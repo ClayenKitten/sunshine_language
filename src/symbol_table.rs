@@ -5,6 +5,7 @@ use itertools::Itertools;
 use crate::ast::{expressions::Identifier, item::Item};
 
 /// Symbol table stores all items known to compiler.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SymbolTable {
     declared: HashMap<Path, Item>,
 }

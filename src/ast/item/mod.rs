@@ -7,7 +7,7 @@ use crate::{lexer::{Lexer, Token, keyword::Keyword}, parser::{UnexpectedTokenErr
 pub use self::{module::Module, r#struct::{Struct, Field}, function::{Function, Parameter}};
 
 /// An Item is a static component of the package.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Item {
     Module(Module),
     Struct(Struct),

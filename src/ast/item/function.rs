@@ -5,7 +5,7 @@ use crate::ast::{expressions::Identifier};
 /// A function is a set of statements to perform a specific task.
 /// 
 /// `fn NAME(NAME: TYPE, ...) -> RETURN_TYPE`
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Function {
     pub name: Identifier,
     pub params: Vec<Parameter>,
@@ -16,7 +16,7 @@ pub struct Function {
 /// A parameter represents a value that the function expects you to pass when you call it.
 /// 
 /// `NAME: TYPE`
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Parameter {
     pub name: Identifier,
     pub type_: Identifier,

@@ -3,7 +3,7 @@ use crate::{lexer::Lexer, ast::{expressions::Identifier}, parser::ParserError};
 use super::Item;
 
 /// Module is a scoped list of items.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Module {
     pub name: Identifier,
     pub body: Vec<Item>,
