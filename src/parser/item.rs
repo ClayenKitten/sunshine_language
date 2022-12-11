@@ -127,3 +127,61 @@ impl<'s> Parser<'s> {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::{lexer::Lexer, ast::expressions::Identifier, input_stream::InputStream, parser::Parser};
+
+    use super::{Struct, Field};
+
+    #[test]
+    fn parse_empty_struct() {
+        let input = InputStream::new("struct name {}");
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+
+        let _ = parser.lexer.next();
+        let expected = Struct {
+            name: Identifier(String::from("name")),
+            fields: Vec::new(),
+        };
+        let produced = parser.parse_struct().unwrap();
+        assert_eq!(expected, produced);
+    }
+
+    #[test]
+    fn parse_struct_with_comma() {
+        let input = InputStream::new("struct name { field1: type1, field2: type2, }");
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+
+        let _ = parser.lexer.next();
+        let expected = Struct {
+            name: Identifier(String::from("name")),
+            fields: vec![
+                Field { name: Identifier(String::from("field1")), type_: Identifier(String::from("type1")) },
+                Field { name: Identifier(String::from("field2")), type_: Identifier(String::from("type2")) },
+            ]
+        };
+        let produced = parser.parse_struct().unwrap();
+        assert_eq!(expected, produced);
+    }
+
+    #[test]
+    fn parse_struct_without_comma() {
+        let input = InputStream::new("struct name { field1: type1, field2: type2 }");
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+
+        let _ = parser.lexer.next();
+        let expected = Struct {
+            name: Identifier(String::from("name")),
+            fields: vec![
+                Field { name: Identifier(String::from("field1")), type_: Identifier(String::from("type1")) },
+                Field { name: Identifier(String::from("field2")), type_: Identifier(String::from("type2")) },
+            ]
+        };
+        let produced = parser.parse_struct().unwrap();
+        assert_eq!(expected, produced);
+    }
+}
