@@ -1,4 +1,4 @@
-use crate::{ast::{item::{Item, Function, Struct, Module, Field, Parameter}, expressions::Identifier, statement::Block}, lexer::{keyword::Keyword, Token, punctuation::Punctuation}};
+use crate::{ast::{item::{Item, Function, Struct, Module, Field, Parameter}, expressions::Identifier}, lexer::{keyword::Keyword, Token, punctuation::Punctuation}};
 
 use super::{Parser, ParserError, UnexpectedTokenError};
 
@@ -82,7 +82,7 @@ impl<'s> Parser<'s> {
         self.lexer.expect_punctuation("(")?;
         let params = self.parse_params()?;
         let return_type = self.parse_return_type()?;
-        let body = Block::parse(&mut self.lexer)?;
+        let body = self.parse_block()?;
         
         Ok(Function {
             name,

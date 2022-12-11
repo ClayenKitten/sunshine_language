@@ -1,4 +1,4 @@
-mod r#let;
+pub mod r#let;
 
 use crate::{lexer::{Lexer, Token, punctuation::Punctuation, keyword::Keyword}, parser::ParserError};
 
@@ -17,11 +17,12 @@ pub enum Statement {
 /// Block is an expression that consists of a number of statements and an optional final expression.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Block {
-    statements: Vec<Statement>,
-    expression: Option<Box<Expression>>,
+    pub statements: Vec<Statement>,
+    pub expression: Option<Box<Expression>>,
 }
 
 impl Block {
+    #[deprecated = "use `Parser::parse_block`"]
     pub fn parse(lexer: &mut Lexer) -> Result<Block, ParserError> {
         let mut buffer = Vec::new();
         let expr = loop {
