@@ -16,30 +16,27 @@ pub enum Expression {
 
     Unary {
         op: Punctuation,
-        value: Box<Expression>
+        value: Box<Expression>,
     },
     Binary {
         op: Punctuation,
         left: Box<Expression>,
         right: Box<Expression>,
     },
-    
+
     FunctionCall(FunctionCall),
     Variable(Identifier),
 }
 
 impl Expression {
     /// Check if that expression is block expression.
-    /// 
+    ///
     /// Block expressions end with a right brace and don't require to be followed by a semicolon to
     /// be accounted as expression statement.
     pub fn is_block_expression(&self) -> bool {
         matches!(
             self,
-            Expression::Block(_) |
-            Expression::If(_) |
-            Expression::While(_) |
-            Expression::For(_)
+            Expression::Block(_) | Expression::If(_) | Expression::While(_) | Expression::For(_)
         )
     }
 }

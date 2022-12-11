@@ -1,8 +1,4 @@
-pub mod r#let;
-
-use self::r#let::LetStatement;
-
-use super::Expression;
+use super::expressions::{Expression, Identifier};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
@@ -16,4 +12,12 @@ pub enum Statement {
 pub struct Block {
     pub statements: Vec<Statement>,
     pub expression: Option<Box<Expression>>,
+}
+
+/// let VAR: TYPE = VALUE;
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LetStatement {
+    pub name: Identifier,
+    pub type_: Option<Identifier>,
+    pub value: Option<Box<Expression>>,
 }

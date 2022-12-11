@@ -1,4 +1,4 @@
-use self::{expressions::*, item::Module};
+use self::item::Module;
 
 pub mod expressions;
 pub mod item;
