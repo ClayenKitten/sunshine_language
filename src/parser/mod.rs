@@ -4,7 +4,8 @@ pub use item::*;
 
 use thiserror::Error;
 
-use crate::ast::{expressions::Identifier, Ast, item::Module};
+use crate::ast::item::Item;
+use crate::ast::{expressions::Identifier};
 use crate::error::ErrorReporter;
 use crate::lexer::{Lexer, Token, punctuation::Punctuation, LexerError, keyword::Keyword};
 use crate::symbol_table::{SymbolTable, Path};
@@ -26,9 +27,10 @@ impl<'s> Parser<'s> {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Ast, ParserError> {
-        Module::parse_toplevel(&mut self.lexer)
-            .map(|module| Ast(module))
+    pub fn parse(&mut self) -> Result<SymbolTable, ParserError> {
+        let module = self.parse_top_module()?;
+        self.symbol_table.declare(self.scope.clone(), Item::Module(module));
+        Ok(self.symbol_table.clone())
     }
 }
 

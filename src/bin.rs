@@ -17,9 +17,9 @@ fn main() -> anyhow::Result<()> {
     let input = InputStream::new(&program);
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
-    let ast = parser.parse();
+    let symbol_table = parser.parse();
     
-    println!("{:#?}", ast);
+    println!("{:#?}", symbol_table);
     println!("{}", parser.error_reporter);
 
     Ok(())

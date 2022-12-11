@@ -8,11 +8,11 @@ impl<'s> Parser<'s> {
         let start = self.lexer.location;
         
         let item = if self.lexer.consume_keyword(Keyword::Fn)? {
-            Item::Function(Function::parse(&mut self.lexer)?)
+            Item::Function(self.parse_fn()?)
         } else if self.lexer.consume_keyword(Keyword::Struct)? {
-            Item::Struct(Struct::parse(&mut self.lexer)?)
+            Item::Struct(self.parse_struct()?)
         } else if self.lexer.consume_keyword(Keyword::Mod)? {
-            Item::Module(Module::parse(&mut self.lexer)?)
+            Item::Module(self.parse_module()?)
         } else {
             let token = self.lexer.next()?;
             self.error_reporter.error()
