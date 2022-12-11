@@ -105,7 +105,7 @@ impl Expression {
 }
 
 /// Identifier is name of type, variable or function.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Identifier(pub String);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
