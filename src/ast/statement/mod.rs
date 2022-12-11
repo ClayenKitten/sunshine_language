@@ -4,11 +4,10 @@ use crate::{lexer::{Lexer, Token, punctuation::Punctuation, keyword::Keyword}, p
 
 use self::r#let::LetStatement;
 
-use super::{item::Item, Expression};
+use super::Expression;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
-    Item(Item),
     ExpressionStatement(Expression),
     LetStatement(LetStatement),
     Break,
@@ -32,7 +31,7 @@ impl Block {
                     break None;
                 },
                 Token::Keyword(Keyword::Fn | Keyword::Struct)
-                    => Statement::Item(Item::parse(lexer)?),
+                    => panic!("To be removed"),
                 Token::Keyword(Keyword::Let)
                     => Statement::LetStatement(LetStatement::parse(lexer)?),
                 Token::Keyword(Keyword::Break) => {
