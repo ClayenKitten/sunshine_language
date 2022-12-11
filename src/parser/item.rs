@@ -4,6 +4,8 @@ use super::{Parser, ParserError, UnexpectedTokenError};
 
 impl<'s> Parser<'s> {
     /// Try to parse an item.
+    /// 
+    /// Stores resulting item in SymbolTable.
     pub fn parse_item(&mut self) -> Result<(), ParserError> {
         let start = self.lexer.location;
         
@@ -29,22 +31,20 @@ impl<'s> Parser<'s> {
 
     /// Parse module. Keyword `mod` is expected to be consumed beforehand.
     pub fn parse_module(&mut self) -> Result<Module, ParserError> {
-        let mut content = Vec::new();
         let name = self.lexer.expect_identifier()?;
         self.lexer.expect_punctuation("{")?;
         while !self.lexer.consume_punctuation("}")? {
-            content.push(Item::parse(&mut self.lexer)?);
+            self.parse_item()?;
         }
-        Ok(Module { name, body: content })
+        Ok(Module { name })
     }
 
     /// Parse toplevel module.
     pub fn parse_top_module(&mut self) -> Result<Module, ParserError> {
-        let mut content = Vec::new();
         while !self.lexer.is_eof() {
-            content.push(Item::parse(&mut self.lexer)?);
+            self.parse_item()?;
         }
-        Ok(Module { name: Identifier(String::from("TOPLEVEL")), body: content })
+        Ok(Module { name: Identifier(String::from("TOPLEVEL")) })
     }
 
     /// Parse structure. keyword `struct` is expected to be consumed beforehand.

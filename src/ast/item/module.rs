@@ -6,7 +6,6 @@ use super::Item;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Module {
     pub name: Identifier,
-    pub body: Vec<Item>,
 }
 
 impl Module {
@@ -22,16 +21,6 @@ impl Module {
             }
             content.push(Item::parse(lexer)?);
         }
-        Ok(Module { name, body: content })
-    }
-
-    /// Parse toplevel module.
-    #[deprecated = "use Parser::parse_top_module"]
-    pub fn parse_toplevel(lexer: &mut Lexer) -> Result<Module, ParserError> {
-        let mut content = Vec::new();
-        while !lexer.is_eof() {
-            content.push(Item::parse(lexer)?);
-        }
-        Ok(Module { name: Identifier(String::from("TOPLEVEL")), body: content })
+        Ok(Module { name })
     }
 }
