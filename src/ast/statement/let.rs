@@ -9,6 +9,7 @@ pub struct LetStatement {
 }
 
 impl LetStatement {
+    #[deprecated = "use `Parser::parse_let`"]
     pub fn parse(lexer: &mut Lexer) -> Result<LetStatement, ParserError> {
         lexer.expect_keyword(Keyword::Let)?;
         let name = lexer.expect_identifier()?;

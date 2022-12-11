@@ -16,7 +16,7 @@ impl<'s> Parser<'s> {
             }
 
             if self.lexer.consume_keyword(Keyword::Let)? {
-                buffer.push(Statement::LetStatement(LetStatement::parse(&mut self.lexer)?));
+                buffer.push(Statement::LetStatement(self.parse_let()?));
                 continue;
             }
             
@@ -38,5 +38,24 @@ impl<'s> Parser<'s> {
             buffer.push(Statement::ExpressionStatement(expr));
         };
         Ok(Block { statements: buffer, expression: expr.map(Box::new) })
+    }
+
+    /// Parse let statement. `let` keyword is expected to be consumed beforehand.
+    pub fn parse_let(&mut self) -> Result<LetStatement, ParserError> {
+        self.lexer.expect_keyword(Keyword::Let)?;
+        let name = self.lexer.expect_identifier()?;
+        let mut statement = LetStatement {
+            name,
+            type_: None,
+            value: None,
+        };
+        if self.lexer.consume_punctuation(":")? {
+            statement.type_ = Some(self.lexer.expect_identifier()?);
+        }
+        if self.lexer.consume_punctuation("=")? {
+            statement.value = Some(Box::new(self.parse_expr()?));
+        }
+        self.lexer.expect_punctuation(";")?;
+        Ok(statement)
     }
 }
