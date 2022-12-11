@@ -1,6 +1,6 @@
 use self::item::Module;
 
-pub mod expressions;
+pub mod expression;
 pub mod item;
 pub mod statement;
 

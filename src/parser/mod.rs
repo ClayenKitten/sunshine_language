@@ -10,7 +10,7 @@ pub use expression::*;
 use thiserror::Error;
 
 use crate::ast::item::Item;
-use crate::ast::{expressions::Identifier};
+use crate::ast::{expression::Identifier};
 use crate::error::ErrorReporter;
 use crate::lexer::{Lexer, Token, punctuation::Punctuation, LexerError, keyword::Keyword};
 use crate::symbol_table::{SymbolTable, Path};

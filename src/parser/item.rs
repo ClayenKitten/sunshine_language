@@ -1,4 +1,4 @@
-use crate::{ast::{item::{Item, Function, Struct, Module, Field, Parameter}, expressions::Identifier}, lexer::{keyword::Keyword, Token, punctuation::Punctuation}};
+use crate::{ast::{item::{Item, Function, Struct, Module, Field, Parameter}, expression::Identifier}, lexer::{keyword::Keyword, Token, punctuation::Punctuation}};
 
 use super::{Parser, ParserError, UnexpectedTokenError};
 
@@ -130,7 +130,7 @@ impl<'s> Parser<'s> {
 
 #[cfg(test)]
 mod test {
-    use crate::{lexer::Lexer, ast::expressions::Identifier, input_stream::InputStream, parser::Parser};
+    use crate::{lexer::Lexer, ast::expression::Identifier, input_stream::InputStream, parser::Parser};
 
     use super::{Struct, Field};
 

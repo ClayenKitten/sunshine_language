@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::{lexer::{punctuation::Punctuation, Token}, parser::ParserError, ast::expressions::Expression};
+use crate::{lexer::{punctuation::Punctuation, Token}, parser::ParserError, ast::expression::Expression};
 
 use super::Parser;
 
