@@ -1,6 +1,6 @@
 use crate::lexer::{number::Number, punctuation::Punctuation};
 
-use super::statement::Block;
+use super::statement::Statement;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expression {
@@ -50,6 +50,13 @@ pub enum Literal {
     Number(Number),
     String(String),
     Boolean(bool),
+}
+
+/// Block is an expression that consists of a number of statements and an optional final expression.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Block {
+    pub statements: Vec<Statement>,
+    pub expression: Option<Box<Expression>>,
 }
 
 /// NAME(PARAMS, ...)

@@ -1,4 +1,4 @@
-use super::{expressions::Identifier, statement::Block};
+use super::expressions::{Identifier, Block};
 
 /// An Item is a static component of the package.
 #[derive(Debug, Clone, PartialEq, Eq)]

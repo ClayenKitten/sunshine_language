@@ -1,5 +1,5 @@
 use crate::{
-    ast::{expressions::{Expression, For, If, While, Literal, Identifier, FunctionCall}},
+    ast::{expressions::{Expression, For, If, While, Literal, Identifier, FunctionCall, Block}, statement::Statement},
     lexer::{keyword::Keyword, Token, punctuation::Punctuation}, parser::UnexpectedTokenError,
 };
 
@@ -62,6 +62,44 @@ impl<'s> Parser<'s> {
         } else {
             Ok(Expression::Variable(name))
         }
+    }
+
+    /// Parse block. Opening brace is expected to be consumed beforehand.
+    pub fn parse_block(&mut self) -> Result<Block, ParserError> {
+        let mut buffer = Vec::new();
+        let expr = loop {
+            if self.lexer.consume_punctuation("}")? {
+                break None;
+            }
+
+            if self.lexer.consume_keyword(Keyword::Fn)? || self.lexer.consume_keyword(Keyword::Struct)? {
+                self.parse_item()?;
+                continue;
+            }
+
+            if self.lexer.consume_keyword(Keyword::Let)? {
+                buffer.push(Statement::LetStatement(self.parse_let()?));
+                continue;
+            }
+            
+            if self.lexer.consume_keyword(Keyword::Break)? {
+                self.lexer.expect_punctuation(";")?;
+                buffer.push(Statement::Break);
+                continue;
+            }
+
+            let expr = self.parse_expr()?;
+            if self.lexer.consume_punctuation("}")? {
+                break Some(expr);
+            }
+            if expr.is_block_expression() {
+                self.lexer.consume_punctuation(";")?;
+            } else {
+                self.lexer.expect_punctuation(";")?;
+            }
+            buffer.push(Statement::ExpressionStatement(expr));
+        };
+        Ok(Block { statements: buffer, expression: expr.map(Box::new) })
     }
 
     /// Parse if loop. Keyword `if` is expected to be consumed beforehand.
