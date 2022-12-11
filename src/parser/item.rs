@@ -4,26 +4,27 @@ use super::{Parser, ParserError, UnexpectedTokenError};
 
 impl<'s> Parser<'s> {
     /// Try to parse an item.
-    pub fn parse_item(&mut self) -> Result<Item, ParserError> {
+    pub fn parse_item(&mut self) -> Result<(), ParserError> {
         let start = self.lexer.location;
         
-        if self.lexer.consume_keyword(Keyword::Fn)? {
-            return Ok(Item::Function(Function::parse(&mut self.lexer)?));
-        }
-        if self.lexer.consume_keyword(Keyword::Struct)? {
-            return Ok(Item::Struct(Struct::parse(&mut self.lexer)?));
-        }
-        if self.lexer.consume_keyword(Keyword::Mod)? {
-            return Ok(Item::Module(Module::parse(&mut self.lexer)?));
-        }
+        let item = if self.lexer.consume_keyword(Keyword::Fn)? {
+            Item::Function(Function::parse(&mut self.lexer)?)
+        } else if self.lexer.consume_keyword(Keyword::Struct)? {
+            Item::Struct(Struct::parse(&mut self.lexer)?)
+        } else if self.lexer.consume_keyword(Keyword::Mod)? {
+            Item::Module(Module::parse(&mut self.lexer)?)
+        } else {
+            let token = self.lexer.next()?;
+            self.error_reporter.error()
+                .message(String::from("expected an item"))
+                .starts_at(start)
+                .ends_at(self.lexer.location)
+                .report();
+            return Err(UnexpectedTokenError::UnexpectedToken(token).into());
+        };
 
-        let token = self.lexer.next()?;
-        self.error_reporter.error()
-            .message(String::from("expected an item"))
-            .starts_at(start)
-            .ends_at(self.lexer.location)
-            .report();
-        Err(UnexpectedTokenError::UnexpectedToken(token).into())
+        self.symbol_table.declare(self.scope.clone(), item);
+        Ok(())
     }
 
     /// Parse module. Keyword `mod` is expected to be consumed beforehand.

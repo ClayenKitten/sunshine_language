@@ -7,11 +7,12 @@ use thiserror::Error;
 use crate::ast::{expressions::Identifier, Ast, item::Module};
 use crate::error::ErrorReporter;
 use crate::lexer::{Lexer, Token, punctuation::Punctuation, LexerError, keyword::Keyword};
-use crate::symbol_table::SymbolTable;
+use crate::symbol_table::{SymbolTable, Path};
 
 pub struct Parser<'s> {
     pub symbol_table: SymbolTable,
     pub lexer: Lexer<'s>,
+    pub scope: Path,
     pub error_reporter: ErrorReporter,
 }
 
@@ -20,6 +21,7 @@ impl<'s> Parser<'s> {
         Self {
             symbol_table: SymbolTable::new(),
             lexer,
+            scope: Path::new(),
             error_reporter: ErrorReporter::new(),
         }
     }
