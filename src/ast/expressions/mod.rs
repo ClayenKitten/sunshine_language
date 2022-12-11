@@ -131,6 +131,7 @@ pub struct If {
 }
 
 impl If {
+    #[deprecated = "use `Parser::parse_if`"]
     pub fn parse(lexer: &mut Lexer) -> Result<If, ParserError> {
         let condition = Box::new(Expression::parse(lexer)?);
         lexer.expect_punctuation("{")?;
@@ -154,6 +155,7 @@ pub struct While {
 }
 
 impl While {
+    #[deprecated = "use `Parser::parse_while`"]
     pub fn parse(lexer: &mut Lexer) -> Result<While, ParserError> {
         let condition = Box::new(Expression::parse(lexer)?);
         lexer.expect_punctuation("{")?;
@@ -171,6 +173,7 @@ pub struct For {
 }
 
 impl For {
+    #[deprecated = "use `Parser::parse_for`"]
     pub fn parse(lexer: &mut Lexer) -> Result<For, ParserError> {
         let var = lexer.expect_identifier()?;
         lexer.expect_keyword(Keyword::In)?;

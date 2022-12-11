@@ -1,8 +1,10 @@
 mod item;
 mod statement;
+mod expression;
 
 pub use item::*;
 pub use statement::*;
+pub use expression::*;
 
 use thiserror::Error;
 
