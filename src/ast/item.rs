@@ -1,8 +1,14 @@
-use super::{Identifier, expression::Block};
+use super::{Identifier, expression::Block, Visibility};
 
 /// An Item is a static component of the package.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Item {
+pub struct Item {
+    kind: ItemKind,
+    visibility: Visibility,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ItemKind {
     Module(Module),
     Struct(Struct),
     Function(Function),
@@ -10,10 +16,17 @@ pub enum Item {
 
 impl Item {
     pub fn name(&self) -> &Identifier {
-        match self {
-            Item::Module(m) => &m.name,
-            Item::Struct(s) => &s.name,
-            Item::Function(f) => &f.name,
+        match &self.kind {
+            ItemKind::Module(m) => &m.name,
+            ItemKind::Struct(s) => &s.name,
+            ItemKind::Function(f) => &f.name,
+        }
+    }
+
+    pub fn new(item: impl Into<ItemKind>, visibility: Visibility) -> Self {
+        Self {
+            kind: item.into(),
+            visibility,
         }
     }
 }
@@ -24,11 +37,23 @@ pub struct Module {
     pub name: Identifier,
 }
 
+impl Into<ItemKind> for Module {
+    fn into(self) -> ItemKind {
+        ItemKind::Module(self)
+    }
+}
+
 /// A type that is composed of other types.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Struct {
     pub name: Identifier,
     pub fields: Vec<Field>,
+}
+
+impl Into<ItemKind> for Struct {
+    fn into(self) -> ItemKind {
+        ItemKind::Struct(self)
+    }
 }
 
 /// Field
@@ -47,6 +72,12 @@ pub struct Function {
     pub params: Vec<Parameter>,
     pub return_type: Option<Identifier>,
     pub body: Block,
+}
+
+impl Into<ItemKind> for Function {
+    fn into(self) -> ItemKind {
+        ItemKind::Function(self)
+    }
 }
 
 /// A parameter represents a value that the function expects you to pass when you call it.

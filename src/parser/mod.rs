@@ -9,6 +9,7 @@ pub use expression::*;
 
 use thiserror::Error;
 
+use crate::ast::Visibility;
 use crate::ast::{Identifier, item::Item};
 use crate::error::ErrorReporter;
 use crate::lexer::{Lexer, Token, punctuation::Punctuation, LexerError, keyword::Keyword};
@@ -33,7 +34,10 @@ impl<'s> Parser<'s> {
 
     pub fn parse(&mut self) -> Result<SymbolTable, ParserError> {
         let module = self.parse_top_module()?;
-        self.symbol_table.declare(self.scope.clone(), Item::Module(module));
+        self.symbol_table.declare(
+            self.scope.clone(),
+            Item::new(module, Visibility::Public)
+        );
         Ok(self.symbol_table.clone())
     }
 }

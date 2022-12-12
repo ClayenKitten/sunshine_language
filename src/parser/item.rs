@@ -1,4 +1,4 @@
-use crate::{ast::{Identifier, item::{Item, Function, Struct, Module, Field, Parameter}}, lexer::{keyword::Keyword, Token, punctuation::Punctuation}};
+use crate::{ast::{Identifier, item::{Item, Function, Struct, Module, Field, Parameter}, Visibility}, lexer::{keyword::Keyword, Token, punctuation::Punctuation}};
 
 use super::{Parser, ParserError, UnexpectedTokenError};
 
@@ -9,12 +9,18 @@ impl<'s> Parser<'s> {
     pub fn parse_item(&mut self) -> Result<(), ParserError> {
         let start = self.lexer.location;
         
+        let visibility = if self.lexer.consume_keyword(Keyword::Pub)? {
+            Visibility::Public
+        } else {
+            Visibility::default()
+        };
+
         let item = if self.lexer.consume_keyword(Keyword::Fn)? {
-            Item::Function(self.parse_fn()?)
+            Item::new(self.parse_fn()?, visibility)
         } else if self.lexer.consume_keyword(Keyword::Struct)? {
-            Item::Struct(self.parse_struct()?)
+            Item::new(self.parse_struct()?, visibility)
         } else if self.lexer.consume_keyword(Keyword::Mod)? {
-            Item::Module(self.parse_module()?)
+            Item::new(self.parse_module()?, visibility)
         } else {
             let token = self.lexer.next()?;
             self.error_reporter.error()
