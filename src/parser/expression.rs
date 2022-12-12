@@ -5,8 +5,9 @@ use crate::{
         Identifier,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
-    parser::{shunting_yard, Parser, ParserError, UnexpectedTokenError},
+    parser::{Parser, ParserError, UnexpectedTokenError, shunting_yard::{ReversePolishExpr, InfixExpr}},
 };
+
 
 /// [Expression]'s parsing.
 ///
@@ -14,7 +15,10 @@ use crate::{
 impl<'s> Parser<'s> {
     /// Parse expression.
     pub fn parse_expr(&mut self) -> Result<Expression, ParserError> {
-        shunting_yard::ReversePolishExpr::parse(self).map(|expr| expr.into_tree())
+        let infix = InfixExpr::parse(self)?;
+        let polish = Into::<ReversePolishExpr>::into(infix);
+        let tree = polish.into_tree();
+        Ok(tree)
     }
 
     /// Parse a single operand.

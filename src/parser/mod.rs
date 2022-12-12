@@ -51,6 +51,10 @@ pub enum ParserError {
     UnexpectedToken(#[from] UnexpectedTokenError),
     #[error("Unexpected EOF")]
     UnexpectedEof,
+    #[error("expected expression")]
+    ExpectedExpression,
+    #[error("unclosed parenthesis")]
+    UnclosedParenthesis,
     #[error("Lexer error occured: {0}.")]
     LexerError(#[from] LexerError),
 }
