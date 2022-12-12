@@ -219,19 +219,19 @@ pub enum Token {
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum LexerError {
-    #[error("Unexpected EOF.")]
+    #[error("unexpected EOF")]
     UnexpectedEOF,
-    #[error("String literal wasn't terminated.")]
+    #[error("string literal wasn't terminated")]
     UnterminatedString,
-    #[error("Identifier must contain only ascii alphanumeric and underscore characters.")]
+    #[error("identifier must contain only ascii alphanumeric and underscore characters")]
     InvalidIdentifier,
-    #[error("Invalid escape sentence.")]
+    #[error("invalid escape sentence")]
     InvalidEscape,
-    #[error("Invalid number.")]
+    #[error("invalid number")]
     InvalidNumber,
     #[error("unknown punctuation")]
     UnknownPunctuation(#[from] NotPunctuation),
-    #[error("Character `{0}` wasn't expected.")]
+    #[error("character `{0}` wasn't expected")]
     UnexpectedCharacter(char),
 }
 
