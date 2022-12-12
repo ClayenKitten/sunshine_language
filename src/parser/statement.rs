@@ -5,7 +5,6 @@ use super::{Parser, ParserError};
 impl<'s> Parser<'s> {
     /// Parse let statement. `let` keyword is expected to be consumed beforehand.
     pub fn parse_let(&mut self) -> Result<LetStatement, ParserError> {
-        self.lexer.expect_keyword(Keyword::Let)?;
         let name = self.lexer.expect_identifier()?;
         let mut statement = LetStatement {
             name,
