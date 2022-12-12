@@ -18,7 +18,7 @@ use crate::symbol_table::{SymbolTable, Path};
 pub struct Parser<'s> {
     pub symbol_table: SymbolTable,
     pub lexer: Lexer<'s>,
-    pub scope: Path,
+    scope: Path,
     pub error_reporter: ErrorReporter,
 }
 

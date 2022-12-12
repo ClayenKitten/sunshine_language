@@ -24,9 +24,15 @@ impl<'s> Parser<'s> {
                 .report();
             return Err(UnexpectedTokenError::UnexpectedToken(token).into());
         };
-
         self.symbol_table.declare(self.scope.clone(), item);
         Ok(())
+    }
+
+    fn subscope<R>(&mut self, ident: Identifier, func: impl Fn(&mut Parser<'s>) -> R) -> R {
+        self.scope.push(ident);
+        let result = func(self);
+        self.scope.pop();
+        result
     }
 
     /// Parse module. Keyword `mod` is expected to be consumed beforehand.
@@ -34,7 +40,10 @@ impl<'s> Parser<'s> {
         let name = self.lexer.expect_identifier()?;
         self.lexer.expect_punctuation("{")?;
         while !self.lexer.consume_punctuation("}")? {
-            self.parse_item()?;
+            self.subscope(
+                name.clone(),
+                |parser| parser.parse_item(),
+            )?;
         }
         Ok(Module { name })
     }
@@ -42,7 +51,10 @@ impl<'s> Parser<'s> {
     /// Parse toplevel module.
     pub fn parse_top_module(&mut self) -> Result<Module, ParserError> {
         while !self.lexer.is_eof() {
-            self.parse_item()?;
+            self.subscope(
+                Identifier(String::from("TOPLEVEL")),
+                |parser| parser.parse_item(),
+            )?;
         }
         Ok(Module { name: Identifier(String::from("TOPLEVEL")) })
     }
@@ -82,7 +94,10 @@ impl<'s> Parser<'s> {
         self.lexer.expect_punctuation("(")?;
         let params = self.parse_params()?;
         let return_type = self.parse_return_type()?;
-        let body = self.parse_block()?;
+        let body = self.subscope(
+            name.clone(),
+            |parser| parser.parse_block()
+        )?;
         
         Ok(Function {
             name,

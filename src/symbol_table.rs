@@ -19,7 +19,7 @@ impl SymbolTable {
     /// 
     /// `scope` is path to `item`'s parent.
     pub fn declare(&mut self, mut scope: Path, item: Item) {
-        scope.push(Identifier(item.name().to_string()));
+        scope.push(item.name().clone());
         self.declared.insert(scope, item);
     }
 }
@@ -30,11 +30,18 @@ pub struct Path(Vec<Identifier>);
 
 impl Path {
     pub fn new() -> Self {
-        Self(Vec::new())
+        Self(vec![Identifier(String::from("crate"))])
     }
 
     pub fn push(&mut self, ident: Identifier) {
         self.0.push(ident);
+    }
+
+    pub fn pop(&mut self) -> Identifier {
+        if self.0.len() > 1 {
+            return self.0.pop().unwrap();
+        }
+        self.0.last().unwrap().clone()
     }
 }
 
@@ -56,9 +63,8 @@ mod test {
     #[test]
     fn display() {
         let mut path = Path::new();
-        path.push(Identifier(String::from("crate_name")));
         path.push(Identifier(String::from("module1_name")));
         path.push(Identifier(String::from("module2_name")));
-        assert_eq!(String::from("crate_name::module1_name::module2_name"), path.to_string());
+        assert_eq!(String::from("crate::module1_name::module2_name"), path.to_string());
     }
 }

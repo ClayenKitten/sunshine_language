@@ -9,11 +9,11 @@ pub enum Item {
 }
 
 impl Item {
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &Identifier {
         match self {
-            Item::Module(m) => &m.name.0,
-            Item::Struct(s) => &s.name.0,
-            Item::Function(f) => &f.name.0,
+            Item::Module(m) => &m.name,
+            Item::Struct(s) => &s.name,
+            Item::Function(f) => &f.name,
         }
     }
 }
