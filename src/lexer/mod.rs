@@ -46,6 +46,13 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /// Discard next token.
+    /// 
+    /// That function ignores errors, so it should only be used after successful [peek](Lexer::peek) call.
+    pub fn discard(&mut self) {
+        let _ = self.next();
+    }
+
     /// Get next token without advancing an iterator.
     pub fn peek(&mut self) -> Result<Token, LexerError> {
         if self.current.is_none() {
