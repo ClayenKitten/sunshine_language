@@ -64,6 +64,12 @@ pub enum UnexpectedTokenError {
 }
 
 impl<'s> Lexer<'s> {
+    /// Check if the following token is provided punctuation without advancing.
+    pub fn peek_punctuation(&mut self, punc: &'static str) -> bool {
+        let Ok(token) = self.peek() else { return false; };
+        token == Token::Punctuation(Punctuation(punc))
+    }
+
     /// Checks if next token is provided punctuation and consumes it if so.
     ///
     /// # Returns
@@ -96,6 +102,28 @@ impl<'s> Lexer<'s> {
             Ok(Some(Identifier(ident)))
         } else {
             Ok(None)
+        }
+    }
+
+    /// Checks if next token is unary operator and consumes it if so.
+    pub fn consume_unary_operator(&mut self) -> Result<Option<Punctuation>, LexerError> {
+        match self.peek()? {
+            Token::Punctuation(punc) if punc.is_unary_operator() => {
+                self.discard();
+                Ok(Some(punc))
+            }
+            _ => Ok(None)
+        }
+    }
+
+    /// Checks if next token is binary operator and consumes it if so.
+    pub fn consume_binary_operator(&mut self) -> Result<Option<Punctuation>, LexerError> {
+        match self.peek()? {
+            Token::Punctuation(punc) if punc.is_binary_operator() => {
+                self.discard();
+                Ok(Some(punc))
+            }
+            _ => Ok(None)
         }
     }
 
