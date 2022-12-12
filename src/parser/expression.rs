@@ -1,44 +1,42 @@
 use crate::{
-    ast::{Identifier, expression::{Expression, For, If, While, Literal, FunctionCall, Block}, statement::Statement},
-    lexer::{keyword::Keyword, Token, punctuation::Punctuation}, parser::UnexpectedTokenError,
+    ast::{
+        expression::{Block, Expression, For, FunctionCall, If, Literal, While},
+        statement::Statement,
+        Identifier,
+    },
+    lexer::{keyword::Keyword, punctuation::Punctuation, Token},
+    parser::{shunting_yard, Parser, ParserError, UnexpectedTokenError},
 };
 
-use super::{Parser, ParserError, shunting_yard};
-
+/// [Expression]'s parsing.
+///
+/// [Expression]: crate::ast::expression::Expression
 impl<'s> Parser<'s> {
+    /// Parse expression.
     pub fn parse_expr(&mut self) -> Result<Expression, ParserError> {
-        shunting_yard::ReversePolishNotation::parse(self)
-            .map(|expr| expr.into_tree())
+        shunting_yard::ReversePolishExpr::parse(self).map(|expr| expr.into_tree())
     }
 
-    /// Parse a single operand
+    /// Parse a single operand.
     pub(super) fn parse_operand(&mut self) -> Result<Expression, ParserError> {
         let token = match self.lexer.next()? {
-            Token::Punctuation(Punctuation("{")) => {
-                Expression::Block(self.parse_block()?)
-            }
+            Token::Punctuation(Punctuation("{")) => Expression::Block(self.parse_block()?),
 
-            Token::Punctuation(_) => {
-                return Err(UnexpectedTokenError::TokenMismatch.into())
-            }
+            Token::Punctuation(_) => return Err(UnexpectedTokenError::TokenMismatch.into()),
 
             Token::Number(num) => Expression::Literal(Literal::Number(num)),
             Token::String(str) => Expression::Literal(Literal::String(str)),
 
-            Token::Keyword(kw) => {
-                match kw {
-                    Keyword::If => Expression::If(self.parse_if()?),
-                    Keyword::While => Expression::While(self.parse_while()?),
-                    Keyword::For => Expression::For(self.parse_for()?),
-                    Keyword::True => Expression::Literal(Literal::Boolean(true)),
-                    Keyword::False => Expression::Literal(Literal::Boolean(false)),
-                    _ => return Err(UnexpectedTokenError::TokenMismatch.into()),
-                }
-            }
-
-            Token::Identifier(ident) => {
-                self.maybe_function_call(Identifier(ident))?
+            Token::Keyword(kw) => match kw {
+                Keyword::If => Expression::If(self.parse_if()?),
+                Keyword::While => Expression::While(self.parse_while()?),
+                Keyword::For => Expression::For(self.parse_for()?),
+                Keyword::True => Expression::Literal(Literal::Boolean(true)),
+                Keyword::False => Expression::Literal(Literal::Boolean(false)),
+                _ => return Err(UnexpectedTokenError::TokenMismatch.into()),
             },
+
+            Token::Identifier(ident) => self.maybe_function_call(Identifier(ident))?,
 
             Token::Eof => return Err(ParserError::UnexpectedEof),
         };
@@ -54,7 +52,6 @@ impl<'s> Parser<'s> {
                 if self.lexer.consume_punctuation(")")? {
                     return Ok(Expression::FunctionCall(FunctionCall { name, params }));
                 } else if self.lexer.consume_punctuation(",")? {
-                    
                 } else {
                     return Err(UnexpectedTokenError::TokenMismatch.into());
                 }
@@ -72,7 +69,9 @@ impl<'s> Parser<'s> {
                 break None;
             }
 
-            if self.lexer.consume_keyword(Keyword::Fn)? || self.lexer.consume_keyword(Keyword::Struct)? {
+            if self.lexer.consume_keyword(Keyword::Fn)?
+                || self.lexer.consume_keyword(Keyword::Struct)?
+            {
                 self.parse_item()?;
                 continue;
             }
@@ -81,7 +80,7 @@ impl<'s> Parser<'s> {
                 buffer.push(Statement::LetStatement(self.parse_let()?));
                 continue;
             }
-            
+
             if self.lexer.consume_keyword(Keyword::Break)? {
                 self.lexer.expect_punctuation(";")?;
                 buffer.push(Statement::Break);
@@ -99,10 +98,13 @@ impl<'s> Parser<'s> {
             }
             buffer.push(Statement::ExpressionStatement(expr));
         };
-        Ok(Block { statements: buffer, expression: expr.map(Box::new) })
+        Ok(Block {
+            statements: buffer,
+            expression: expr.map(Box::new),
+        })
     }
 
-    /// Parse if loop. Keyword `if` is expected to be consumed beforehand.
+    /// Parse if loop. Keyword [if](Keyword::If) is expected to be consumed beforehand.
     pub fn parse_if(&mut self) -> Result<If, ParserError> {
         let condition = Box::new(self.parse_expr()?);
         self.lexer.expect_punctuation("{")?;
@@ -122,7 +124,7 @@ impl<'s> Parser<'s> {
         })
     }
 
-    /// Parse while loop. Keyword `while` is expected to be consumed beforehand.
+    /// Parse while loop. Keyword [while](Keyword::While) is expected to be consumed beforehand.
     pub fn parse_while(&mut self) -> Result<While, ParserError> {
         let condition = Box::new(self.parse_expr()?);
         self.lexer.expect_punctuation("{")?;
@@ -130,7 +132,7 @@ impl<'s> Parser<'s> {
         Ok(While { condition, body })
     }
 
-    /// Parse for loop. Keyword `for` is expected to be consumed beforehand.
+    /// Parse for loop. Keyword [for](Keyword::For) is expected to be consumed beforehand.
     pub fn parse_for(&mut self) -> Result<For, ParserError> {
         let var = self.lexer.expect_identifier()?;
         self.lexer.expect_keyword(Keyword::In)?;

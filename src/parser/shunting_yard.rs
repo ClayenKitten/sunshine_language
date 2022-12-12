@@ -1,17 +1,22 @@
+//! [Shunting yard algorithm](https://en.wikipedia.org/wiki/Shunting_yard_algorithm) is used to
+//! map expressions from infix notation to reverse polish notation.
+
 use std::collections::VecDeque;
 
-use crate::{lexer::{punctuation::Punctuation, Token}, parser::ParserError, ast::expression::Expression};
+use crate::{
+    ast::expression::Expression,
+    lexer::{punctuation::Punctuation, Token},
+    parser::{Parser, ParserError},
+};
 
-use super::Parser;
-
-/// An expression that stores a sequence of operands and operators.
+/// A sequence of operands and operators in [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation).
 #[derive(Debug, PartialEq, Eq)]
-pub struct ReversePolishNotation(VecDeque<PolishEntry>);
+pub struct ReversePolishExpr(VecDeque<PolishEntry>);
 
-impl ReversePolishNotation {
-    /// Parse binary expression.
-    /// 
-    /// Parsing continues until "stopper" punctuation met or error occur.
+impl ReversePolishExpr {
+    /// Parse infix expression.
+    ///
+    /// Parsing continues while it is valid infix expression.
     pub fn parse(parser: &mut Parser) -> Result<Self, ParserError> {
         let mut output = VecDeque::<PolishEntry>::new();
         let mut op_stack = Vec::<Operator>::new();
@@ -32,7 +37,7 @@ impl ReversePolishNotation {
                         }
                         output.push_back(op_stack.pop().unwrap().try_into().unwrap());
                     }
-                    
+
                     // Either `op_stack` is empty or left parenthesis is on the top at that point.
                     if op_stack.pop().is_none() {
                         break;
@@ -49,15 +54,19 @@ impl ReversePolishNotation {
                         break;
                     };
                     parser.lexer.next()?;
-                    
+
                     is_last_token_an_operand = false;
                     let priority = punc.priority();
-    
+
                     while let Some(top_op) = op_stack.last() {
                         if top_op == &Operator::LeftParenthesis {
                             break;
                         }
-                        if let Operator::Binary { priority: top_priority, .. } = top_op {
+                        if let Operator::Binary {
+                            priority: top_priority,
+                            ..
+                        } = top_op
+                        {
                             if *top_priority < priority {
                                 break;
                             }
@@ -65,7 +74,10 @@ impl ReversePolishNotation {
                         output.push_back(op_stack.pop().unwrap().try_into().unwrap());
                     }
                     if arity == 2 {
-                        op_stack.push(Operator::Binary { punc, priority: punc.priority() })
+                        op_stack.push(Operator::Binary {
+                            punc,
+                            priority: punc.priority(),
+                        })
                     } else if arity == 1 {
                         op_stack.push(Operator::Unary { punc })
                     }
@@ -79,13 +91,13 @@ impl ReversePolishNotation {
                     is_last_token_an_operand = true;
                 }
             }
-        };
+        }
 
         while let Some(op) = op_stack.pop() {
             output.push_back(op.try_into().unwrap());
         }
-        
-        Ok(ReversePolishNotation(output))
+
+        Ok(ReversePolishExpr(output))
     }
 
     /// Convert an RPN to expression tree.
@@ -95,9 +107,7 @@ impl ReversePolishNotation {
 
     fn get_node(buf: &mut VecDeque<PolishEntry>) -> Expression {
         match buf.pop_back().unwrap() {
-            PolishEntry::Operand(expr) => {
-                expr
-            }
+            PolishEntry::Operand(expr) => expr,
             PolishEntry::UnaryOperator(punc) => {
                 let value = Box::new(Self::get_node(buf));
                 Expression::Unary { op: punc, value }
@@ -105,21 +115,26 @@ impl ReversePolishNotation {
             PolishEntry::BinaryOperator(punc) => {
                 let right = Box::new(Self::get_node(buf));
                 let left = Box::new(Self::get_node(buf));
-                Expression::Binary { op: punc, left, right }
+                Expression::Binary {
+                    op: punc,
+                    left,
+                    right,
+                }
             }
         }
     }
 }
 
+/// An entry of RPN expression: operand or operator (unary or binary).
 #[derive(Debug, PartialEq, Eq)]
-enum PolishEntry {
+pub enum PolishEntry {
     Operand(Expression),
     UnaryOperator(Punctuation),
     BinaryOperator(Punctuation),
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum Operator {
+enum Operator {
     Unary { punc: Punctuation },
     Binary { punc: Punctuation, priority: u8 },
     LeftParenthesis,

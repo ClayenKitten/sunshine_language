@@ -1,20 +1,24 @@
-mod item;
-mod statement;
-mod expression;
-mod shunting_yard;
+//! Parsing stage of the compilation.
 
+mod expression;
+mod item;
+pub mod shunting_yard;
+mod statement;
+
+pub use expression::*;
 pub use item::*;
 pub use statement::*;
-pub use expression::*;
 
 use thiserror::Error;
 
-use crate::ast::Visibility;
-use crate::ast::{Identifier, item::Item};
-use crate::error::ErrorReporter;
-use crate::lexer::{Lexer, Token, punctuation::Punctuation, LexerError, keyword::Keyword};
-use crate::symbol_table::{SymbolTable, Path};
+use crate::{
+    ast::{item::Item, Identifier, Visibility},
+    error::ErrorReporter,
+    lexer::{keyword::Keyword, punctuation::Punctuation, Lexer, LexerError, Token},
+    symbol_table::{Path, SymbolTable},
+};
 
+/// Main interface to parsing process. Holds all data required to parse source into [SymbolTable].
 pub struct Parser<'s> {
     pub symbol_table: SymbolTable,
     pub lexer: Lexer<'s>,
@@ -34,22 +38,13 @@ impl<'s> Parser<'s> {
 
     pub fn parse(&mut self) -> Result<SymbolTable, ParserError> {
         let module = self.parse_top_module()?;
-        self.symbol_table.declare(
-            self.scope.clone(),
-            Item::new(module, Visibility::Public)
-        );
+        self.symbol_table
+            .declare(self.scope.clone(), Item::new(module, Visibility::Public));
         Ok(self.symbol_table.clone())
     }
 }
 
-#[derive(Debug, Error, PartialEq, Eq)]
-pub enum UnexpectedTokenError {
-    #[error("unexpected token: ")]
-    UnexpectedToken(Token),
-    #[error("token mismatch")]
-    TokenMismatch,
-}
-
+/// Error that has occured during parsing.
 #[derive(Debug, PartialEq, Eq, Error)]
 pub enum ParserError {
     #[error(transparent)]
@@ -60,11 +55,19 @@ pub enum ParserError {
     LexerError(#[from] LexerError),
 }
 
+#[derive(Debug, Error, PartialEq, Eq)]
+pub enum UnexpectedTokenError {
+    #[error("unexpected token: ")]
+    UnexpectedToken(Token),
+    #[error("token mismatch")]
+    TokenMismatch,
+}
+
 impl<'s> Lexer<'s> {
     /// Checks if next token is provided punctuation and consumes it if so.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// Returns `true` if provided punctuation matches.
     pub fn consume_punctuation(&mut self, punc: &'static str) -> Result<bool, ParserError> {
         if self.peek()? == Token::Punctuation(Punctuation(punc)) {
@@ -103,8 +106,11 @@ impl<'s> Lexer<'s> {
         if found == Token::Punctuation(Punctuation(expected)) {
             Ok(())
         } else {
-            self.error_reporter.error()
-                .message(format!("Expected punctuation `{expected}`, found {found:?}"))
+            self.error_reporter
+                .error()
+                .message(format!(
+                    "Expected punctuation `{expected}`, found {found:?}"
+                ))
                 .starts_at(start)
                 .ends_at(self.location)
                 .report();
@@ -119,7 +125,8 @@ impl<'s> Lexer<'s> {
         if found == Token::Keyword(keyword) {
             Ok(())
         } else {
-            self.error_reporter.error()
+            self.error_reporter
+                .error()
                 .message(format!("Expected keyword `{keyword}`, found {found:?}"))
                 .starts_at(start)
                 .ends_at(self.location)
@@ -135,7 +142,8 @@ impl<'s> Lexer<'s> {
         if let Token::Identifier(ident) = found {
             Ok(Identifier(ident))
         } else {
-            self.error_reporter.error()
+            self.error_reporter
+                .error()
                 .message(format!("Expected identifier, found {found:?}"))
                 .starts_at(start)
                 .ends_at(self.location)

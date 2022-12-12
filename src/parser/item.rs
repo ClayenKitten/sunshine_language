@@ -1,14 +1,25 @@
-use crate::{ast::{Identifier, item::{Item, Function, Struct, Module, Field, Parameter}, Visibility}, lexer::{keyword::Keyword, Token, punctuation::Punctuation}};
+use crate::{
+    ast::{
+        item::{Field, Function, Item, Module, Parameter, Struct},
+        Identifier, Visibility,
+    },
+    lexer::{keyword::Keyword, punctuation::Punctuation, Token},
+};
 
 use super::{Parser, ParserError, UnexpectedTokenError};
 
+/// [Item]'s parsing.
+///
+/// [Item]: crate::ast::item::Item
 impl<'s> Parser<'s> {
     /// Try to parse an item.
-    /// 
-    /// Stores resulting item in SymbolTable.
+    ///
+    /// Stores resulting item in parser's [SymbolTable].
+    ///
+    /// [SymbolTable]: crate::symbol_table::SymbolTable
     pub fn parse_item(&mut self) -> Result<(), ParserError> {
         let start = self.lexer.location;
-        
+
         let visibility = if self.lexer.consume_keyword(Keyword::Pub)? {
             Visibility::Public
         } else {
@@ -23,7 +34,8 @@ impl<'s> Parser<'s> {
             Item::new(self.parse_module()?, visibility)
         } else {
             let token = self.lexer.next()?;
-            self.error_reporter.error()
+            self.error_reporter
+                .error()
                 .message(String::from("expected an item"))
                 .starts_at(start)
                 .ends_at(self.lexer.location)
@@ -41,15 +53,12 @@ impl<'s> Parser<'s> {
         result
     }
 
-    /// Parse module. Keyword `mod` is expected to be consumed beforehand.
+    /// Parse module. Keyword [mod](Keyword::Mod) is expected to be consumed beforehand.
     pub fn parse_module(&mut self) -> Result<Module, ParserError> {
         let name = self.lexer.expect_identifier()?;
         self.lexer.expect_punctuation("{")?;
         while !self.lexer.consume_punctuation("}")? {
-            self.subscope(
-                name.clone(),
-                |parser| parser.parse_item(),
-            )?;
+            self.subscope(name.clone(), |parser| parser.parse_item())?;
         }
         Ok(Module { name })
     }
@@ -57,20 +66,21 @@ impl<'s> Parser<'s> {
     /// Parse toplevel module.
     pub fn parse_top_module(&mut self) -> Result<Module, ParserError> {
         while !self.lexer.is_eof() {
-            self.subscope(
-                Identifier(String::from("TOPLEVEL")),
-                |parser| parser.parse_item(),
-            )?;
+            self.subscope(Identifier(String::from("TOPLEVEL")), |parser| {
+                parser.parse_item()
+            })?;
         }
-        Ok(Module { name: Identifier(String::from("TOPLEVEL")) })
+        Ok(Module {
+            name: Identifier(String::from("TOPLEVEL")),
+        })
     }
 
-    /// Parse structure. keyword `struct` is expected to be consumed beforehand.
+    /// Parse structure. Keyword [struct](Keyword::Struct) is expected to be consumed beforehand.
     pub fn parse_struct(&mut self) -> Result<Struct, ParserError> {
         let name = self.lexer.expect_identifier()?;
         let mut fields = Vec::new();
         self.lexer.expect_punctuation("{")?;
-        
+
         while let Some(field) = self.parse_field()? {
             fields.push(field);
             if self.lexer.consume_punctuation("}")? {
@@ -81,7 +91,7 @@ impl<'s> Parser<'s> {
         }
         Ok(Struct { name, fields })
     }
-    
+
     /// Parse a single field of struct. Returns `None` if closing brace met instead.
     fn parse_field(&mut self) -> Result<Option<Field>, ParserError> {
         let Some(name) = self.lexer.consume_identifier()? else {
@@ -94,17 +104,14 @@ impl<'s> Parser<'s> {
         Ok(Some(Field { name, type_ }))
     }
 
-    /// Parse function from token stream. `fn` keyword is expected to be consumed beforehand.
+    /// Parse function from token stream. Keyword [fn](Keyword::Fn) is expected to be consumed beforehand.
     pub fn parse_fn(&mut self) -> Result<Function, ParserError> {
         let name = self.lexer.expect_identifier()?;
         self.lexer.expect_punctuation("(")?;
         let params = self.parse_params()?;
         let return_type = self.parse_return_type()?;
-        let body = self.subscope(
-            name.clone(),
-            |parser| parser.parse_block()
-        )?;
-        
+        let body = self.subscope(name.clone(), |parser| parser.parse_block())?;
+
         Ok(Function {
             name,
             params,
@@ -113,14 +120,14 @@ impl<'s> Parser<'s> {
         })
     }
 
-    /// Parse parameters. Opening parenthesis (`(`) is expected to be consumed beforehand.
+    /// Parse parameters. Opening parenthesis is expected to be consumed beforehand.
     fn parse_params(&mut self) -> Result<Vec<Parameter>, ParserError> {
         let mut params = Vec::new();
         loop {
             let name = match self.lexer.next()? {
                 Token::Identifier(ident) => Identifier(ident),
                 Token::Punctuation(Punctuation(")")) => break,
-                token => return Err(UnexpectedTokenError::UnexpectedToken(token).into())
+                token => return Err(UnexpectedTokenError::UnexpectedToken(token).into()),
             };
             self.lexer.expect_punctuation(":")?;
             let type_ = self.lexer.expect_identifier()?;
@@ -142,7 +149,7 @@ impl<'s> Parser<'s> {
                 let return_type = self.lexer.expect_identifier()?;
                 self.lexer.expect_punctuation("{")?;
                 Ok(Some(return_type))
-            },
+            }
             Token::Punctuation(Punctuation("{")) => Ok(None),
             token => Err(UnexpectedTokenError::UnexpectedToken(token).into()),
         }
@@ -151,9 +158,9 @@ impl<'s> Parser<'s> {
 
 #[cfg(test)]
 mod test {
-    use crate::{lexer::Lexer, ast::Identifier, input_stream::InputStream, parser::Parser};
+    use crate::{ast::Identifier, input_stream::InputStream, lexer::Lexer, parser::Parser};
 
-    use super::{Struct, Field};
+    use super::{Field, Struct};
 
     #[test]
     fn parse_empty_struct() {
@@ -180,9 +187,15 @@ mod test {
         let expected = Struct {
             name: Identifier(String::from("name")),
             fields: vec![
-                Field { name: Identifier(String::from("field1")), type_: Identifier(String::from("type1")) },
-                Field { name: Identifier(String::from("field2")), type_: Identifier(String::from("type2")) },
-            ]
+                Field {
+                    name: Identifier(String::from("field1")),
+                    type_: Identifier(String::from("type1")),
+                },
+                Field {
+                    name: Identifier(String::from("field2")),
+                    type_: Identifier(String::from("type2")),
+                },
+            ],
         };
         let produced = parser.parse_struct().unwrap();
         assert_eq!(expected, produced);
@@ -198,9 +211,15 @@ mod test {
         let expected = Struct {
             name: Identifier(String::from("name")),
             fields: vec![
-                Field { name: Identifier(String::from("field1")), type_: Identifier(String::from("type1")) },
-                Field { name: Identifier(String::from("field2")), type_: Identifier(String::from("type2")) },
-            ]
+                Field {
+                    name: Identifier(String::from("field1")),
+                    type_: Identifier(String::from("type1")),
+                },
+                Field {
+                    name: Identifier(String::from("field2")),
+                    type_: Identifier(String::from("type2")),
+                },
+            ],
         };
         let produced = parser.parse_struct().unwrap();
         assert_eq!(expected, produced);

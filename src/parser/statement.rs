@@ -1,9 +1,15 @@
-use crate::{ast::statement::LetStatement, lexer::keyword::Keyword};
+use crate::{
+    ast::statement::LetStatement,
+    parser::{Parser, ParserError},
+};
 
-use super::{Parser, ParserError};
-
+/// [Statement]'s parsing.
+///
+/// [Statement]: crate::ast::statement::Statement
 impl<'s> Parser<'s> {
-    /// Parse let statement. `let` keyword is expected to be consumed beforehand.
+    /// Parse let statement. [let] keyword is expected to be consumed beforehand.
+    ///
+    /// [let]: crate::lexer::keyword::Keyword::Let
     pub fn parse_let(&mut self) -> Result<LetStatement, ParserError> {
         let name = self.lexer.expect_identifier()?;
         let mut statement = LetStatement {
