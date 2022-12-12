@@ -1,4 +1,4 @@
-use super::expression::{Expression, Identifier};
+use super::{Identifier, expression::Expression};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {

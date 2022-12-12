@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use itertools::Itertools;
 
-use crate::ast::{expression::Identifier, item::Item};
+use crate::ast::{Identifier, item::Item};
 
 /// Symbol table stores all items known to compiler.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -66,7 +66,7 @@ impl Display for Path {
 
 #[cfg(test)]
 mod test {
-    use crate::ast::expression::Identifier;
+    use crate::ast::Identifier;
     use super::Path;
 
     #[test]

@@ -1,5 +1,5 @@
 use crate::{
-    ast::{expression::{Expression, For, If, While, Literal, Identifier, FunctionCall, Block}, statement::Statement},
+    ast::{Identifier, expression::{Expression, For, If, While, Literal, FunctionCall, Block}, statement::Statement},
     lexer::{keyword::Keyword, Token, punctuation::Punctuation}, parser::UnexpectedTokenError,
 };
 
