@@ -24,6 +24,15 @@ impl SymbolTable {
     }
 }
 
+impl Display for SymbolTable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (path, item) in self.declared.iter() {
+            writeln!(f, "{}\n{:#?}", path, item)?;
+        }
+        Ok(())
+    }
+}
+
 /// Path to Item.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Path(Vec<Identifier>);
