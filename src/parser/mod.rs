@@ -37,7 +37,7 @@ impl<'s> FileParser<'s> {
     }
 
     pub fn parse(&mut self) -> Result<SymbolTable, ParserError> {
-        let module = self.parse_top_module()?;
+        let module = self.parse_top_module(Identifier(String::from("crate")))?;
         self.symbol_table
             .declare(self.scope.clone(), Item::new(module, Visibility::Public));
         Ok(self.symbol_table.clone())

@@ -64,15 +64,11 @@ impl<'s> FileParser<'s> {
     }
 
     /// Parse toplevel module.
-    pub fn parse_top_module(&mut self) -> Result<Module, ParserError> {
+    pub fn parse_top_module(&mut self, name: Identifier) -> Result<Module, ParserError> {
         while !self.lexer.is_eof() {
-            self.subscope(Identifier(String::from("TOPLEVEL")), |parser| {
-                parser.parse_item()
-            })?;
+            self.subscope(name.clone(), |p| p.parse_item())?;
         }
-        Ok(Module {
-            name: Identifier(String::from("TOPLEVEL")),
-        })
+        Ok(Module { name })
     }
 
     /// Parse structure. Keyword [struct](Keyword::Struct) is expected to be consumed beforehand.
