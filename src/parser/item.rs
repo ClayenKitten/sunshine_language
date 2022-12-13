@@ -6,12 +6,12 @@ use crate::{
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
 };
 
-use super::{Parser, ParserError, UnexpectedTokenError};
+use super::{FileParser, ParserError, UnexpectedTokenError};
 
 /// [Item]'s parsing.
 ///
 /// [Item]: crate::ast::item::Item
-impl<'s> Parser<'s> {
+impl<'s> FileParser<'s> {
     /// Try to parse an item.
     ///
     /// Stores resulting item in parser's [SymbolTable].
@@ -46,7 +46,7 @@ impl<'s> Parser<'s> {
         Ok(())
     }
 
-    fn subscope<R>(&mut self, ident: Identifier, func: impl Fn(&mut Parser<'s>) -> R) -> R {
+    fn subscope<R>(&mut self, ident: Identifier, func: impl Fn(&mut FileParser<'s>) -> R) -> R {
         self.scope.push(ident);
         let result = func(self);
         self.scope.pop();
@@ -158,7 +158,7 @@ impl<'s> Parser<'s> {
 
 #[cfg(test)]
 mod test {
-    use crate::{ast::Identifier, input_stream::InputStream, lexer::Lexer, parser::Parser};
+    use crate::{ast::Identifier, input_stream::InputStream, lexer::Lexer, parser::FileParser};
 
     use super::{Field, Struct};
 
@@ -166,7 +166,7 @@ mod test {
     fn parse_empty_struct() {
         let input = InputStream::new("struct name {}");
         let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
+        let mut parser = FileParser::new(lexer);
 
         let _ = parser.lexer.next();
         let expected = Struct {
@@ -181,7 +181,7 @@ mod test {
     fn parse_struct_with_comma() {
         let input = InputStream::new("struct name { field1: type1, field2: type2, }");
         let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
+        let mut parser = FileParser::new(lexer);
 
         let _ = parser.lexer.next();
         let expected = Struct {
@@ -205,7 +205,7 @@ mod test {
     fn parse_struct_without_comma() {
         let input = InputStream::new("struct name { field1: type1, field2: type2 }");
         let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
+        let mut parser = FileParser::new(lexer);
 
         let _ = parser.lexer.next();
         let expected = Struct {

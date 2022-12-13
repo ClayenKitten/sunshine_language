@@ -6,7 +6,7 @@ use std::collections::VecDeque;
 use crate::{
     ast::expression::Expression,
     lexer::punctuation::Punctuation,
-    parser::{Parser, ParserError},
+    parser::{FileParser, ParserError},
 };
 
 /// A sequence of operands and operators in infix notation.
@@ -26,7 +26,7 @@ impl InfixExpr {
     /// # Errors
     ///
     /// Error will only be produced if parenthesis mismatches or operator without following operand occurs.
-    pub fn parse(parser: &mut Parser) -> Result<Self, ParserError> {
+    pub fn parse(parser: &mut FileParser) -> Result<Self, ParserError> {
         let mut depth = 0usize;
         let mut output = VecDeque::<InfixEntry>::new();
         let mut is_last_token_an_operand = false;
@@ -215,7 +215,7 @@ mod test {
             punctuation::Punctuation,
             Lexer,
         },
-        parser::{shunting_yard::InfixEntry, Parser},
+        parser::{shunting_yard::InfixEntry, FileParser},
     };
 
     use super::InfixExpr;
@@ -226,7 +226,7 @@ mod test {
 
         let input = InputStream::new("1 + 2 - (3 * 4) / -5");
         let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
+        let mut parser = FileParser::new(lexer);
         let parsed = InfixExpr::parse(&mut parser).expect("parsing failed");
         let expected = InfixExpr(
             vec![

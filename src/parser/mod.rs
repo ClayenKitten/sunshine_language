@@ -18,15 +18,15 @@ use crate::{
     symbol_table::{Path, SymbolTable},
 };
 
-/// Main interface to parsing process. Holds all data required to parse source into [SymbolTable].
-pub struct Parser<'s> {
+/// Interface to parse a single file into [SymbolTable].
+pub struct FileParser<'s> {
     pub symbol_table: SymbolTable,
     pub lexer: Lexer<'s>,
     scope: Path,
     pub error_reporter: ErrorReporter,
 }
 
-impl<'s> Parser<'s> {
+impl<'s> FileParser<'s> {
     pub fn new(lexer: Lexer<'s>) -> Self {
         Self {
             symbol_table: SymbolTable::new(),

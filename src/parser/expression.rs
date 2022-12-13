@@ -5,14 +5,14 @@ use crate::{
         Identifier,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
-    parser::{Parser, ParserError, UnexpectedTokenError, shunting_yard::{ReversePolishExpr, InfixExpr}},
+    parser::{FileParser, ParserError, UnexpectedTokenError, shunting_yard::{ReversePolishExpr, InfixExpr}},
 };
 
 
 /// [Expression]'s parsing.
 ///
 /// [Expression]: crate::ast::expression::Expression
-impl<'s> Parser<'s> {
+impl<'s> FileParser<'s> {
     /// Parse expression.
     pub fn parse_expr(&mut self) -> Result<Expression, ParserError> {
         let infix = InfixExpr::parse(self)?;

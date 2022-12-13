@@ -1,12 +1,12 @@
 use crate::{
     ast::statement::LetStatement,
-    parser::{Parser, ParserError},
+    parser::{FileParser, ParserError},
 };
 
 /// [Statement]'s parsing.
 ///
 /// [Statement]: crate::ast::statement::Statement
-impl<'s> Parser<'s> {
+impl<'s> FileParser<'s> {
     /// Parse let statement. [let] keyword is expected to be consumed beforehand.
     ///
     /// [let]: crate::lexer::keyword::Keyword::Let
