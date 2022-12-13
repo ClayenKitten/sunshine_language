@@ -39,18 +39,15 @@ pub struct Path(Vec<Identifier>);
 
 impl Path {
     pub fn new() -> Self {
-        Self(vec![Identifier(String::from("crate"))])
+        Self(Vec::new())
     }
 
     pub fn push(&mut self, ident: Identifier) {
         self.0.push(ident);
     }
 
-    pub fn pop(&mut self) -> Identifier {
-        if self.0.len() > 1 {
-            return self.0.pop().unwrap();
-        }
-        self.0.last().unwrap().clone()
+    pub fn pop(&mut self) -> Option<Identifier> {
+        self.0.pop()
     }
 }
 
@@ -72,6 +69,7 @@ mod test {
     #[test]
     fn display() {
         let mut path = Path::new();
+        path.push(Identifier(String::from("crate")));
         path.push(Identifier(String::from("module1_name")));
         path.push(Identifier(String::from("module2_name")));
         assert_eq!(String::from("crate::module1_name::module2_name"), path.to_string());
