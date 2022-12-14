@@ -2,8 +2,8 @@ use super::{Identifier, expression::Expression};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
-    ExpressionStatement(Expression),
-    LetStatement(LetStatement),
+    ExprStmt(Expression),
+    LetStmt(LetStatement),
     Break,
 }
 

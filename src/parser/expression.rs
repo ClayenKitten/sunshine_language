@@ -54,14 +54,14 @@ impl<'s> FileParser<'s> {
             loop {
                 params.push(self.parse_expr()?);
                 if self.lexer.consume_punctuation(")")? {
-                    return Ok(Expression::FunctionCall(FunctionCall { name, params }));
+                    return Ok(Expression::FnCall(FunctionCall { name, params }));
                 } else if self.lexer.consume_punctuation(",")? {
                 } else {
                     return Err(UnexpectedTokenError::TokenMismatch.into());
                 }
             }
         } else {
-            Ok(Expression::Variable(name))
+            Ok(Expression::Var(name))
         }
     }
 
@@ -81,7 +81,7 @@ impl<'s> FileParser<'s> {
             }
 
             if self.lexer.consume_keyword(Keyword::Let)? {
-                buffer.push(Statement::LetStatement(self.parse_let()?));
+                buffer.push(Statement::LetStmt(self.parse_let()?));
                 continue;
             }
 
@@ -100,7 +100,7 @@ impl<'s> FileParser<'s> {
             } else {
                 self.lexer.expect_punctuation(";")?;
             }
-            buffer.push(Statement::ExpressionStatement(expr));
+            buffer.push(Statement::ExprStmt(expr));
         };
         Ok(Block {
             statements: buffer,

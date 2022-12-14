@@ -11,7 +11,7 @@ pub enum Expression {
     While(While),
     For(For),
 
-    Identifier(Identifier),
+    Ident(Identifier),
     Literal(Literal),
 
     Unary {
@@ -24,8 +24,8 @@ pub enum Expression {
         right: Box<Expression>,
     },
 
-    FunctionCall(FunctionCall),
-    Variable(Identifier),
+    FnCall(FunctionCall),
+    Var(Identifier),
 }
 
 impl Expression {
