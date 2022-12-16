@@ -8,11 +8,25 @@ use crate::ast::{Identifier, item::Item};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SymbolTable {
     declared: HashMap<Path, Item>,
+    duplicated: Vec<(Path, Item)>,
 }
 
 impl SymbolTable {
     pub fn new() -> Self {
-        SymbolTable { declared: HashMap::new() }
+        SymbolTable {
+            declared: HashMap::new(),
+            duplicated: Vec::new(),
+        }
+    }
+
+    /// Merge two symbol tables.
+    pub fn extend(&mut self, other: SymbolTable) {
+        self.duplicated.extend(other.duplicated.into_iter());
+
+        self.declared.reserve(other.declared.len());
+        for (path, item) in other.declared {
+            self.try_insert(path, item);
+        }
     }
 
     /// Add new entry to symbol table.
@@ -20,7 +34,17 @@ impl SymbolTable {
     /// `scope` is path to `item`'s parent.
     pub fn declare(&mut self, mut scope: Path, item: Item) {
         scope.push(item.name().clone());
-        self.declared.insert(scope, item);
+        self.try_insert(scope, item);
+    }
+
+    /// Try to insert provided [Item] to `declared`. If it already exists, push it to `duplicated`
+    /// instead.
+    fn try_insert(&mut self, path: Path, item: Item) {
+        if self.declared.contains_key(&path) {
+            self.duplicated.push((path, item));
+        } else {
+            self.declared.insert(path, item);
+        }
     }
 }
 
