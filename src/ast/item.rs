@@ -17,7 +17,8 @@ pub enum ItemKind {
 impl Item {
     pub fn name(&self) -> &Identifier {
         match &self.kind {
-            ItemKind::Module(m) => &m.name,
+            ItemKind::Module(Module::Inline(ident)) => &ident,
+            ItemKind::Module(Module::Loadable(ident)) => &ident,
             ItemKind::Struct(s) => &s.name,
             ItemKind::Function(f) => &f.name,
         }
@@ -31,10 +32,13 @@ impl Item {
     }
 }
 
-/// Module is a scoped list of items.
+/// Module is a container for zero or more [items](Item).
+/// 
+/// Module may be either inline or loadable from separate file.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Module {
-    pub name: Identifier,
+pub enum Module {
+    Inline(Identifier),
+    Loadable(Identifier),
 }
 
 impl From<Module> for ItemKind {

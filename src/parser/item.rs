@@ -58,11 +58,16 @@ impl FileParser {
     /// Parse module. Keyword [mod](Keyword::Mod) is expected to be consumed beforehand.
     pub fn parse_module(&mut self) -> Result<Module, ParserError> {
         let name = self.lexer.expect_identifier()?;
+        
+        if self.lexer.consume_punctuation(";")? {
+            return Ok(Module::Loadable(name))
+        }
+
         self.lexer.expect_punctuation("{")?;
         while !self.lexer.consume_punctuation("}")? {
             self.subscope(name.clone(), |parser| parser.parse_item())?;
         }
-        Ok(Module { name })
+        Ok(Module::Inline(name))
     }
 
     /// Parse toplevel module.
@@ -70,7 +75,7 @@ impl FileParser {
         while !self.lexer.is_eof() {
             self.subscope(name.clone(), |p| p.parse_item())?;
         }
-        Ok(Module { name })
+        Ok(Module::Inline(name))
     }
 
     /// Parse structure. Keyword [struct](Keyword::Struct) is expected to be consumed beforehand.
