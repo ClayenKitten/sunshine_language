@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
+use std::{collections::{HashMap, hash_map}, fmt::Display, path::PathBuf};
 
 use itertools::Itertools;
 
@@ -46,6 +46,14 @@ impl SymbolTable {
             self.declared.insert(path, item);
         }
     }
+
+    pub fn iter(&self) -> hash_map::Iter<Path, Item> {
+        self.declared.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> hash_map::IterMut<Path, Item> {
+        self.declared.iter_mut()
+    }
 }
 
 impl Display for SymbolTable {
@@ -72,6 +80,13 @@ impl Path {
 
     pub fn pop(&mut self) -> Option<Identifier> {
         self.0.pop()
+    }
+
+    /// Map that [Path] to system's [PathBuf] relative to the main source file.
+    pub fn into_path_buf(self) -> PathBuf {
+        self.0.into_iter()
+            .map(|ident| ident.0)
+            .collect()
     }
 }
 
