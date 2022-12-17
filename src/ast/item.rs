@@ -3,8 +3,8 @@ use super::{Identifier, expression::Block, Visibility};
 /// An Item is a static component of the package.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Item {
-    kind: ItemKind,
-    visibility: Visibility,
+    pub kind: ItemKind,
+    pub visibility: Visibility,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
