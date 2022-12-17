@@ -14,7 +14,7 @@ pub use statement::*;
 use thiserror::Error;
 
 use crate::{
-    ast::{item::Item, Identifier, Visibility},
+    ast::{item::{Item, ItemKind, Module}, Identifier, Visibility},
     error::ErrorReporter,
     lexer::{keyword::Keyword, punctuation::Punctuation, Lexer, LexerError, Token},
     symbol_table::{Path, SymbolTable}, input_stream::InputStream,
@@ -37,12 +37,32 @@ impl Parser {
 
     /// Parse the whole package.
     pub fn parse(mut self) -> (Result<SymbolTable, ParserError>, ErrorReporter) {
-        let table = self.parse_file(&self.root.clone());
+        let table = self.parse_file_recursive(&self.root.clone());
         let error_reporter = Arc::try_unwrap(self.error_reporter)
             .expect("as all parsing processes ended, no other references are expected to exist")
             .into_inner()
             .expect("poisoning shouldn't have happened");
         (table, error_reporter)
+    }
+
+    /// Parse file and inline all its loadable modules.
+    fn parse_file_recursive(&mut self, path: &std::path::Path) -> Result<SymbolTable, ParserError> {
+        let mut table = self.parse_file(path)?;
+        let mut modules = Vec::<PathBuf>::new();
+        for (path, item) in table.iter_mut() {
+            match &mut item.kind {
+                ItemKind::Module(Module::Loadable(ident)) => {
+                    item.kind = ItemKind::Module(Module::Inline(ident.clone()));
+                    let path = path.clone();
+                    modules.push(self.submodule_path(path));
+                }
+                _ => { }
+            }
+        }
+        for module in modules {
+            table.extend(self.parse_file_recursive(&module)?);
+        }
+        Ok(table)
     }
 
     fn parse_file(&mut self, path: &std::path::Path) -> Result<SymbolTable, ParserError> {
@@ -52,6 +72,18 @@ impl Parser {
             .map(|input| Lexer::new(input, Arc::clone(&self.error_reporter)))
             .map(|lexer| FileParser::new(lexer, Arc::clone(&self.error_reporter)))
             .and_then(|mut parser| parser.parse())
+    }
+
+    fn submodule_path(&self, parent: Path) -> PathBuf {
+        let mut root_folder = {
+            let mut root = self.root.clone();
+            root.pop();
+            root
+        };
+        let parent = parent.into_path_buf();
+        root_folder.extend(parent.into_iter());
+        root_folder.set_extension("sun");
+        root_folder
     }
 }
 

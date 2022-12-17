@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, hash_map}, fmt::Display, path::PathBuf};
+use std::{collections::{HashMap, hash_map}, fmt::Display, path::PathBuf, slice};
 
 use itertools::Itertools;
 
@@ -82,9 +82,14 @@ impl Path {
         self.0.pop()
     }
 
+    pub fn iter(&self) -> slice::Iter<Identifier> {
+        self.0.iter()
+    }
+
     /// Map that [Path] to system's [PathBuf] relative to the main source file.
     pub fn into_path_buf(self) -> PathBuf {
         self.0.into_iter()
+            .skip(1)
             .map(|ident| ident.0)
             .collect()
     }
