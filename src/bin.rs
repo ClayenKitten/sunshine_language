@@ -1,7 +1,6 @@
-use std::{fs::read_to_string, path::PathBuf};
-
+use std::path::PathBuf;
 use clap::Parser as ArgParser;
-use compiler::{lexer::Lexer, input_stream::InputStream, parser::FileParser};
+use compiler::parser::Parser;
 
 #[derive(ArgParser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -12,17 +11,13 @@ struct Args {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-
-    let program = read_to_string(args.path)?;
-    let input = InputStream::new(&program);
-    let lexer = Lexer::new(input);
-    let mut parser = FileParser::new(lexer);
-    
-    match parser.parse() {
+    let parser = Parser::new(args.path);
+    let (symbol_table, error_reporter) = parser.parse();
+    match symbol_table {
         Ok(symbol_table) => println!("{}", symbol_table),
-        Err(e) => println!("{}", e),
+        Err(error) => println!("{}", error),
     }
-    println!("{}", parser.error_reporter);
+    println!("{}", error_reporter);
 
     Ok(())
 }

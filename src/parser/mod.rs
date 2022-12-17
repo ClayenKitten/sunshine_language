@@ -5,6 +5,8 @@ mod item;
 pub mod shunting_yard;
 mod statement;
 
+use std::{path::PathBuf, sync::{Mutex, Arc}};
+
 pub use expression::*;
 pub use item::*;
 pub use statement::*;
@@ -15,8 +17,43 @@ use crate::{
     ast::{item::Item, Identifier, Visibility},
     error::ErrorReporter,
     lexer::{keyword::Keyword, punctuation::Punctuation, Lexer, LexerError, Token},
-    symbol_table::{Path, SymbolTable},
+    symbol_table::{Path, SymbolTable}, input_stream::InputStream,
 };
+
+/// Interface to compute a [SymbolTable] of the whole project.
+pub struct Parser {
+    /// Path to the root file.
+    root: PathBuf,
+    error_reporter: Arc<Mutex<ErrorReporter>>,
+}
+
+impl Parser {
+    pub fn new(root: PathBuf) -> Self {
+        Parser {
+            root,
+            error_reporter: Arc::new(Mutex::new(ErrorReporter::new())),
+        }
+    }
+
+    /// Parse the whole package.
+    pub fn parse(mut self) -> (Result<SymbolTable, ParserError>, ErrorReporter) {
+        let table = self.parse_file(&self.root.clone());
+        let error_reporter = Arc::try_unwrap(self.error_reporter)
+            .expect("as all parsing processes ended, no other references are expected to exist")
+            .into_inner()
+            .expect("poisoning shouldn't have happened");
+        (table, error_reporter)
+    }
+
+    fn parse_file(&mut self, path: &std::path::Path) -> Result<SymbolTable, ParserError> {
+        std::fs::read_to_string(path)
+            .map_err(|e| ParserError::IoError(e))
+            .map(|src| InputStream::new(src))
+            .map(|input| Lexer::new(input))
+            .map(|lexer| FileParser::new(lexer))
+            .and_then(|mut parser| parser.parse())
+    }
+}
 
 /// Interface to parse a single file into [SymbolTable].
 pub struct FileParser {
@@ -45,7 +82,7 @@ impl FileParser {
 }
 
 /// Error that has occured during parsing.
-#[derive(Debug, PartialEq, Eq, Error)]
+#[derive(Debug, Error)]
 pub enum ParserError {
     #[error(transparent)]
     UnexpectedToken(#[from] UnexpectedTokenError),
@@ -57,6 +94,8 @@ pub enum ParserError {
     UnclosedParenthesis,
     #[error("Lexer error occured: {0}.")]
     LexerError(#[from] LexerError),
+    #[error("io error occured: {0}.")]
+    IoError(#[from] std::io::Error)
 }
 
 #[derive(Debug, Error, PartialEq, Eq)]
