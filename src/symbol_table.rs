@@ -82,6 +82,10 @@ impl Path {
         self.0.pop()
     }
 
+    pub fn last(&self) -> Option<&Identifier> {
+        self.0.last()
+    }
+
     pub fn iter(&self) -> slice::Iter<Identifier> {
         self.0.iter()
     }
