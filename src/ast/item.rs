@@ -37,9 +37,9 @@ pub struct Module {
     pub name: Identifier,
 }
 
-impl Into<ItemKind> for Module {
-    fn into(self) -> ItemKind {
-        ItemKind::Module(self)
+impl From<Module> for ItemKind {
+    fn from(val: Module) -> Self {
+        ItemKind::Module(val)
     }
 }
 
@@ -50,9 +50,9 @@ pub struct Struct {
     pub fields: Vec<Field>,
 }
 
-impl Into<ItemKind> for Struct {
-    fn into(self) -> ItemKind {
-        ItemKind::Struct(self)
+impl From<Struct> for ItemKind {
+    fn from(val: Struct) -> Self {
+        ItemKind::Struct(val)
     }
 }
 
@@ -74,9 +74,9 @@ pub struct Function {
     pub body: Block,
 }
 
-impl Into<ItemKind> for Function {
-    fn into(self) -> ItemKind {
-        ItemKind::Function(self)
+impl From<Function> for ItemKind {
+    fn from(val: Function) -> Self {
+        ItemKind::Function(val)
     }
 }
 

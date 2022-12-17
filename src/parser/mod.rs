@@ -47,8 +47,8 @@ impl Parser {
 
     fn parse_file(&mut self, path: &std::path::Path) -> Result<SymbolTable, ParserError> {
         std::fs::read_to_string(path)
-            .map_err(|e| ParserError::IoError(e))
-            .map(|src| InputStream::new(src))
+            .map_err(ParserError::IoError)
+            .map(InputStream::new)
             .map(|input| Lexer::new(input, Arc::clone(&self.error_reporter)))
             .map(|lexer| FileParser::new(lexer, Arc::clone(&self.error_reporter)))
             .and_then(|mut parser| parser.parse())
