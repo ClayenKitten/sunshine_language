@@ -6,7 +6,7 @@ use crate::{
 /// [Statement]'s parsing.
 ///
 /// [Statement]: crate::ast::statement::Statement
-impl<'s> FileParser<'s> {
+impl FileParser {
     /// Parse let statement. [let] keyword is expected to be consumed beforehand.
     ///
     /// [let]: crate::lexer::keyword::Keyword::Let

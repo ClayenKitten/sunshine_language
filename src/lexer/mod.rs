@@ -13,17 +13,17 @@ use crate::{input_stream::{InputStream, Location}, error::ErrorReporter};
 use self::{number::Number, punctuation::{Punctuation, NotPunctuation}, keyword::Keyword};
 
 /// A stream that returns tokens of programming language.
-#[derive(Debug, Clone)]
-pub struct Lexer<'a> {
+#[derive(Debug)]
+pub struct Lexer {
     /// Cached token.
     current: Option<Token>,
-    input: InputStream<'a>,
+    input: InputStream,
     pub location: Location,
     pub error_reporter: ErrorReporter,
 }
 
-impl<'a> Lexer<'a> {
-    pub fn new(input: InputStream<'a>) -> Self {
+impl Lexer {
+    pub fn new(input: InputStream) -> Self {
         let location = input.location();
         Self {
             current: None,

@@ -19,15 +19,15 @@ use crate::{
 };
 
 /// Interface to parse a single file into [SymbolTable].
-pub struct FileParser<'s> {
+pub struct FileParser {
     pub symbol_table: SymbolTable,
-    pub lexer: Lexer<'s>,
+    pub lexer: Lexer,
     scope: Path,
     pub error_reporter: ErrorReporter,
 }
 
-impl<'s> FileParser<'s> {
-    pub fn new(lexer: Lexer<'s>) -> Self {
+impl FileParser {
+    pub fn new(lexer: Lexer) -> Self {
         Self {
             symbol_table: SymbolTable::new(),
             lexer,
@@ -67,7 +67,7 @@ pub enum UnexpectedTokenError {
     TokenMismatch,
 }
 
-impl<'s> Lexer<'s> {
+impl Lexer {
     /// Check if the following token is provided punctuation without advancing.
     pub fn peek_punctuation(&mut self, punc: &'static str) -> bool {
         let Ok(token) = self.peek() else { return false; };

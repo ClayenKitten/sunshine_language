@@ -11,7 +11,7 @@ use super::{FileParser, ParserError, UnexpectedTokenError};
 /// [Item]'s parsing.
 ///
 /// [Item]: crate::ast::item::Item
-impl<'s> FileParser<'s> {
+impl FileParser {
     /// Try to parse an item.
     ///
     /// Stores resulting item in parser's [SymbolTable].
@@ -46,7 +46,7 @@ impl<'s> FileParser<'s> {
         Ok(())
     }
 
-    fn subscope<R>(&mut self, ident: Identifier, func: impl Fn(&mut FileParser<'s>) -> R) -> R {
+    fn subscope<R>(&mut self, ident: Identifier, func: impl Fn(&mut FileParser) -> R) -> R {
         self.scope.push(ident);
         let result = func(self);
         self.scope.pop();

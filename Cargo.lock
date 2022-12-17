@@ -63,6 +63,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "delegate-attr"
+version = "0.2.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee7e7ea0dba407429d816e8e38dda1a467cd74737722f2ccc8eae60429a1a3ab"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "either"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -109,6 +120,15 @@ name = "os_str_bytes"
 version = "6.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
+
+[[package]]
+name = "owned_chars"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09dbaf3100ac7057d6d4e885bb1cd85716f95b5690ac443b31fbf5aac206dc3b"
+dependencies = [
+ "delegate-attr",
+]
 
 [[package]]
 name = "proc-macro-error"
@@ -194,6 +214,7 @@ dependencies = [
  "clap",
  "itertools",
  "once_cell",
+ "owned_chars",
  "strum",
  "thiserror",
 ]

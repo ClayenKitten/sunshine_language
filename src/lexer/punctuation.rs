@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use super::{Lexer, Token, LexerError};
 
-impl<'a> Lexer<'a> {
+impl Lexer {
     /// Try to parse punctuation or operator from input stream.
     /// 
     /// Longest sequence of chars that represents punctuation is considered a token. So, `->` is returned rather than `-`.

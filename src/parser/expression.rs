@@ -12,7 +12,7 @@ use crate::{
 /// [Expression]'s parsing.
 ///
 /// [Expression]: crate::ast::expression::Expression
-impl<'s> FileParser<'s> {
+impl FileParser {
     /// Parse expression.
     pub fn parse_expr(&mut self) -> Result<Expression, ParserError> {
         let infix = InfixExpr::parse(self)?;
