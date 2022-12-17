@@ -4,7 +4,7 @@ pub mod number;
 pub mod punctuation;
 pub mod keyword;
 
-use std::{str::FromStr, mem::take};
+use std::{str::FromStr, mem::take, sync::{Mutex, Arc}};
 
 use thiserror::Error;
 
@@ -19,22 +19,18 @@ pub struct Lexer {
     current: Option<Token>,
     input: InputStream,
     pub location: Location,
-    pub error_reporter: ErrorReporter,
+    pub error_reporter: Arc<Mutex<ErrorReporter>>,
 }
 
 impl Lexer {
-    pub fn new(input: InputStream) -> Self {
+    pub fn new(input: InputStream, error_reporter: Arc<Mutex<ErrorReporter>>) -> Self {
         let location = input.location();
         Self {
             current: None,
             input,
             location,
-            error_reporter: ErrorReporter::new(),
+            error_reporter,
         }
-    }
-
-    pub fn error_reporter(&self) -> &ErrorReporter {
-        &self.error_reporter
     }
 
     /// Get next token.
@@ -72,7 +68,10 @@ impl Lexer {
         match self.read_token_inner() {
             Ok(token) => Ok(token),
             Err(err) => {
-                self.error_reporter.error()
+                self.error_reporter
+                    .lock()
+                    .unwrap()
+                    .error()
                     .starts_at(start)
                     .ends_at(self.input.location())
                     .message(err.to_string())
@@ -244,18 +243,20 @@ pub enum LexerError {
 
 #[cfg(test)]
 mod test {
+    use std::sync::{Arc, Mutex};
+
     use crate::{lexer::{
         number::{Base, Number},
         punctuation::Punctuation,
         keyword::Keyword, Token,
-    }, input_stream::InputStream};
+    }, input_stream::InputStream, error::ErrorReporter};
 
     use super::Lexer;
 
     #[test]
     fn return_string() {
         let input = InputStream::new("return \"x > 0\";");
-        let mut lexer = Lexer::new(input);
+        let mut lexer = Lexer::new(input, Arc::new(Mutex::new(ErrorReporter::new())));
 
         assert_eq!(
             lexer.next(),
@@ -274,7 +275,7 @@ mod test {
     #[test]
     fn assign_num_to_var() {
         let input = InputStream::new("let x = 123;");
-        let mut lexer = Lexer::new(input);
+        let mut lexer = Lexer::new(input, Arc::new(Mutex::new(ErrorReporter::new())));
 
         assert_eq!(
             lexer.next(),
@@ -307,7 +308,7 @@ mod test {
     #[test]
     fn if_with_else() {
         let input = InputStream::new("if x > 0. { return x; } else { return 0.; }");
-        let mut lexer = Lexer::new(input);
+        let mut lexer = Lexer::new(input, Arc::new(Mutex::new(ErrorReporter::new())));
 
         let x = Ok(Token::Identifier(String::from("x")));
         let _return = Ok(Token::Keyword(Keyword::Return));

@@ -49,8 +49,8 @@ impl Parser {
         std::fs::read_to_string(path)
             .map_err(|e| ParserError::IoError(e))
             .map(|src| InputStream::new(src))
-            .map(|input| Lexer::new(input))
-            .map(|lexer| FileParser::new(lexer))
+            .map(|input| Lexer::new(input, Arc::clone(&self.error_reporter)))
+            .map(|lexer| FileParser::new(lexer, Arc::clone(&self.error_reporter)))
             .and_then(|mut parser| parser.parse())
     }
 }
@@ -60,16 +60,16 @@ pub struct FileParser {
     pub symbol_table: SymbolTable,
     pub lexer: Lexer,
     scope: Path,
-    pub error_reporter: ErrorReporter,
+    pub error_reporter: Arc<Mutex<ErrorReporter>>,
 }
 
 impl FileParser {
-    pub fn new(lexer: Lexer) -> Self {
+    pub fn new(lexer: Lexer, error_reporter: Arc<Mutex<ErrorReporter>>) -> Self {
         Self {
             symbol_table: SymbolTable::new(),
             lexer,
             scope: Path::new(),
-            error_reporter: ErrorReporter::new(),
+            error_reporter,
         }
     }
 
@@ -178,6 +178,8 @@ impl Lexer {
             Ok(())
         } else {
             self.error_reporter
+                .lock()
+                .unwrap()
                 .error()
                 .message(format!(
                     "Expected punctuation `{expected}`, found {found:?}"
@@ -197,6 +199,8 @@ impl Lexer {
             Ok(())
         } else {
             self.error_reporter
+                .lock()
+                .unwrap()
                 .error()
                 .message(format!("Expected keyword `{keyword}`, found {found:?}"))
                 .starts_at(start)
@@ -214,6 +218,8 @@ impl Lexer {
             Ok(Identifier(ident))
         } else {
             self.error_reporter
+                .lock()
+                .unwrap()
                 .error()
                 .message(format!("Expected identifier, found {found:?}"))
                 .starts_at(start)

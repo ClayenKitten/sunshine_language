@@ -35,6 +35,8 @@ impl FileParser {
         } else {
             let token = self.lexer.next()?;
             self.error_reporter
+                .lock()
+                .unwrap()
                 .error()
                 .message(String::from("expected an item"))
                 .starts_at(start)
@@ -154,15 +156,17 @@ impl FileParser {
 
 #[cfg(test)]
 mod test {
-    use crate::{ast::Identifier, input_stream::InputStream, lexer::Lexer, parser::FileParser};
+    use std::sync::{Mutex, Arc};
+
+    use crate::{ast::Identifier, input_stream::InputStream, lexer::Lexer, parser::FileParser, error::ErrorReporter};
 
     use super::{Field, Struct};
 
     #[test]
     fn parse_empty_struct() {
         let input = InputStream::new("struct name {}");
-        let lexer = Lexer::new(input);
-        let mut parser = FileParser::new(lexer);
+        let lexer = Lexer::new(input, Arc::new(Mutex::new(ErrorReporter::new())));
+        let mut parser = FileParser::new(lexer, Arc::new(Mutex::new(ErrorReporter::new())));
 
         let _ = parser.lexer.next();
         let expected = Struct {
@@ -176,8 +180,8 @@ mod test {
     #[test]
     fn parse_struct_with_comma() {
         let input = InputStream::new("struct name { field1: type1, field2: type2, }");
-        let lexer = Lexer::new(input);
-        let mut parser = FileParser::new(lexer);
+        let lexer = Lexer::new(input, Arc::new(Mutex::new(ErrorReporter::new())));
+        let mut parser = FileParser::new(lexer, Arc::new(Mutex::new(ErrorReporter::new())));
 
         let _ = parser.lexer.next();
         let expected = Struct {
@@ -200,8 +204,8 @@ mod test {
     #[test]
     fn parse_struct_without_comma() {
         let input = InputStream::new("struct name { field1: type1, field2: type2 }");
-        let lexer = Lexer::new(input);
-        let mut parser = FileParser::new(lexer);
+        let lexer = Lexer::new(input, Arc::new(Mutex::new(ErrorReporter::new())));
+        let mut parser = FileParser::new(lexer, Arc::new(Mutex::new(ErrorReporter::new())));
 
         let _ = parser.lexer.next();
         let expected = Struct {
