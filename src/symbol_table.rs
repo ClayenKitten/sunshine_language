@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, hash_map}, fmt::Display, path::PathBuf, slice};
+use std::{collections::{HashMap, hash_map}, fmt::Display, path::PathBuf, slice, iter::once};
 
 use itertools::Itertools;
 
@@ -67,33 +67,38 @@ impl Display for SymbolTable {
 
 /// Path to Item.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Path(Vec<Identifier>);
+pub struct Path {
+    krate: Identifier,
+    other: Vec<Identifier>,
+}
 
 impl Path {
-    pub fn new() -> Self {
-        Self(Vec::new())
+    pub fn new(krate: impl Into<Identifier>) -> Self {
+        Self {
+            krate: krate.into(),
+            other: Vec::new(),
+        }
     }
 
     pub fn push(&mut self, ident: Identifier) {
-        self.0.push(ident);
+        self.other.push(ident);
     }
 
     pub fn pop(&mut self) -> Option<Identifier> {
-        self.0.pop()
+        self.other.pop()
     }
 
     pub fn last(&self) -> Option<&Identifier> {
-        self.0.last()
+        self.other.last()
     }
 
     pub fn iter(&self) -> slice::Iter<Identifier> {
-        self.0.iter()
+        self.other.iter()
     }
 
     /// Map that [Path] to system's [PathBuf] relative to the main source file.
     pub fn into_path_buf(self) -> PathBuf {
-        self.0.into_iter()
-            .skip(1)
+        self.other.into_iter()
             .map(|ident| ident.0)
             .collect()
     }
@@ -102,7 +107,8 @@ impl Path {
 impl Display for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         #[allow(unstable_name_collisions)]
-        self.0.iter()
+        once(&self.krate)
+            .chain(self.other.iter())
             .map(|ident| ident.0.as_str())
             .intersperse("::")
             .try_for_each(|s| write!(f, "{}", s))
@@ -116,8 +122,7 @@ mod test {
 
     #[test]
     fn display() {
-        let mut path = Path::new();
-        path.push(Identifier(String::from("crate")));
+        let mut path = Path::new(Identifier(String::from("crate")));
         path.push(Identifier(String::from("module1_name")));
         path.push(Identifier(String::from("module2_name")));
         assert_eq!(String::from("crate::module1_name::module2_name"), path.to_string());
