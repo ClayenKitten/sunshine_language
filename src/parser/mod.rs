@@ -17,7 +17,7 @@ use crate::{
     ast::{item::{Item, ItemKind, Module}, Identifier, Visibility},
     error::ErrorReporter,
     lexer::{keyword::Keyword, punctuation::Punctuation, Lexer, LexerError, Token},
-    symbol_table::{Path, SymbolTable}, input_stream::InputStream,
+    symbol_table::{ItemPath, SymbolTable}, input_stream::InputStream,
 };
 
 /// Interface to compute a [SymbolTable] of the whole project.
@@ -74,7 +74,7 @@ impl Parser {
             .and_then(|mut parser| parser.parse())
     }
 
-    fn submodule_path(&self, parent: Path) -> PathBuf {
+    fn submodule_path(&self, parent: ItemPath) -> PathBuf {
         let mut root_folder = {
             let mut root = self.root.clone();
             root.pop();
@@ -91,7 +91,7 @@ impl Parser {
 pub struct FileParser {
     pub symbol_table: SymbolTable,
     pub lexer: Lexer,
-    scope: Path,
+    scope: ItemPath,
     pub error_reporter: Arc<Mutex<ErrorReporter>>,
 }
 
@@ -100,7 +100,7 @@ impl FileParser {
         Self {
             symbol_table: SymbolTable::new(),
             lexer,
-            scope: Path::new(Identifier(String::from("crate"))),
+            scope: ItemPath::new(Identifier(String::from("crate"))),
             error_reporter,
         }
     }
