@@ -1,4 +1,7 @@
-use std::{collections::{HashMap, hash_map}, fmt::Display};
+use std::{
+    collections::{hash_map, HashMap},
+    fmt::Display,
+};
 
 use crate::ast::item::Item;
 
@@ -28,7 +31,7 @@ impl SymbolTable {
     }
 
     /// Add new entry to symbol table.
-    /// 
+    ///
     /// `scope` is path to `item`'s parent.
     pub fn declare(&mut self, mut scope: path::ItemPath, item: Item) {
         scope.push(item.name().clone());
@@ -64,11 +67,11 @@ impl Display for SymbolTable {
 }
 
 pub mod path {
-    use std::iter::once;
+    use itertools::Itertools;
     use std::fmt::Display;
+    use std::iter::once;
     use std::path::PathBuf;
     use std::slice;
-    use itertools::Itertools;
 
     use crate::ast::Identifier;
 
@@ -105,9 +108,7 @@ pub mod path {
 
         /// Map that [Path] to system's [PathBuf] relative to the main source file.
         pub fn into_path_buf(self) -> PathBuf {
-            self.other.into_iter()
-                .map(|ident| ident.0)
-                .collect()
+            self.other.into_iter().map(|ident| ident.0).collect()
         }
     }
 
@@ -131,7 +132,10 @@ pub mod path {
             let mut path = ItemPath::new(Identifier(String::from("crate")));
             path.push(Identifier(String::from("module1_name")));
             path.push(Identifier(String::from("module2_name")));
-            assert_eq!(String::from("crate::module1_name::module2_name"), path.to_string());
+            assert_eq!(
+                String::from("crate::module1_name::module2_name"),
+                path.to_string()
+            );
         }
     }
 }
