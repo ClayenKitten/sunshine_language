@@ -72,8 +72,10 @@ pub mod path {
     use std::iter::once;
     use std::path::PathBuf;
     use std::slice;
+    use std::str::FromStr;
+    use thiserror::Error;
 
-    use crate::ast::Identifier;
+    use crate::ast::{Identifier, IdentifierParseError};
 
     /// Path to Item.
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -123,8 +125,49 @@ pub mod path {
         }
     }
 
+    impl FromStr for ItemPath {
+        type Err = ItemPathParsingError;
+
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            let mut entries = s.split("::");
+            let krate = entries
+                .next()
+                .ok_or(ItemPathParsingError::ExpectedIdentifier)
+                .and_then(|s| {
+                    if s.is_empty() {
+                        Err(ItemPathParsingError::ExpectedIdentifier)
+                    } else {
+                        Ok(s)
+                    }
+                })
+                .and_then(|s| Identifier::from_str(s).map_err(Into::into))?;
+            let other = entries
+                .map(|s| {
+                    Identifier::from_str(s).map_err(|e| {
+                        if e == IdentifierParseError::Empty {
+                            ItemPathParsingError::ExpectedIdentifier
+                        } else {
+                            ItemPathParsingError::InvalidIdentifier(e)
+                        }
+                    })
+                })
+                .collect::<Result<_, _>>()?;
+            Ok(ItemPath { krate, other })
+        }
+    }
+
+    #[derive(Debug, PartialEq, Eq, Error)]
+    pub enum ItemPathParsingError {
+        #[error("expected identifier")]
+        ExpectedIdentifier,
+        #[error("invalid identifier, {0}")]
+        InvalidIdentifier(#[from] IdentifierParseError),
+    }
+
     #[cfg(test)]
     mod test {
+        use std::str::FromStr;
+
         use crate::{ast::Identifier, symbol_table::path::ItemPath};
 
         #[test]
@@ -136,6 +179,17 @@ pub mod path {
                 String::from("crate::module1_name::module2_name"),
                 path.to_string()
             );
+        }
+
+        #[test]
+        fn from_str() {
+            let mut path = ItemPath::new(Identifier(String::from("crate")));
+            path.push(Identifier(String::from("module1_name")));
+            path.push(Identifier(String::from("module2_name")));
+            assert_eq!(
+                path,
+                ItemPath::from_str("crate::module1_name::module2_name").unwrap()
+            )
         }
     }
 }
