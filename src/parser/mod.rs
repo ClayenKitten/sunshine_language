@@ -100,7 +100,7 @@ impl FileParser {
         Self {
             symbol_table: SymbolTable::new(),
             lexer,
-            scope: Path::new(),
+            scope: Path::new(Identifier(String::from("crate"))),
             error_reporter,
         }
     }
