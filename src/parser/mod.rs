@@ -17,7 +17,7 @@ use crate::{
     ast::{item::{Item, ItemKind, Module}, Identifier, Visibility},
     error::ErrorReporter,
     lexer::{keyword::Keyword, punctuation::Punctuation, Lexer, LexerError, Token},
-    symbol_table::{ItemPath, SymbolTable}, input_stream::InputStream,
+    symbol_table::{path::ItemPath, SymbolTable}, input_stream::InputStream,
 };
 
 /// Interface to compute a [SymbolTable] of the whole project.
