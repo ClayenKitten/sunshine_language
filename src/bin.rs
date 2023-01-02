@@ -5,8 +5,10 @@ use compiler::parser::Parser;
 #[derive(ArgParser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    #[arg(short, long)]
+    #[arg(help="Path to the root file of the crate", value_name="INPUT")]
     path: PathBuf,
+    #[arg(long, value_name="NAME", help="Specify the name of the crate being built")]
+    crate_name: Option<String>,
 }
 
 fn main() -> anyhow::Result<()> {
