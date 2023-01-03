@@ -5,7 +5,7 @@ mod item;
 pub mod shunting_yard;
 mod statement;
 
-use std::{path::PathBuf, sync::{Mutex, Arc}};
+use std::{path::PathBuf, sync::Arc};
 
 pub use expression::*;
 pub use item::*;
@@ -15,34 +15,28 @@ use thiserror::Error;
 
 use crate::{
     ast::{item::{Item, ItemKind, Module}, Identifier, Visibility},
-    error::ErrorReporter,
     lexer::{keyword::Keyword, punctuation::Punctuation, Lexer, LexerError, Token},
-    symbol_table::{path::ItemPath, SymbolTable}, input_stream::InputStream,
+    symbol_table::{path::ItemPath, SymbolTable}, input_stream::InputStream, context::Context,
 };
 
 /// Interface to compute a [SymbolTable] of the whole project.
 pub struct Parser {
     /// Path to the root file.
     root: PathBuf,
-    error_reporter: Arc<Mutex<ErrorReporter>>,
+    pub context: Arc<Context>,
 }
 
 impl Parser {
-    pub fn new(root: PathBuf) -> Self {
+    pub fn new(root: PathBuf, context: Arc<Context>) -> Self {
         Parser {
             root,
-            error_reporter: Arc::new(Mutex::new(ErrorReporter::new())),
+            context,
         }
     }
 
     /// Parse the whole package.
-    pub fn parse(mut self) -> (Result<SymbolTable, ParserError>, ErrorReporter) {
-        let table = self.parse_file_recursive(&self.root.clone());
-        let error_reporter = Arc::try_unwrap(self.error_reporter)
-            .expect("as all parsing processes ended, no other references are expected to exist")
-            .into_inner()
-            .expect("poisoning shouldn't have happened");
-        (table, error_reporter)
+    pub fn parse(&mut self) -> Result<SymbolTable, ParserError> {
+        self.parse_file_recursive(&self.root.clone())
     }
 
     /// Parse file and inline all its loadable modules.
@@ -69,8 +63,8 @@ impl Parser {
         std::fs::read_to_string(path)
             .map_err(ParserError::IoError)
             .map(InputStream::new)
-            .map(|input| Lexer::new(input, Arc::clone(&self.error_reporter)))
-            .map(|lexer| FileParser::new(lexer, Arc::clone(&self.error_reporter)))
+            .map(|input| Lexer::new(input, Arc::clone(&self.context)))
+            .map(|lexer| FileParser::new(lexer, Arc::clone(&self.context)))
             .and_then(|mut parser| parser.parse())
     }
 
@@ -92,16 +86,27 @@ pub struct FileParser {
     pub symbol_table: SymbolTable,
     pub lexer: Lexer,
     scope: ItemPath,
-    pub error_reporter: Arc<Mutex<ErrorReporter>>,
+    pub context: Arc<Context>,
 }
 
 impl FileParser {
-    pub fn new(lexer: Lexer, error_reporter: Arc<Mutex<ErrorReporter>>) -> Self {
+    pub fn new(lexer: Lexer, context: Arc<Context>) -> Self {
         Self {
             symbol_table: SymbolTable::new(),
             lexer,
             scope: ItemPath::new(Identifier(String::from("crate"))),
-            error_reporter,
+            context,
+        }
+    }
+
+    #[cfg(test)]
+    pub fn new_test(src: &str) -> Self {
+        let context = Arc::new(Context::new_test());
+        Self {
+            symbol_table: SymbolTable::new(),
+            lexer: Lexer::new(InputStream::new(src), Arc::clone(&context)),
+            scope: ItemPath::new(Identifier(String::from("crate"))),
+            context,
         }
     }
 
@@ -209,7 +214,7 @@ impl Lexer {
         if found == Token::Punctuation(Punctuation(expected)) {
             Ok(())
         } else {
-            self.error_reporter
+            self.context.error_reporter
                 .lock()
                 .unwrap()
                 .error()
@@ -230,7 +235,7 @@ impl Lexer {
         if found == Token::Keyword(keyword) {
             Ok(())
         } else {
-            self.error_reporter
+            self.context.error_reporter
                 .lock()
                 .unwrap()
                 .error()
@@ -249,7 +254,7 @@ impl Lexer {
         if let Token::Identifier(ident) = found {
             Ok(Identifier(ident))
         } else {
-            self.error_reporter
+            self.context.error_reporter
                 .lock()
                 .unwrap()
                 .error()
