@@ -94,7 +94,7 @@ impl FileParser {
         Self {
             symbol_table: SymbolTable::new(),
             lexer,
-            scope: ItemPath::new(Identifier(String::from("crate"))),
+            scope: ItemPath::new(Identifier(context.metadata.crate_name.clone())),
             context,
         }
     }
@@ -111,7 +111,7 @@ impl FileParser {
     }
 
     pub fn parse(&mut self) -> Result<SymbolTable, ParserError> {
-        let module = self.parse_top_module(Identifier(String::from("crate")))?;
+        let module = self.parse_top_module(Identifier(self.context.metadata.crate_name.clone()))?;
         self.symbol_table
             .declare(self.scope.clone(), Item::new(module, Visibility::Public));
         Ok(self.symbol_table.clone())
