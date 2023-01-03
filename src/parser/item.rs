@@ -73,7 +73,7 @@ impl FileParser {
     /// Parse toplevel module.
     pub fn parse_top_module(&mut self, name: Identifier) -> Result<Module, ParserError> {
         while !self.lexer.is_eof() {
-            self.subscope(name.clone(), |p| p.parse_item())?;
+            self.parse_item()?;
         }
         Ok(Module::Inline(name))
     }

@@ -38,6 +38,10 @@ impl SymbolTable {
         self.try_insert(scope, item);
     }
 
+    pub fn declare_anonymous(&mut self, scope: path::ItemPath, item: Item) {
+        self.try_insert(scope, item);
+    }
+
     /// Try to insert provided [Item] to `declared`. If it already exists, push it to `duplicated`
     /// instead.
     fn try_insert(&mut self, path: path::ItemPath, item: Item) {
@@ -100,8 +104,9 @@ pub mod path {
             self.other.pop()
         }
 
-        pub fn last(&self) -> Option<&Identifier> {
+        pub fn last(&self) -> &Identifier {
             self.other.last()
+                .unwrap_or(&self.krate)
         }
 
         pub fn iter(&self) -> slice::Iter<Identifier> {

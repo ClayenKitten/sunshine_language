@@ -111,9 +111,9 @@ impl FileParser {
     }
 
     pub fn parse(&mut self) -> Result<SymbolTable, ParserError> {
-        let module = self.parse_top_module(Identifier(self.context.metadata.crate_name.clone()))?;
+        let module = self.parse_top_module(self.scope.last().clone())?;
         self.symbol_table
-            .declare(self.scope.clone(), Item::new(module, Visibility::Public));
+            .declare_anonymous(self.scope.clone(), Item::new(module, Visibility::Public));
         Ok(self.symbol_table.clone())
     }
 }
