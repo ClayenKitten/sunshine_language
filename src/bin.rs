@@ -14,7 +14,7 @@ struct Args {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let crate_name = args.crate_name
-        .unwrap_or_else(|| args.path.file_name().unwrap().to_string_lossy().to_string());
+        .unwrap_or_else(|| args.path.file_stem().unwrap().to_string_lossy().to_string());
     let context = Context {
         metadata: Metadata { crate_name },
         error_reporter: Mutex::new(ErrorReporter::new()),
