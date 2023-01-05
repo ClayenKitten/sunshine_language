@@ -4,6 +4,7 @@ use super::{Identifier, expression::Expression};
 pub enum Statement {
     ExprStmt(Expression),
     LetStmt(LetStatement),
+    Return(Expression),
     Break,
 }
 

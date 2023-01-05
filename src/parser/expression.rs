@@ -81,6 +81,12 @@ impl FileParser {
                 continue;
             }
 
+            if self.lexer.consume_keyword(Keyword::Return)? {
+                buffer.push(Statement::Return(self.parse_expr()?));
+                self.lexer.expect_punctuation(";")?;
+                continue;
+            }
+
             if self.lexer.consume_keyword(Keyword::Let)? {
                 buffer.push(Statement::LetStmt(self.parse_let()?));
                 continue;
