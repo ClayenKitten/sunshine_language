@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::{Mutex, Arc}};
 use clap::Parser as ArgParser;
-use compiler::{parser::Parser, context::{Context, Metadata}, error::ErrorReporter};
+use compiler::{parser::Parser, context::{Context, Metadata, Emit}, error::ErrorReporter};
 
 #[derive(ArgParser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -9,6 +9,8 @@ struct Args {
     path: PathBuf,
     #[arg(long, value_name="NAME", help="Specify the name of the crate being built")]
     crate_name: Option<String>,
+    #[arg(long, default_value = "binary")]
+    emit: Emit,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -16,7 +18,7 @@ fn main() -> anyhow::Result<()> {
     let crate_name = args.crate_name
         .unwrap_or_else(|| args.path.file_stem().unwrap().to_string_lossy().to_string());
     let context = Context {
-        metadata: Metadata { crate_name },
+        metadata: Metadata { crate_name, emit_type: args.emit },
         error_reporter: Mutex::new(ErrorReporter::new()),
     };
     let mut parser = Parser::new(args.path, Arc::new(context));
