@@ -1,6 +1,6 @@
-use std::{path::PathBuf, sync::{Mutex, Arc}};
+use std::{path::PathBuf, sync::{Mutex, Arc}, io::stdout};
 use clap::Parser as ArgParser;
-use compiler::{parser::Parser, context::{Context, Metadata, Emit}, error::ErrorReporter};
+use compiler::{parser::Parser, context::{Context, Metadata, Emit}, error::ErrorReporter, ast::pretty_print::print_table};
 
 #[derive(ArgParser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -24,11 +24,14 @@ fn main() -> anyhow::Result<()> {
     let mut parser = Parser::new(args.path, Arc::new(context));
     
     let symbol_table = parser.parse();
-    match symbol_table {
-        Ok(symbol_table) => println!("{}", symbol_table),
-        Err(error) => println!("{}", error),
-    }
 
     println!("{}", parser.context.error_reporter.lock().unwrap());
+
+    match parser.context.metadata.emit_type {
+        Emit::Ast => print_table(&mut stdout(), &symbol_table?)?,
+        Emit::LlvmIr => todo!(),
+        Emit::Binary => todo!(),
+    };
+
     Ok(())
 }

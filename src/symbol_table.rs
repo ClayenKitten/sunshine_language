@@ -8,7 +8,7 @@ use crate::ast::item::Item;
 /// Symbol table stores all items known to compiler.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SymbolTable {
-    declared: HashMap<path::ItemPath, Item>,
+    pub declared: HashMap<path::ItemPath, Item>,
     duplicated: Vec<(path::ItemPath, Item)>,
 }
 
