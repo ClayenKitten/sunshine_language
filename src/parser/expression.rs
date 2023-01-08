@@ -5,9 +5,11 @@ use crate::{
         Identifier,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
-    parser::{FileParser, ParserError, UnexpectedTokenError, shunting_yard::{ReversePolishExpr, InfixExpr}},
+    parser::{
+        shunting_yard::{InfixExpr, ReversePolishExpr},
+        FileParser, ParserError, UnexpectedTokenError,
+    },
 };
-
 
 /// [Expression]'s parsing.
 ///
@@ -23,28 +25,27 @@ impl FileParser {
 
     /// Parse a single operand.
     pub(super) fn parse_operand(&mut self) -> Result<Expression, ParserError> {
-        let token = match self.lexer.next()? {
+        use Keyword::*;
+        Ok(match self.lexer.next()? {
             Token::Punctuation(Punctuation("{")) => Expression::Block(self.parse_block()?),
-
-            Token::Punctuation(_) => return Err(UnexpectedTokenError::TokenMismatch.into()),
 
             Token::Number(num) => Expression::Literal(Literal::Number(num)),
             Token::String(str) => Expression::Literal(Literal::String(str)),
 
-            Token::Keyword(kw) => match kw {
-                Keyword::If => Expression::If(self.parse_if()?),
-                Keyword::While => Expression::While(self.parse_while()?),
-                Keyword::For => Expression::For(self.parse_for()?),
-                Keyword::True => Expression::Literal(Literal::Boolean(true)),
-                Keyword::False => Expression::Literal(Literal::Boolean(false)),
-                _ => return Err(UnexpectedTokenError::TokenMismatch.into()),
-            },
+            Token::Keyword(If) => Expression::If(self.parse_if()?),
+            Token::Keyword(While) => Expression::While(self.parse_while()?),
+            Token::Keyword(For) => Expression::For(self.parse_for()?),
+            Token::Keyword(True) => Expression::Literal(Literal::Boolean(true)),
+            Token::Keyword(False) => Expression::Literal(Literal::Boolean(false)),
 
             Token::Identifier(ident) => self.maybe_function_call(Identifier(ident))?,
 
             Token::Eof => return Err(ParserError::UnexpectedEof),
-        };
-        Ok(token)
+
+            Token::Punctuation(_) | Token::Keyword(_) => {
+                return Err(UnexpectedTokenError::TokenMismatch.into())
+            }
+        })
     }
 
     /// Try to wrap provided identifier in function call.
@@ -77,6 +78,12 @@ impl FileParser {
                 || self.lexer.consume_keyword(Keyword::Struct)?
             {
                 self.parse_item()?;
+                continue;
+            }
+
+            if self.lexer.consume_keyword(Keyword::Return)? {
+                buffer.push(Statement::Return(self.parse_expr()?));
+                self.lexer.expect_punctuation(";")?;
                 continue;
             }
 

@@ -8,7 +8,7 @@ use crate::ast::item::Item;
 /// Symbol table stores all items known to compiler.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SymbolTable {
-    declared: HashMap<path::ItemPath, Item>,
+    pub declared: HashMap<path::ItemPath, Item>,
     duplicated: Vec<(path::ItemPath, Item)>,
 }
 
@@ -35,6 +35,10 @@ impl SymbolTable {
     /// `scope` is path to `item`'s parent.
     pub fn declare(&mut self, mut scope: path::ItemPath, item: Item) {
         scope.push(item.name().clone());
+        self.try_insert(scope, item);
+    }
+
+    pub fn declare_anonymous(&mut self, scope: path::ItemPath, item: Item) {
         self.try_insert(scope, item);
     }
 
@@ -100,8 +104,9 @@ pub mod path {
             self.other.pop()
         }
 
-        pub fn last(&self) -> Option<&Identifier> {
+        pub fn last(&self) -> &Identifier {
             self.other.last()
+                .unwrap_or(&self.krate)
         }
 
         pub fn iter(&self) -> slice::Iter<Identifier> {

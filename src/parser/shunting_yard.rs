@@ -207,17 +207,13 @@ impl TryFrom<Operator> for PolishEntry {
 
 #[cfg(test)]
 mod test {
-    use std::sync::{Mutex, Arc};
-
     use crate::{
         ast::expression::{Expression, Literal},
-        input_stream::InputStream,
         lexer::{
             number::{Base, Number},
             punctuation::Punctuation,
-            Lexer,
         },
-        parser::{shunting_yard::InfixEntry, FileParser}, error::ErrorReporter,
+        parser::{shunting_yard::InfixEntry, FileParser},
     };
 
     use super::InfixExpr;
@@ -226,9 +222,7 @@ mod test {
     fn infix_parsing() {
         use InfixEntry::*;
 
-        let input = InputStream::new("1 + 2 - (3 * 4) / -5");
-        let lexer = Lexer::new(input, Arc::new(Mutex::new(ErrorReporter::new())));
-        let mut parser = FileParser::new(lexer, Arc::new(Mutex::new(ErrorReporter::new())));
+        let mut parser = FileParser::new_test("1 + 2 - (3 * 4) / -5");
         let parsed = InfixExpr::parse(&mut parser).expect("parsing failed");
         let expected = InfixExpr(
             vec![
