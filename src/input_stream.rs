@@ -1,3 +1,5 @@
+//! Iterator of characters.
+
 use std::{fmt::{Debug, Display}, cmp::Ordering, collections::VecDeque};
 
 use owned_chars::{OwnedCharIndices, OwnedCharsExt};

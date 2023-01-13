@@ -1,3 +1,5 @@
+//! Source code and file hierarchy management.
+
 use std::{fs, collections::HashMap, path::{PathBuf, Path}, io::{Read, self}};
 use thiserror::Error;
 

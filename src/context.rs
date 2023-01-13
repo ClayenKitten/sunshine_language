@@ -1,3 +1,5 @@
+//! Compiler context.
+
 use std::sync::Mutex;
 
 use clap::ValueEnum;

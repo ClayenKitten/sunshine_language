@@ -1,4 +1,4 @@
-//! Error reporting
+//! Error reporting.
 
 use std::fmt::Display;
 

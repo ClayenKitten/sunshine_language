@@ -1,4 +1,4 @@
-//! Lexer
+//! Iterator of tokens.
 
 pub mod number;
 pub mod punctuation;

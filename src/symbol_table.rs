@@ -1,3 +1,5 @@
+//! Symbol table of [items](Item).
+
 use std::{
     collections::{hash_map, HashMap},
     fmt::Display,
