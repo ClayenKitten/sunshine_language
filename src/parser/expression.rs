@@ -6,7 +6,7 @@ use crate::{
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
     parser::{
-        shunting_yard::{InfixExpr, ReversePolishExpr},
+        operator_expression::{InfixExpr, ReversePolishExpr},
         FileParser, ParserError, UnexpectedTokenError,
     },
 };
