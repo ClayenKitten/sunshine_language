@@ -152,3 +152,28 @@ impl FromStr for Punctuation {
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 #[error("provided string is not punctuation")]
 pub struct NotPunctuation(String);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AssignOp {
+    Assign,
+    AddAssign,
+    SubAssign,
+    MulAssign,
+    DivAssign,
+}
+
+impl TryFrom<Punctuation> for AssignOp {
+    type Error = ();
+
+    fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
+        use AssignOp::*;
+        Ok(match value.0 {
+            "=" => Assign,
+            "+=" => AddAssign,
+            "-=" => SubAssign,
+            "*=" => MulAssign,
+            "/=" => DivAssign,
+            _ => return Err(()),
+        })
+    }
+}

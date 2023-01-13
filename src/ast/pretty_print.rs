@@ -8,7 +8,7 @@ use crate::{
 use super::{
     expression::{Block, Expression, For, FunctionCall, If, Literal, While},
     item::{ItemKind, Module},
-    statement::{LetStatement, Statement},
+    statement::{LetStatement, Statement, Assignment},
     Visibility,
 };
 
@@ -66,6 +66,11 @@ fn print_stmt(w: &mut impl Write, stmt: &Statement, ident: usize) -> Result<()> 
                 write!(w, " = ")?;
                 print_expr(w, value, ident)?;
             }
+            writeln!(w, ";")?;
+        }
+        Statement::Assignment(Assignment { assignee, operator, value }) => {
+            write!(w, "{} {} ", assignee, operator.0)?;
+            print_expr(w, value, ident)?;
             writeln!(w, ";")?;
         }
         Statement::Return(expr) => {
