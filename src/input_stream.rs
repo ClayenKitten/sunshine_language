@@ -106,6 +106,17 @@ mod test {
     use crate::input_stream::InputStream;
 
     #[test]
+    fn iteration() {
+        let s = "Hello, мир 🌐! ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ?";
+        let mut stream = InputStream::new(s);
+        for ch in s.chars() {
+            print!("{}", ch);
+            assert_eq!(Some(ch), stream.next());
+        }
+        assert_eq!(None, stream.next());
+    }
+
+    #[test]
     fn location() {
         let mut stream = InputStream::new("x = 5;\ny = 2;");
         assert_eq!(0, stream.location.line);
