@@ -115,7 +115,7 @@ pub mod path {
             self.other.iter()
         }
 
-        /// Map that [Path] to system's [PathBuf] relative to the main source file.
+        /// Map that [ItemPath] to system's [PathBuf] relative to the main source file.
         pub fn into_path_buf(self) -> PathBuf {
             self.other.into_iter().map(|ident| ident.0).collect()
         }
