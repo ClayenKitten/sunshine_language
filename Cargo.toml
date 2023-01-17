@@ -10,7 +10,7 @@ anyhow = "1.0.65"
 clap = { version = "4.0.15", features = ["derive"] }
 itertools = "0.10.5"
 once_cell = "1.16.0"
-owned_chars = { git = "https://github.com/ClayenKitten/owned-chars.git" }
+owned_chars = { git = "https://github.com/durka/owned-chars.git" }
 strum = { version = "0.24.1", features = ["derive"] }
 thiserror = "1.0.37"
 
