@@ -16,10 +16,10 @@ use thiserror::Error;
 use crate::{
     ast::{item::{Item, ItemKind, Module}, Identifier, Visibility},
     lexer::{keyword::Keyword, punctuation::Punctuation, Lexer, LexerError, Token},
-    symbol_table::{path::ItemPath, SymbolTable}, input_stream::InputStream, context::Context,
+    item_table::{path::ItemPath, ItemTable}, input_stream::InputStream, context::Context,
 };
 
-/// Interface to compute a [SymbolTable] of the whole project.
+/// Interface to compute a [ItemTable] of the whole project.
 pub struct Parser {
     /// Path to the root file.
     root: PathBuf,
@@ -35,12 +35,12 @@ impl Parser {
     }
 
     /// Parse the whole package.
-    pub fn parse(&mut self) -> Result<SymbolTable, ParserError> {
+    pub fn parse(&mut self) -> Result<ItemTable, ParserError> {
         self.parse_file_recursive(&self.root.clone())
     }
 
     /// Parse file and inline all its loadable modules.
-    fn parse_file_recursive(&mut self, path: &std::path::Path) -> Result<SymbolTable, ParserError> {
+    fn parse_file_recursive(&mut self, path: &std::path::Path) -> Result<ItemTable, ParserError> {
         let mut table = self.parse_file(path)?;
         let mut modules = Vec::<PathBuf>::new();
         for (path, item) in table.iter_mut() {
@@ -59,7 +59,7 @@ impl Parser {
         Ok(table)
     }
 
-    fn parse_file(&mut self, path: &std::path::Path) -> Result<SymbolTable, ParserError> {
+    fn parse_file(&mut self, path: &std::path::Path) -> Result<ItemTable, ParserError> {
         std::fs::read_to_string(path)
             .map_err(ParserError::IoError)
             .map(InputStream::new)
@@ -81,9 +81,9 @@ impl Parser {
     }
 }
 
-/// Interface to parse a single file into [SymbolTable].
+/// Interface to parse a single file into [ItemTable].
 pub struct FileParser {
-    pub symbol_table: SymbolTable,
+    pub item_table: ItemTable,
     pub lexer: Lexer,
     scope: ItemPath,
     pub context: Arc<Context>,
@@ -92,7 +92,7 @@ pub struct FileParser {
 impl FileParser {
     pub fn new(lexer: Lexer, context: Arc<Context>) -> Self {
         Self {
-            symbol_table: SymbolTable::new(),
+            item_table: ItemTable::new(),
             lexer,
             scope: ItemPath::new(Identifier(context.metadata.crate_name.clone())),
             context,
@@ -103,18 +103,18 @@ impl FileParser {
     pub fn new_test(src: &str) -> Self {
         let context = Arc::new(Context::new_test());
         Self {
-            symbol_table: SymbolTable::new(),
+            item_table: ItemTable::new(),
             lexer: Lexer::new(InputStream::new(src), Arc::clone(&context)),
             scope: ItemPath::new(Identifier(String::from("crate"))),
             context,
         }
     }
 
-    pub fn parse(&mut self) -> Result<SymbolTable, ParserError> {
+    pub fn parse(&mut self) -> Result<ItemTable, ParserError> {
         let module = self.parse_top_module(self.scope.last().clone())?;
-        self.symbol_table
+        self.item_table
             .declare_anonymous(self.scope.clone(), Item::new(module, Visibility::Public));
-        Ok(self.symbol_table.clone())
+        Ok(self.item_table.clone())
     }
 }
 

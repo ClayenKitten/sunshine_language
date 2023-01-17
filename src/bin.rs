@@ -23,12 +23,12 @@ fn main() -> anyhow::Result<()> {
     };
     let mut parser = Parser::new(args.path, Arc::new(context));
     
-    let symbol_table = parser.parse();
+    let item_table = parser.parse();
 
     println!("{}", parser.context.error_reporter.lock().unwrap());
 
     match parser.context.metadata.emit_type {
-        Emit::Ast => print_table(&mut stdout(), &symbol_table?)?,
+        Emit::Ast => print_table(&mut stdout(), &item_table?)?,
         Emit::LlvmIr => todo!(),
         Emit::Binary => todo!(),
     };

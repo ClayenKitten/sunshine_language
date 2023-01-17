@@ -2,7 +2,7 @@ use std::io::{Result, Write};
 
 use crate::{
     lexer::number::{Base, Number},
-    symbol_table::SymbolTable,
+    item_table::ItemTable,
 };
 
 use super::{
@@ -13,7 +13,7 @@ use super::{
     Visibility,
 };
 
-pub fn print_table(w: &mut impl Write, table: &SymbolTable) -> Result<()> {
+pub fn print_table(w: &mut impl Write, table: &ItemTable) -> Result<()> {
     for (path, item) in table.declared.iter() {
         writeln!(w, "[{}]", path)?;
         if item.visibility == Visibility::Public {

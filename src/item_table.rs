@@ -1,4 +1,7 @@
 //! Symbol table of [items](Item).
+//!
+//! Items have special scope and visibility rules as opposed to variable bindings.
+//! As such, they are stored in special data structure.
 
 use std::{
     collections::{hash_map, HashMap},
@@ -7,23 +10,27 @@ use std::{
 
 use crate::ast::item::Item;
 
-/// Symbol table stores all items known to compiler.
+/// Table of all known items.
+///
+/// See the [module documentation] for details.
+///
+/// [module documentation]: crate::item_table
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SymbolTable {
+pub struct ItemTable {
     pub declared: HashMap<path::ItemPath, Item>,
     duplicated: Vec<(path::ItemPath, Item)>,
 }
 
-impl SymbolTable {
+impl ItemTable {
     pub fn new() -> Self {
-        SymbolTable {
+        ItemTable {
             declared: HashMap::new(),
             duplicated: Vec::new(),
         }
     }
 
-    /// Merge two symbol tables.
-    pub fn extend(&mut self, other: SymbolTable) {
+    /// Merge two item tables.
+    pub fn extend(&mut self, other: ItemTable) {
         self.duplicated.extend(other.duplicated.into_iter());
 
         self.declared.reserve(other.declared.len());
@@ -32,7 +39,7 @@ impl SymbolTable {
         }
     }
 
-    /// Add new entry to symbol table.
+    /// Add new entry to item table.
     ///
     /// `scope` is path to `item`'s parent.
     pub fn declare(&mut self, mut scope: path::ItemPath, item: Item) {
@@ -63,7 +70,7 @@ impl SymbolTable {
     }
 }
 
-impl Display for SymbolTable {
+impl Display for ItemTable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (path, item) in self.declared.iter() {
             writeln!(f, "{}\n{:#?}", path, item)?;
@@ -107,8 +114,7 @@ pub mod path {
         }
 
         pub fn last(&self) -> &Identifier {
-            self.other.last()
-                .unwrap_or(&self.krate)
+            self.other.last().unwrap_or(&self.krate)
         }
 
         pub fn iter(&self) -> slice::Iter<Identifier> {
@@ -175,7 +181,7 @@ pub mod path {
     mod test {
         use std::str::FromStr;
 
-        use crate::{ast::Identifier, symbol_table::path::ItemPath};
+        use crate::{ast::Identifier, item_table::path::ItemPath};
 
         #[test]
         fn display() {

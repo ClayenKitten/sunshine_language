@@ -14,9 +14,9 @@ use super::{FileParser, ParserError, UnexpectedTokenError};
 impl FileParser {
     /// Try to parse an item.
     ///
-    /// Stores resulting item in parser's [SymbolTable].
+    /// Stores resulting item in parser's [ItemTable].
     ///
-    /// [SymbolTable]: crate::symbol_table::SymbolTable
+    /// [ItemTable]: crate::item_table::ItemTable
     pub fn parse_item(&mut self) -> Result<(), ParserError> {
         let start = self.lexer.location;
 
@@ -44,7 +44,7 @@ impl FileParser {
                 .report();
             return Err(UnexpectedTokenError::UnexpectedToken(token).into());
         };
-        self.symbol_table.declare(self.scope.clone(), item);
+        self.item_table.declare(self.scope.clone(), item);
         Ok(())
     }
 
