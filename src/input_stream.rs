@@ -60,7 +60,7 @@ impl InputStream {
 
     /// Create slice of source code.
     pub fn slice(&mut self, from: Location, to: Location) -> &str {
-        self.iter.as_str().get(from.pos .. to.pos)
+        self.iter.get_inner().get(from.pos .. to.pos)
             .expect("slice is expected to be in boundaries")
     }
 

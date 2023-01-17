@@ -124,8 +124,7 @@ checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
 [[package]]
 name = "owned_chars"
 version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09dbaf3100ac7057d6d4e885bb1cd85716f95b5690ac443b31fbf5aac206dc3b"
+source = "git+https://github.com/ClayenKitten/owned-chars.git#12f2695d11c76f892f127a9bf00d3537a74c0a07"
 dependencies = [
  "delegate-attr",
 ]
