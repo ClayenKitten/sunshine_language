@@ -5,6 +5,7 @@ pub mod identifier;
 pub mod item;
 pub mod statement;
 pub mod pretty_print;
+pub mod block;
 
 pub use identifier::*;
 

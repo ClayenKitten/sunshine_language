@@ -6,7 +6,8 @@ use crate::{
 };
 
 use super::{
-    expression::{Block, Expression, For, FunctionCall, If, Literal, While},
+    block::Block,
+    expression::{Expression, For, FunctionCall, If, Literal, While},
     item::{ItemKind, Module},
     statement::{LetStatement, Statement, Assignment},
     Visibility,
