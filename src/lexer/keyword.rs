@@ -1,4 +1,4 @@
-use strum::{EnumString, Display};
+use strum::{Display, EnumString};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, Display)]
 #[strum(serialize_all = "lowercase")]

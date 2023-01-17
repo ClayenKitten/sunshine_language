@@ -1,12 +1,12 @@
-use std::{str::FromStr, collections::HashMap};
 use once_cell::sync::Lazy;
+use std::{collections::HashMap, str::FromStr};
 use thiserror::Error;
 
-use super::{Lexer, Token, LexerError};
+use super::{Lexer, LexerError, Token};
 
 impl Lexer {
     /// Try to parse punctuation or operator from input stream.
-    /// 
+    ///
     /// Longest sequence of chars that represents punctuation is considered a token. So, `->` is returned rather than `-`.
     pub(super) fn read_punctuation(&mut self) -> Result<Token, LexerError> {
         let mut buffer = String::with_capacity(*MAX_PUNCTUATION_LENGTH);
@@ -20,7 +20,7 @@ impl Lexer {
 
             result = Punctuation::from_str(&buffer).ok().or(result);
         }
-        
+
         result
             .map(|punc| {
                 self.input.nth(punc.0.len() - 1);
@@ -43,7 +43,7 @@ struct PuncProps {
     /// Priority of operator. Equals zero for everything except binary operators.
     pub priority: u8,
     /// Does that punctuation represent assignment binary operator.
-    /// 
+    ///
     /// Assignment operator may only appear once in an expression.
     pub is_assign: bool,
 }
@@ -57,49 +57,43 @@ static DICT: Lazy<HashMap<&'static str, PuncProps>> = Lazy::new(|| {
         ("*", 128),
         ("/", 128),
         ("%", 128),
-        
-        ("+",  96),
-        ("-",  96),
-        
+        ("+", 96),
+        ("-", 96),
         (">>", 64),
         ("<<", 64),
-        
         ("&", 50),
         ("^", 49),
         ("|", 48),
-        
         ("&&", 32),
         ("||", 32),
-        
         ("==", 16),
         ("!=", 16),
-        (">",  16),
-        ("<",  16),
+        (">", 16),
+        ("<", 16),
         (">=", 16),
         ("<=", 16),
     ]);
-    
+
     punc.into_iter()
         .chain(unary)
         .chain(assign)
         .chain(binary.keys().copied())
         .map(|s| {
-            (s, PuncProps {
-                is_unary_op: unary.contains(&s),
-                is_binary_op: binary.contains_key(&s) || assign.contains(&s),
-                priority: binary.get(&s).copied().unwrap_or(0),
-                is_assign: assign.contains(&s)
-            })
+            (
+                s,
+                PuncProps {
+                    is_unary_op: unary.contains(&s),
+                    is_binary_op: binary.contains_key(&s) || assign.contains(&s),
+                    priority: binary.get(&s).copied().unwrap_or(0),
+                    is_assign: assign.contains(&s),
+                },
+            )
         })
         .collect()
 });
 
-static MAX_PUNCTUATION_LENGTH: Lazy<usize> = Lazy::new(|| {
-    DICT.keys()
-        .map(|punc| punc.len())
-        .max()
-        .unwrap_or_default()
-});
+static MAX_PUNCTUATION_LENGTH: Lazy<usize> =
+    Lazy::new(|| DICT.keys().map(|punc| punc.len()).max().unwrap_or_default());
 
 impl Punctuation {
     pub fn new(s: &'static str) -> Self {

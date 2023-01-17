@@ -1,6 +1,11 @@
 //! Source code and file hierarchy management.
 
-use std::{fs, collections::HashMap, path::{PathBuf, Path}, io::{Read, self}};
+use std::{
+    collections::HashMap,
+    fs,
+    io::{self, Read},
+    path::{Path, PathBuf},
+};
 use thiserror::Error;
 
 /// The structure that holds the whole source code of the compiled program.
@@ -12,11 +17,11 @@ pub struct SourceMap {
 
 impl SourceMap {
     /// Create new [SourceMap] with path to root folder.
-    /// 
+    ///
     /// Compiler will seek for `bin.sun` in provided folder.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// Error is only returned if `root/bin.sun` is not found or couldn't be opened.
     pub fn new(root: PathBuf) -> Result<Self, SourceError> {
         if !root.is_dir() {
@@ -40,7 +45,7 @@ impl SourceMap {
 }
 
 /// A single file of the source code.
-/// 
+///
 /// File's content is buffered.
 #[derive(Debug)]
 enum SourceFile {
@@ -51,8 +56,7 @@ enum SourceFile {
 impl SourceFile {
     /// Open new file without reading it.
     pub fn new(path: impl AsRef<Path>) -> io::Result<SourceFile> {
-        fs::File::open(path)
-            .map(SourceFile::Opened)
+        fs::File::open(path).map(SourceFile::Opened)
     }
 
     /// Read file to string slice.
@@ -64,9 +68,7 @@ impl SourceFile {
                 *self = SourceFile::Loaded(buf);
                 self.read()
             }
-            SourceFile::Loaded(string) => {
-                Ok(string.as_str())
-            },
+            SourceFile::Loaded(string) => Ok(string.as_str()),
         }
     }
 
@@ -77,7 +79,7 @@ impl SourceFile {
                 let mut buf = String::new();
                 file.read_to_string(&mut buf)?;
                 buf
-            },
+            }
         })
     }
 }
@@ -100,5 +102,5 @@ pub enum SourceError {
     #[error("provided path `{0}` is not found")]
     NotFound(PathBuf),
     #[error("{0}")]
-    IoError(#[from] io::Error)
+    IoError(#[from] io::Error),
 }

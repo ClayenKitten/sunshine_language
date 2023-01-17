@@ -1,4 +1,4 @@
-use super::{Identifier, block::Block, Visibility};
+use super::{block::Block, Identifier, Visibility};
 
 /// An Item is a static component of the package.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,7 +33,7 @@ impl Item {
 }
 
 /// Module is a container for zero or more [items](Item).
-/// 
+///
 /// Module may be either inline or loadable from separate file.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Module {

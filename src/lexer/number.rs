@@ -53,7 +53,7 @@ impl Number {
         let mut fraction = String::new();
         let mut met_dot = false;
 
-        while let Some(ch) = stream.peek() {            
+        while let Some(ch) = stream.peek() {
             if ch.is_digit(base.radix()) {
                 if !met_dot {
                     integer.push(ch);
@@ -99,10 +99,7 @@ impl Base {
 
 #[cfg(test)]
 mod test {
-    use crate::{
-        input_stream::InputStream,
-        lexer::number::Base,
-    };
+    use crate::{input_stream::InputStream, lexer::number::Base};
 
     use super::Number;
 

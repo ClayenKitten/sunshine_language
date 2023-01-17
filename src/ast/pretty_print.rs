@@ -1,15 +1,15 @@
 use std::io::{Result, Write};
 
 use crate::{
-    lexer::number::{Base, Number},
     item_table::ItemTable,
+    lexer::number::{Base, Number},
 };
 
 use super::{
     block::Block,
     expression::{Expression, For, FunctionCall, If, Literal, While},
     item::{ItemKind, Module},
-    statement::{LetStatement, Statement, Assignment},
+    statement::{Assignment, LetStatement, Statement},
     Visibility,
 };
 
@@ -69,7 +69,11 @@ fn print_stmt(w: &mut impl Write, stmt: &Statement, ident: usize) -> Result<()> 
             }
             writeln!(w, ";")?;
         }
-        Statement::Assignment(Assignment { assignee, operator, value }) => {
+        Statement::Assignment(Assignment {
+            assignee,
+            operator,
+            value,
+        }) => {
             write!(w, "{} {} ", assignee, operator.0)?;
             print_expr(w, value, ident)?;
             writeln!(w, ";")?;

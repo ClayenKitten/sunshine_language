@@ -14,9 +14,14 @@ pub use statement::*;
 use thiserror::Error;
 
 use crate::{
-    ast::{item::{Item, ItemKind, Module}, Identifier, Visibility},
+    ast::{
+        item::{Item, ItemKind, Module},
+        Identifier, Visibility,
+    },
+    context::Context,
+    input_stream::InputStream,
+    item_table::{path::ItemPath, ItemTable},
     lexer::{keyword::Keyword, punctuation::Punctuation, Lexer, LexerError, Token},
-    item_table::{path::ItemPath, ItemTable}, input_stream::InputStream, context::Context,
 };
 
 /// Interface to compute a [ItemTable] of the whole project.
@@ -28,10 +33,7 @@ pub struct Parser {
 
 impl Parser {
     pub fn new(root: PathBuf, context: Arc<Context>) -> Self {
-        Parser {
-            root,
-            context,
-        }
+        Parser { root, context }
     }
 
     /// Parse the whole package.
@@ -50,7 +52,7 @@ impl Parser {
                     let path = path.clone();
                     modules.push(self.submodule_path(path));
                 }
-                _ => { }
+                _ => {}
             }
         }
         for module in modules {
@@ -132,7 +134,7 @@ pub enum ParserError {
     #[error("Lexer error occured: {0}.")]
     LexerError(#[from] LexerError),
     #[error("io error occured: {0}.")]
-    IoError(#[from] std::io::Error)
+    IoError(#[from] std::io::Error),
 }
 
 #[derive(Debug, Error, PartialEq, Eq)]
@@ -192,7 +194,7 @@ impl Lexer {
                 self.discard();
                 Ok(Some(punc))
             }
-            _ => Ok(None)
+            _ => Ok(None),
         }
     }
 
@@ -203,7 +205,7 @@ impl Lexer {
                 self.discard();
                 Ok(Some(punc))
             }
-            _ => Ok(None)
+            _ => Ok(None),
         }
     }
 
@@ -214,7 +216,8 @@ impl Lexer {
         if found == Token::Punctuation(Punctuation(expected)) {
             Ok(())
         } else {
-            self.context.error_reporter
+            self.context
+                .error_reporter
                 .lock()
                 .unwrap()
                 .error()
@@ -235,7 +238,8 @@ impl Lexer {
         if found == Token::Keyword(keyword) {
             Ok(())
         } else {
-            self.context.error_reporter
+            self.context
+                .error_reporter
                 .lock()
                 .unwrap()
                 .error()
@@ -254,7 +258,8 @@ impl Lexer {
         if let Token::Identifier(ident) = found {
             Ok(Identifier(ident))
         } else {
-            self.context.error_reporter
+            self.context
+                .error_reporter
                 .lock()
                 .unwrap()
                 .error()

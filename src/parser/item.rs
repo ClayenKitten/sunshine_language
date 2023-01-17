@@ -34,7 +34,8 @@ impl FileParser {
             Item::new(self.parse_module()?, visibility)
         } else {
             let token = self.lexer.next()?;
-            self.context.error_reporter
+            self.context
+                .error_reporter
                 .lock()
                 .unwrap()
                 .error()
@@ -58,9 +59,9 @@ impl FileParser {
     /// Parse module. Keyword [mod](Keyword::Mod) is expected to be consumed beforehand.
     pub fn parse_module(&mut self) -> Result<Module, ParserError> {
         let name = self.lexer.expect_identifier()?;
-        
+
         if self.lexer.consume_punctuation(";")? {
-            return Ok(Module::Loadable(name))
+            return Ok(Module::Loadable(name));
         }
 
         self.lexer.expect_punctuation("{")?;

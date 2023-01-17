@@ -1,6 +1,10 @@
 //! Iterator of characters.
 
-use std::{fmt::{Debug, Display}, cmp::Ordering, collections::VecDeque};
+use std::{
+    cmp::Ordering,
+    collections::VecDeque,
+    fmt::{Debug, Display},
+};
 
 use owned_chars::{OwnedCharIndices, OwnedCharsExt};
 
@@ -17,7 +21,8 @@ impl Iterator for InputStream {
     type Item = char;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.buf.pop_front()
+        self.buf
+            .pop_front()
             .or_else(|| self.iter.next())
             .map(|(pos, ch)| {
                 self.location.pos = pos + ch.len_utf8();
@@ -37,7 +42,11 @@ impl InputStream {
         InputStream {
             buf: VecDeque::new(),
             iter: src.to_string().into_char_indices(),
-            location: Location { pos: 0, line: 0, column: 0 },
+            location: Location {
+                pos: 0,
+                line: 0,
+                column: 0,
+            },
         }
     }
 
@@ -47,11 +56,9 @@ impl InputStream {
 
     pub fn peek_nth(&mut self, n: usize) -> Option<char> {
         let unbuffered_items = (n + 1).saturating_sub(self.buf.len());
-        let items = self.iter.by_ref()
-            .take(unbuffered_items);
+        let items = self.iter.by_ref().take(unbuffered_items);
         self.buf.extend(items);
-        self.buf.get(n)
-            .map(|(_, ch)| *ch)
+        self.buf.get(n).map(|(_, ch)| *ch)
     }
 
     pub fn is_eof(&mut self) -> bool {
@@ -60,7 +67,9 @@ impl InputStream {
 
     /// Create slice of source code.
     pub fn slice(&mut self, from: Location, to: Location) -> &str {
-        self.iter.get_inner().get(from.pos .. to.pos)
+        self.iter
+            .get_inner()
+            .get(from.pos..to.pos)
             .expect("slice is expected to be in boundaries")
     }
 
@@ -71,7 +80,7 @@ impl InputStream {
 }
 
 /// Location of character at source code.
-#[derive(Debug, Clone, Copy,PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Location {
     pos: usize,
     pub line: usize,
@@ -87,9 +96,7 @@ impl Display for Location {
 impl Ord for Location {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.line.cmp(&other.line) {
-            Ordering::Equal => {
-                self.column.cmp(&other.column).reverse()
-            },
+            Ordering::Equal => self.column.cmp(&other.column).reverse(),
             ord => ord.reverse(),
         }
     }
@@ -120,17 +127,17 @@ mod test {
     fn location() {
         let mut stream = InputStream::new("x = 5;\ny = 2;");
         assert_eq!(0, stream.location.line);
-        
+
         assert_eq!(Some('x'), stream.next());
         assert_eq!(1, stream.location.column);
-        
+
         assert_eq!(Some(';'), stream.nth(4));
         assert_eq!(6, stream.location.column);
-        
+
         assert_eq!(Some('\n'), stream.next());
         assert_eq!(1, stream.location.line);
         assert_eq!(0, stream.location.column);
-        
+
         assert_eq!(Some('y'), stream.next());
         assert_eq!(1, stream.location.line);
         assert_eq!(1, stream.location.column);
@@ -155,7 +162,7 @@ mod test {
         let to = stream.location();
         assert_eq!("\"Hello world\"", stream.slice(from, to));
     }
-    
+
     #[test]
     fn slice_unicode() {
         let mut stream = InputStream::new("Привет!:) 😀😀✨! 祝你好运!");

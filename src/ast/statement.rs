@@ -1,6 +1,6 @@
 use crate::lexer::punctuation::Punctuation;
 
-use super::{Identifier, expression::Expression};
+use super::{expression::Expression, Identifier};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {

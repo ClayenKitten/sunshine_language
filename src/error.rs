@@ -46,7 +46,12 @@ impl Display for ErrorReporter {
         for error in self.errors.iter() {
             writeln!(f, "Error at {}:\n\t{}", error.start, error.message)?;
         }
-        writeln!(f, "{} warning(s), {} error(s)", self.warnings.len(), self.errors.len())?;
+        writeln!(
+            f,
+            "{} warning(s), {} error(s)",
+            self.warnings.len(),
+            self.errors.len()
+        )?;
         Ok(())
     }
 }
@@ -97,16 +102,22 @@ impl<'a> ErrorBuilder<'a> {
     }
 
     /// Build error and store it in `ErrorReporter`.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// Panics if not all required fields were set.
     pub fn report(self) {
         let message = self.message.expect("Error message wasn't provided.");
-        let start = self.start.expect("Error starting location wasn't provided.");
+        let start = self
+            .start
+            .expect("Error starting location wasn't provided.");
         let end = self.end.unwrap_or(start);
 
-        let error = Error { message, start, end };
+        let error = Error {
+            message,
+            start,
+            end,
+        };
         match self.severity {
             Severity::Warning => self.reporter.warnings.push(error),
             Severity::Error => self.reporter.errors.push(error),
