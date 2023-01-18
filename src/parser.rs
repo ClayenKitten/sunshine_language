@@ -15,8 +15,8 @@ use thiserror::Error;
 
 use crate::{
     ast::{
-        item::{Item, ItemKind, Module},
-        Identifier, Visibility,
+        item::{Item, ItemKind, Module, Visibility},
+        Identifier,
     },
     context::Context,
     input_stream::InputStream,

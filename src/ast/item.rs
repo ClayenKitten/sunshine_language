@@ -1,4 +1,4 @@
-use super::{expression::Block, Identifier, Visibility};
+use super::{expression::Block, Identifier};
 
 /// An Item is a static component of the package.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -91,4 +91,23 @@ impl From<Function> for ItemKind {
 pub struct Parameter {
     pub name: Identifier,
     pub type_: Identifier,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum Visibility {
+    Public,
+    #[default]
+    Private,
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn visibility_ordering() {
+        use super::Visibility::*;
+        let expected = vec![Public, Public, Private, Private];
+        let mut init = vec![Private, Public, Private, Public];
+        init.sort();
+        assert_eq!(expected, init);
+    }
 }

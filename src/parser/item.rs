@@ -1,7 +1,7 @@
 use crate::{
     ast::{
-        item::{Field, Function, Item, Module, Parameter, Struct},
-        Identifier, Visibility,
+        item::{Field, Function, Item, Module, Parameter, Struct, Visibility},
+        Identifier,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
 };

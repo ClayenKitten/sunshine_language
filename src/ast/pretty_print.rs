@@ -7,9 +7,8 @@ use crate::{
 
 use super::{
     expression::{Block, Expression, For, FunctionCall, If, Literal, While},
-    item::{ItemKind, Module},
+    item::{ItemKind, Module, Visibility},
     statement::{Assignment, LetStatement, Statement},
-    Visibility,
 };
 
 pub fn print_table(w: &mut impl Write, table: &ItemTable) -> Result<()> {
