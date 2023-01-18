@@ -4,7 +4,10 @@
 //! As such, they are stored in special data structure.
 
 use std::{
-    collections::{hash_map, HashMap},
+    collections::{
+        hash_map::{self, Entry},
+        HashMap,
+    },
     fmt::Display,
 };
 
@@ -54,10 +57,11 @@ impl ItemTable {
     /// Try to insert provided [Item] to `declared`. If it already exists, push it to `duplicated`
     /// instead.
     fn try_insert(&mut self, path: path::ItemPath, item: Item) {
-        if self.declared.contains_key(&path) {
-            self.duplicated.push((path, item));
-        } else {
-            self.declared.insert(path, item);
+        match self.declared.entry(path) {
+            Entry::Vacant(entry) => {
+                entry.insert(item);
+            }
+            Entry::Occupied(entry) => self.duplicated.push((entry.key().clone(), item)),
         }
     }
 
@@ -67,6 +71,12 @@ impl ItemTable {
 
     pub fn iter_mut(&mut self) -> hash_map::IterMut<path::ItemPath, Item> {
         self.declared.iter_mut()
+    }
+}
+
+impl Default for ItemTable {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

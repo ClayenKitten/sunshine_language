@@ -17,8 +17,8 @@ pub enum ItemKind {
 impl Item {
     pub fn name(&self) -> &Identifier {
         match &self.kind {
-            ItemKind::Module(Module::Inline(ident)) => &ident,
-            ItemKind::Module(Module::Loadable(ident)) => &ident,
+            ItemKind::Module(Module::Inline(ident)) => ident,
+            ItemKind::Module(Module::Loadable(ident)) => ident,
             ItemKind::Struct(s) => &s.name,
             ItemKind::Function(f) => &f.name,
         }

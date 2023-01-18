@@ -53,7 +53,7 @@ fn print_stmt(w: &mut impl Write, stmt: &Statement, ident: usize) -> Result<()> 
     print_ident(w, ident)?;
     match stmt {
         Statement::ExprStmt(expr) => {
-            print_expr(w, &expr, ident)?;
+            print_expr(w, expr, ident)?;
             writeln!(w, ";")?;
         }
         Statement::LetStmt(LetStatement { name, type_, value }) => {
@@ -95,7 +95,7 @@ fn print_expr(w: &mut impl Write, expr: &Expression, ident: usize) -> Result<()>
             else_body,
         }) => {
             write!(w, "if ")?;
-            print_expr(w, &condition, ident)?;
+            print_expr(w, condition, ident)?;
             write!(w, " ")?;
             print_block(w, body, ident)?;
             if let Some(else_body) = else_body {
@@ -105,7 +105,7 @@ fn print_expr(w: &mut impl Write, expr: &Expression, ident: usize) -> Result<()>
         }
         Expression::While(While { condition, body }) => {
             write!(w, "while ")?;
-            print_expr(w, &condition, ident)?;
+            print_expr(w, condition, ident)?;
             print_block(w, body, ident)?;
         }
         Expression::For(For { var, expr, body }) => {
@@ -135,19 +135,19 @@ fn print_expr(w: &mut impl Write, expr: &Expression, ident: usize) -> Result<()>
         Expression::Literal(Literal::Boolean(false)) => write!(w, "false")?,
         Expression::Unary { op, value } => {
             write!(w, "{}", op.0)?;
-            print_expr(w, &value, ident)?;
+            print_expr(w, value, ident)?;
         }
         Expression::Binary { op, left, right } => {
             write!(w, "(")?;
-            print_expr(w, &left, ident)?;
+            print_expr(w, left, ident)?;
             write!(w, " {} ", op.0)?;
-            print_expr(w, &right, ident)?;
+            print_expr(w, right, ident)?;
             write!(w, ")")?;
         }
         Expression::FnCall(FunctionCall { name, params }) => {
             write!(w, "{name}(")?;
             for param in params {
-                print_expr(w, &param, ident)?;
+                print_expr(w, param, ident)?;
                 write!(w, ",")?;
             }
             write!(w, ")")?;
@@ -160,7 +160,7 @@ fn print_expr(w: &mut impl Write, expr: &Expression, ident: usize) -> Result<()>
 fn print_block(w: &mut impl Write, block: &Block, ident: usize) -> Result<()> {
     writeln!(w, "{{")?;
     for stmt in block.statements.iter() {
-        print_stmt(w, &stmt, ident + 1)?;
+        print_stmt(w, stmt, ident + 1)?;
     }
     if let Some(expr) = &block.expression {
         print_ident(w, ident + 1)?;

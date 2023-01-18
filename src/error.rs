@@ -38,6 +38,12 @@ impl<'a> ErrorReporter {
     }
 }
 
+impl Default for ErrorReporter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Display for ErrorReporter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for warning in self.warnings.iter() {

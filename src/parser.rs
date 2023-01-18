@@ -46,13 +46,10 @@ impl Parser {
         let mut table = self.parse_file(path)?;
         let mut modules = Vec::<PathBuf>::new();
         for (path, item) in table.iter_mut() {
-            match &mut item.kind {
-                ItemKind::Module(Module::Loadable(ident)) => {
-                    item.kind = ItemKind::Module(Module::Inline(ident.clone()));
-                    let path = path.clone();
-                    modules.push(self.submodule_path(path));
-                }
-                _ => {}
+            if let ItemKind::Module(Module::Loadable(ident)) = &mut item.kind {
+                item.kind = ItemKind::Module(Module::Inline(ident.clone()));
+                let path = path.clone();
+                modules.push(self.submodule_path(path));
             }
         }
         for module in modules {
@@ -77,7 +74,7 @@ impl Parser {
             root
         };
         let parent = parent.into_path_buf();
-        root_folder.extend(parent.into_iter());
+        root_folder.extend(parent.iter());
         root_folder.set_extension("sun");
         root_folder
     }
