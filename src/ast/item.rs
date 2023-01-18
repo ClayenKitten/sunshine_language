@@ -1,4 +1,4 @@
-use super::{block::Block, Identifier, Visibility};
+use super::{expression::Block, Identifier, Visibility};
 
 /// An Item is a static component of the package.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,6 +1,5 @@
 //! Abstract syntax tree
 
-pub mod block;
 pub mod expression;
 pub mod identifier;
 pub mod item;

@@ -1,6 +1,6 @@
 use crate::lexer::{number::Number, punctuation::Punctuation};
 
-use super::{block::Block, Identifier};
+use super::{statement::Statement, Identifier};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expression {
@@ -76,4 +76,11 @@ pub struct For {
     pub var: Identifier,
     pub expr: Box<Expression>,
     pub body: Block,
+}
+
+/// Block is an expression that consists of a number of statements and an optional final expression.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Block {
+    pub statements: Vec<Statement>,
+    pub expression: Option<Box<Expression>>,
 }

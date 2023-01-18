@@ -1,7 +1,6 @@
 use crate::{
     ast::{
-        block::Block,
-        expression::{Expression, For, FunctionCall, If, Literal, While},
+        expression::{Block, Expression, For, FunctionCall, If, Literal, While},
         statement::Statement,
         Identifier,
     },
