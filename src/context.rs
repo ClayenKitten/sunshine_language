@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use clap::ValueEnum;
 
-use crate::error::ErrorReporter;
+use crate::{ast::Identifier, error::ErrorReporter};
 
 #[derive(Debug)]
 pub struct Context {
@@ -17,7 +17,7 @@ impl Context {
     pub fn new_test() -> Self {
         Self {
             metadata: Metadata {
-                crate_name: String::from("_TEST"),
+                crate_name: Identifier(String::from("_TEST")),
                 emit_type: Emit::default(),
             },
             error_reporter: Mutex::new(ErrorReporter::new()),
@@ -27,7 +27,7 @@ impl Context {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Metadata {
-    pub crate_name: String,
+    pub crate_name: Identifier,
     pub emit_type: Emit,
 }
 

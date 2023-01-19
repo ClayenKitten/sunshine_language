@@ -1,6 +1,6 @@
 use clap::Parser as ArgParser;
 use compiler::{
-    ast::pretty_print::print_table,
+    ast::{pretty_print::print_table, Identifier},
     context::{Context, Emit, Metadata},
     error::ErrorReporter,
     parser::Parser,
@@ -8,6 +8,7 @@ use compiler::{
 use std::{
     io::stdout,
     path::PathBuf,
+    str::FromStr,
     sync::{Arc, Mutex},
 };
 
@@ -21,16 +22,20 @@ struct Args {
         value_name = "NAME",
         help = "Specify the name of the crate being built"
     )]
-    crate_name: Option<String>,
+    crate_name: Option<Identifier>,
     #[arg(long, default_value = "binary")]
     emit: Emit,
 }
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let crate_name = args
-        .crate_name
-        .unwrap_or_else(|| args.path.file_stem().unwrap().to_string_lossy().to_string());
+    let crate_name = match args.crate_name {
+        Some(crate_name) => crate_name,
+        None => {
+            let x = args.path.file_stem().unwrap().to_string_lossy().to_string();
+            Identifier::from_str(&x)?
+        }
+    };
     let context = Context {
         metadata: Metadata {
             crate_name,

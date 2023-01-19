@@ -93,7 +93,7 @@ impl FileParser {
         Self {
             item_table: ItemTable::new(),
             lexer,
-            scope: ItemPath::new(Identifier(context.metadata.crate_name.clone())),
+            scope: ItemPath::new(context.metadata.crate_name.clone()),
             context,
         }
     }
