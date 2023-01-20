@@ -63,7 +63,7 @@ impl SourceFile {
         let path = path.as_ref();
         match fs::metadata(path) {
             Ok(meta) if !meta.is_file() => {
-                return Err(SourceError::NotAFile(path.to_owned()));
+                Err(SourceError::NotAFile(path.to_owned()))
             }
             Ok(_) => fs::OpenOptions::new()
                 .read(true)
@@ -71,13 +71,13 @@ impl SourceFile {
                 .map(SourceFile::Opened)
                 .map_err(|err| SourceError::IoErrorWithSource(path.to_owned(), err)),
             Err(err) if err.kind() == io::ErrorKind::NotFound => {
-                return Err(SourceError::NotFound(path.to_owned()));
+                Err(SourceError::NotFound(path.to_owned()))
             }
             Err(err) if err.kind() == io::ErrorKind::PermissionDenied => {
-                return Err(SourceError::PermissionDenied(path.to_owned()));
+                Err(SourceError::PermissionDenied(path.to_owned()))
             }
             Err(err) => {
-                return Err(SourceError::IoErrorWithSource(path.to_owned(), err));
+                Err(SourceError::IoErrorWithSource(path.to_owned(), err))
             }
         }
     }
