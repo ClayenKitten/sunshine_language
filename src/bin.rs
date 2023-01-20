@@ -43,7 +43,7 @@ fn main() -> anyhow::Result<()> {
         },
         error_reporter: Mutex::new(ErrorReporter::new()),
     };
-    let mut parser = Parser::new(args.path, Arc::new(context));
+    let mut parser = Parser::new(args.path, Arc::new(context))?;
 
     let item_table = parser.parse();
 

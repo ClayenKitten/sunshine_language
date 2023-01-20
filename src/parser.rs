@@ -22,61 +22,51 @@ use crate::{
     input_stream::InputStream,
     item_table::{path::ItemPath, ItemTable},
     lexer::{keyword::Keyword, punctuation::Punctuation, Lexer, LexerError, Token},
+    source::{SourceError, SourceMap},
 };
 
 /// Interface to compute a [ItemTable] of the whole project.
 pub struct Parser {
-    /// Path to the root file.
-    root: PathBuf,
+    /// Path to the root folder.
+    source: SourceMap,
     pub context: Arc<Context>,
 }
 
 impl Parser {
-    pub fn new(root: PathBuf, context: Arc<Context>) -> Self {
-        Parser { root, context }
+    pub fn new(root: PathBuf, context: Arc<Context>) -> Result<Self, SourceError> {
+        Ok(Parser {
+            source: SourceMap::new(root, context.metadata.crate_name.clone())?,
+            context,
+        })
     }
 
     /// Parse the whole package.
     pub fn parse(&mut self) -> Result<ItemTable, ParserError> {
-        self.parse_file_recursive(&self.root.clone())
-    }
-
-    /// Parse file and inline all its loadable modules.
-    fn parse_file_recursive(&mut self, path: &std::path::Path) -> Result<ItemTable, ParserError> {
-        let mut table = self.parse_file(path)?;
-        let mut modules = Vec::<PathBuf>::new();
-        for (path, item) in table.iter_mut() {
-            if let ItemKind::Module(Module::Loadable(ident)) = &mut item.kind {
-                item.kind = ItemKind::Module(Module::Inline(ident.clone()));
-                let path = path.clone();
-                modules.push(self.submodule_path(path));
+        let mut table = ItemTable::new();
+        let mut unparsed = vec![ItemPath::new(self.context.metadata.crate_name.clone())];
+        while let Some(path) = unparsed.pop() {
+            let mut parsed = self.parse_file(path)?;
+            for (path, item) in parsed.iter_mut() {
+                if let ItemKind::Module(Module::Loadable(ident)) = &mut item.kind {
+                    item.kind = ItemKind::Module(Module::Inline(ident.clone()));
+                    unparsed.push(path.clone());
+                }
             }
-        }
-        for module in modules {
-            table.extend(self.parse_file_recursive(&module)?);
+            table.extend(parsed);
         }
         Ok(table)
     }
 
-    fn parse_file(&mut self, path: &std::path::Path) -> Result<ItemTable, ParserError> {
-        std::fs::read_to_string(path)
-            .map_err(ParserError::IoError)
+    /// Parse one file.
+    pub fn parse_file(&mut self, path: ItemPath) -> Result<ItemTable, ParserError> {
+        self.source
+            .insert(path.clone())
+            .and_then(|src| src.read())
+            .map_err(ParserError::SourceError)
             .map(InputStream::new)
             .map(|input| Lexer::new(input, Arc::clone(&self.context)))
-            .map(|lexer| FileParser::new(lexer, Arc::clone(&self.context)))
+            .map(|lexer| FileParser::new(lexer, path, Arc::clone(&self.context)))
             .and_then(|mut parser| parser.parse())
-    }
-
-    fn submodule_path(&self, parent: ItemPath) -> PathBuf {
-        let mut root_folder = {
-            let mut root = self.root.clone();
-            root.pop();
-            root
-        };
-        let parent = parent.into_path_buf();
-        root_folder.extend(parent.iter());
-        root_folder.set_extension("sun");
-        root_folder
     }
 }
 
@@ -89,11 +79,11 @@ pub struct FileParser {
 }
 
 impl FileParser {
-    pub fn new(lexer: Lexer, context: Arc<Context>) -> Self {
+    pub fn new(lexer: Lexer, scope: ItemPath, context: Arc<Context>) -> Self {
         Self {
             item_table: ItemTable::new(),
             lexer,
-            scope: ItemPath::new(context.metadata.crate_name.clone()),
+            scope,
             context,
         }
     }
@@ -130,8 +120,8 @@ pub enum ParserError {
     UnclosedParenthesis,
     #[error("Lexer error occured: {0}.")]
     LexerError(#[from] LexerError),
-    #[error("io error occured: {0}.")]
-    IoError(#[from] std::io::Error),
+    #[error("source error occured: {0}.")]
+    SourceError(#[from] SourceError),
 }
 
 #[derive(Debug, Error, PartialEq, Eq)]

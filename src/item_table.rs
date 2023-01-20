@@ -131,9 +131,26 @@ pub mod path {
             self.other.iter()
         }
 
-        /// Map that [ItemPath] to system's [PathBuf] relative to the main source file.
+        /// Maps [ItemPath] into relative [PathBuf].
+        ///
+        /// # Example
+        ///
+        /// ```rust
+        /// # use std::path::PathBuf;
+        /// # use compiler::{ast::Identifier, item_table::path::ItemPath};
+        /// let mut path = ItemPath::new(Identifier(String::from("example")));
+        /// path.push(Identifier(String::from("mod1")));
+        /// path.push(Identifier(String::from("mod2")));
+        ///
+        /// assert_eq!(
+        ///     path.into_path_buf(),
+        ///     PathBuf::from("mod1/mod2.sun"),
+        /// );
+        /// ```
         pub fn into_path_buf(self) -> PathBuf {
-            self.other.into_iter().map(|ident| ident.0).collect()
+            let mut path: PathBuf = self.other.into_iter().map(|ident| ident.0).collect();
+            path.set_extension("sun");
+            path
         }
     }
 
