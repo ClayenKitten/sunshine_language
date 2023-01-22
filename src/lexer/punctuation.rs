@@ -24,7 +24,7 @@ impl Lexer {
         result
             .map(|punc| {
                 self.input.nth(punc.0.len() - 1);
-                Token::Punctuation(punc)
+                Token::Punc(punc)
             })
             .ok_or(LexerError::UnknownPunctuation(NotPunctuation(buffer)))
     }

@@ -27,22 +27,22 @@ impl FileParser {
     pub(super) fn parse_operand(&mut self) -> Result<Expression, ParserError> {
         use Keyword::*;
         Ok(match self.lexer.next()? {
-            Token::Punctuation(Punctuation("{")) => Expression::Block(self.parse_block()?),
+            Token::Punc(Punctuation("{")) => Expression::Block(self.parse_block()?),
 
-            Token::Number(num) => Expression::Literal(Literal::Number(num)),
-            Token::String(str) => Expression::Literal(Literal::String(str)),
+            Token::Num(num) => Expression::Literal(Literal::Number(num)),
+            Token::Str(str) => Expression::Literal(Literal::String(str)),
 
-            Token::Keyword(If) => Expression::If(self.parse_if()?),
-            Token::Keyword(While) => Expression::While(self.parse_while()?),
-            Token::Keyword(For) => Expression::For(self.parse_for()?),
-            Token::Keyword(True) => Expression::Literal(Literal::Boolean(true)),
-            Token::Keyword(False) => Expression::Literal(Literal::Boolean(false)),
+            Token::Kw(If) => Expression::If(self.parse_if()?),
+            Token::Kw(While) => Expression::While(self.parse_while()?),
+            Token::Kw(For) => Expression::For(self.parse_for()?),
+            Token::Kw(True) => Expression::Literal(Literal::Boolean(true)),
+            Token::Kw(False) => Expression::Literal(Literal::Boolean(false)),
 
-            Token::Identifier(ident) => self.maybe_function_call(Identifier(ident))?,
+            Token::Ident(ident) => self.maybe_function_call(Identifier(ident))?,
 
             Token::Eof => return Err(ParserError::UnexpectedEof),
 
-            Token::Punctuation(_) | Token::Keyword(_) => {
+            Token::Punc(_) | Token::Kw(_) => {
                 return Err(UnexpectedTokenError::TokenMismatch.into())
             }
         })

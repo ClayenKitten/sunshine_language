@@ -112,7 +112,7 @@ impl Lexer {
 
         if ch.is_ascii_digit() {
             let number = number::Number::parse(&mut self.input)?;
-            return Ok(Token::Number(number));
+            return Ok(Token::Num(number));
         }
 
         if ch.is_ascii_alphabetic() || ch == '_' {
@@ -208,7 +208,7 @@ impl Lexer {
                 }
             }
         }
-        Ok(Token::String(buffer))
+        Ok(Token::Str(buffer))
     }
 
     /// Read identifier or keyword.
@@ -224,9 +224,9 @@ impl Lexer {
             }
         }
         let token = if let Ok(keyword) = Keyword::from_str(&buffer) {
-            Token::Keyword(keyword)
+            Token::Kw(keyword)
         } else {
-            Token::Identifier(buffer)
+            Token::Ident(buffer)
         };
         Ok(token)
     }
@@ -234,11 +234,11 @@ impl Lexer {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Token {
-    Punctuation(Punctuation),
-    Number(Number),
-    String(String),
-    Keyword(Keyword),
-    Identifier(String),
+    Punc(Punctuation),
+    Num(Number),
+    Str(String),
+    Kw(Keyword),
+    Ident(String),
     Eof,
 }
 
@@ -275,59 +275,59 @@ mod test {
     fn return_string() {
         let mut lexer = Lexer::new_test("return \"x > 0\";");
 
-        assert_eq!(lexer.next(), Ok(Token::Keyword(Keyword::Return)),);
-        assert_eq!(lexer.next(), Ok(Token::String(String::from("x > 0"))),);
-        assert_eq!(lexer.next(), Ok(Token::Punctuation(Punctuation::new(";"))),);
+        assert_eq!(lexer.next(), Ok(Token::Kw(Keyword::Return)),);
+        assert_eq!(lexer.next(), Ok(Token::Str(String::from("x > 0"))),);
+        assert_eq!(lexer.next(), Ok(Token::Punc(Punctuation::new(";"))),);
     }
 
     #[test]
     fn assign_num_to_var() {
         let mut lexer = Lexer::new_test("let x = 123;");
 
-        assert_eq!(lexer.next(), Ok(Token::Keyword(Keyword::Let)),);
-        assert_eq!(lexer.next(), Ok(Token::Identifier(String::from("x"))),);
+        assert_eq!(lexer.next(), Ok(Token::Kw(Keyword::Let)),);
+        assert_eq!(lexer.next(), Ok(Token::Ident(String::from("x"))),);
 
-        assert_eq!(lexer.next(), Ok(Token::Punctuation(Punctuation::new("="))),);
+        assert_eq!(lexer.next(), Ok(Token::Punc(Punctuation::new("="))),);
         assert_eq!(
             lexer.next(),
-            Ok(Token::Number(Number {
+            Ok(Token::Num(Number {
                 base: Base::Decimal,
                 integer: String::from("123"),
                 fraction: None,
             })),
         );
-        assert_eq!(lexer.next(), Ok(Token::Punctuation(Punctuation::new(";"))),);
+        assert_eq!(lexer.next(), Ok(Token::Punc(Punctuation::new(";"))),);
     }
 
     #[test]
     fn if_with_else() {
         let mut lexer = Lexer::new_test("if x > 0. { return x; } else { return 0.; }");
 
-        let x = Ok(Token::Identifier(String::from("x")));
-        let _return = Ok(Token::Keyword(Keyword::Return));
-        let semicolon = Ok(Token::Punctuation(Punctuation::new(";")));
-        let zero = Ok(Token::Number(Number {
+        let x = Ok(Token::Ident(String::from("x")));
+        let _return = Ok(Token::Kw(Keyword::Return));
+        let semicolon = Ok(Token::Punc(Punctuation::new(";")));
+        let zero = Ok(Token::Num(Number {
             base: Base::Decimal,
             integer: String::from("0"),
             fraction: Some(String::new()),
         }));
 
-        assert_eq!(lexer.next(), Ok(Token::Keyword(Keyword::If)));
+        assert_eq!(lexer.next(), Ok(Token::Kw(Keyword::If)));
         assert_eq!(lexer.next(), x);
-        assert_eq!(lexer.next(), Ok(Token::Punctuation(Punctuation::new(">"))),);
+        assert_eq!(lexer.next(), Ok(Token::Punc(Punctuation::new(">"))),);
         assert_eq!(lexer.next(), zero);
 
-        assert_eq!(lexer.next(), Ok(Token::Punctuation(Punctuation::new("{"))));
+        assert_eq!(lexer.next(), Ok(Token::Punc(Punctuation::new("{"))));
         assert_eq!(lexer.next(), _return);
         assert_eq!(lexer.next(), x);
         assert_eq!(lexer.next(), semicolon);
-        assert_eq!(lexer.next(), Ok(Token::Punctuation(Punctuation::new("}"))));
+        assert_eq!(lexer.next(), Ok(Token::Punc(Punctuation::new("}"))));
 
-        assert_eq!(lexer.next(), Ok(Token::Keyword(Keyword::Else)));
-        assert_eq!(lexer.next(), Ok(Token::Punctuation(Punctuation::new("{"))));
+        assert_eq!(lexer.next(), Ok(Token::Kw(Keyword::Else)));
+        assert_eq!(lexer.next(), Ok(Token::Punc(Punctuation::new("{"))));
         assert_eq!(lexer.next(), _return);
         assert_eq!(lexer.next(), zero);
         assert_eq!(lexer.next(), semicolon);
-        assert_eq!(lexer.next(), Ok(Token::Punctuation(Punctuation::new("}"))));
+        assert_eq!(lexer.next(), Ok(Token::Punc(Punctuation::new("}"))));
     }
 }

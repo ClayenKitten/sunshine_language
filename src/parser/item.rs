@@ -129,8 +129,8 @@ impl FileParser {
         let mut params = Vec::new();
         loop {
             let name = match self.lexer.next()? {
-                Token::Identifier(ident) => Identifier(ident),
-                Token::Punctuation(Punctuation(")")) => break,
+                Token::Ident(ident) => Identifier(ident),
+                Token::Punc(Punctuation(")")) => break,
                 token => return Err(UnexpectedTokenError::UnexpectedToken(token).into()),
             };
             self.lexer.expect_punctuation(":")?;
@@ -149,12 +149,12 @@ impl FileParser {
     /// Try to parse return type if any. Consumes opening brace `{` which is required for function body.
     fn parse_return_type(&mut self) -> Result<Option<Identifier>, ParserError> {
         match self.lexer.next()? {
-            Token::Punctuation(Punctuation("->")) => {
+            Token::Punc(Punctuation("->")) => {
                 let return_type = self.lexer.expect_identifier()?;
                 self.lexer.expect_punctuation("{")?;
                 Ok(Some(return_type))
             }
-            Token::Punctuation(Punctuation("{")) => Ok(None),
+            Token::Punc(Punctuation("{")) => Ok(None),
             token => Err(UnexpectedTokenError::UnexpectedToken(token).into()),
         }
     }
