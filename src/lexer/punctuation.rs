@@ -1,5 +1,5 @@
 use once_cell::sync::Lazy;
-use std::{fmt::Display, str::FromStr};
+use std::str::FromStr;
 use thiserror::Error;
 
 use super::{Lexer, LexerError, Token};
@@ -33,7 +33,7 @@ impl Lexer {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Punctuation(pub &'static str);
 
-static DICT: [&'static str; 34] = [
+static DICT: [&str; 34] = [
     ";", ":", "{", "}", "(", ")", "[", "]", ",", "->", "+", "-", "!", "*", "/", "%", ">>", "<<",
     "&", "^", "|", "&&", "||", "==", "!=", ">", "<", ">=", "<=", "=", "+=", "-=", "*=", "/=",
 ];
@@ -67,63 +67,76 @@ impl FromStr for Punctuation {
 #[error("provided string is not punctuation")]
 pub struct NotPunctuation(String);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UnaryOp {
-    Add,
-    Sub,
-    Not,
-}
+macro_rules! define_operator {
+    (
+        $(#[doc = $doc:expr])?
+        enum $name:ident {
+            $($field:ident = $value:literal,)*
+        }
+    ) => {
+        $(#[doc = $doc])?
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub enum $name {
+            $($field,)*
+        }
 
-impl TryFrom<Punctuation> for UnaryOp {
-    type Error = ();
-
-    fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
-        use UnaryOp::*;
-        Ok(match value.0 {
-            "+" => Add,
-            "-" => Sub,
-            "!" => Not,
-            _ => return Err(()),
-        })
-    }
-}
-
-impl Display for UnaryOp {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use UnaryOp::*;
-        write!(
-            f,
-            "{}",
-            match self {
-                Add => "+",
-                Sub => "-",
-                Not => "!",
+        impl std::fmt::Display for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(
+                    f,
+                    "{}",
+                    match self {
+                        $($name::$field => $value,)*
+                    }
+                )
             }
-        )
+        }
+
+        impl TryFrom<Punctuation> for $name {
+            type Error = ();
+
+            fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
+                Ok(match value.0 {
+                    $($value => $name::$field,)*
+                    _ => return Err(()),
+                })
+            }
+        }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BinaryOp {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Mod,
-    Rsh,
-    Lsh,
-    BinAnd,
-    BinOr,
-    BinXor,
-    And,
-    Or,
-    Eq,
-    Neq,
-    More,
-    Less,
-    MoreEq,
-    LessEq,
-}
+define_operator!(
+    /// An operator with one operand.
+    enum UnaryOp {
+        Add = "+",
+        Sub = "-",
+        Not = "!",
+    }
+);
+
+define_operator!(
+    /// An operator with two operands.
+    enum BinaryOp {
+        Add = "+",
+        Sub = "-",
+        Mul = "*",
+        Div = "/",
+        Mod = "%",
+        Rsh = ">>",
+        Lsh = "<<",
+        BinAnd = "&",
+        BinOr = "|",
+        BinXor = "^",
+        And = "&&",
+        Or = "||",
+        Eq = "==",
+        Neq = "!=",
+        More = ">",
+        Less = "<",
+        MoreEq = ">=",
+        LessEq = "<=",
+    }
+);
 
 impl BinaryOp {
     pub fn priority(&self) -> usize {
@@ -142,103 +155,13 @@ impl BinaryOp {
     }
 }
 
-impl TryFrom<Punctuation> for BinaryOp {
-    type Error = ();
-
-    fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
-        use BinaryOp::*;
-        Ok(match value.0 {
-            "+" => Add,
-            "-" => Sub,
-            "*" => Mul,
-            "/" => Div,
-            "%" => Mod,
-            ">>" => Rsh,
-            "<<" => Lsh,
-            "&" => BinAnd,
-            "|" => BinOr,
-            "^" => BinXor,
-            "&&" => And,
-            "||" => Or,
-            "==" => Eq,
-            "!=" => Neq,
-            ">" => More,
-            "<" => Less,
-            ">=" => MoreEq,
-            "<=" => LessEq,
-            _ => return Err(()),
-        })
+define_operator!(
+    /// An operator with two operands: assignee and value.
+    enum AssignOp {
+        Assign = "=",
+        AddAssign = "+=",
+        SubAssign = "-=",
+        MulAssign = "*=",
+        DivAssign = "/=",
     }
-}
-
-impl Display for BinaryOp {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use BinaryOp::*;
-        write!(
-            f,
-            "{}",
-            match self {
-                Add => "+",
-                Sub => "-",
-                Mul => "*",
-                Div => "/",
-                Mod => "%",
-                Rsh => ">>",
-                Lsh => "<<",
-                BinAnd => "&",
-                BinOr => "|",
-                BinXor => "^",
-                And => "&&",
-                Or => "||",
-                Eq => "==",
-                Neq => "!=",
-                More => ">",
-                Less => "<",
-                MoreEq => ">=",
-                LessEq => "<=",
-            }
-        )
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AssignOp {
-    Assign,
-    AddAssign,
-    SubAssign,
-    MulAssign,
-    DivAssign,
-}
-
-impl TryFrom<Punctuation> for AssignOp {
-    type Error = ();
-
-    fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
-        use AssignOp::*;
-        Ok(match value.0 {
-            "=" => Assign,
-            "+=" => AddAssign,
-            "-=" => SubAssign,
-            "*=" => MulAssign,
-            "/=" => DivAssign,
-            _ => return Err(()),
-        })
-    }
-}
-
-impl Display for AssignOp {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use AssignOp::*;
-        write!(
-            f,
-            "{}",
-            match self {
-                Assign => "=",
-                AddAssign => "+=",
-                SubAssign => "-=",
-                MulAssign => "*=",
-                DivAssign => "/=",
-            }
-        )
-    }
-}
+);
