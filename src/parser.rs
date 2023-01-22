@@ -21,7 +21,11 @@ use crate::{
     context::Context,
     input_stream::InputStream,
     item_table::{path::ItemPath, ItemTable},
-    lexer::{keyword::Keyword, punctuation::Punctuation, Lexer, LexerError, Token},
+    lexer::{
+        keyword::Keyword,
+        punctuation::{BinaryOp, Punctuation, UnaryOp},
+        Lexer, LexerError, Token,
+    },
     source::{SourceError, SourceMap},
 };
 
@@ -146,7 +150,7 @@ impl Lexer {
     /// Returns `true` if provided punctuation matches.
     pub fn consume_punctuation(&mut self, punc: &'static str) -> Result<bool, ParserError> {
         if self.peek()? == Token::Punctuation(Punctuation(punc)) {
-            let _ = self.next();
+            self.discard();
             Ok(true)
         } else {
             Ok(false)
@@ -156,7 +160,7 @@ impl Lexer {
     /// Checks if next token is provided keyword and consumes it if so.
     pub fn consume_keyword(&mut self, kw: Keyword) -> Result<bool, ParserError> {
         if self.peek()? == Token::Keyword(kw) {
-            let _ = self.next();
+            self.discard();
             Ok(true)
         } else {
             Ok(false)
@@ -165,35 +169,29 @@ impl Lexer {
 
     /// Checks if next token is identifier and consumes it if so.
     pub fn consume_identifier(&mut self) -> Result<Option<Identifier>, LexerError> {
-        let token = self.peek()?;
-        if let Token::Identifier(ident) = token {
-            let _ = self.next();
-            Ok(Some(Identifier(ident)))
-        } else {
-            Ok(None)
-        }
+        let Token::Identifier(ident) = self.peek()? else { return Ok(None); };
+        self.discard();
+        Ok(Some(Identifier(ident)))
     }
 
     /// Checks if next token is unary operator and consumes it if so.
-    pub fn consume_unary_operator(&mut self) -> Result<Option<Punctuation>, LexerError> {
-        match self.peek()? {
-            Token::Punctuation(punc) if punc.is_unary_operator() => {
+    pub fn consume_unary_operator(&mut self) -> Result<Option<UnaryOp>, LexerError> {
+        let Token::Punctuation(punc) = self.peek()? else { return Ok(None); };
+        match UnaryOp::try_from(punc) {
+            Ok(op) => {
                 self.discard();
-                Ok(Some(punc))
+                Ok(Some(op))
             }
-            _ => Ok(None),
+            Err(_) => Ok(None),
         }
     }
 
     /// Checks if next token is binary operator and consumes it if so.
-    pub fn consume_binary_operator(&mut self) -> Result<Option<Punctuation>, LexerError> {
-        match self.peek()? {
-            Token::Punctuation(punc) if punc.is_binary_operator() => {
-                self.discard();
-                Ok(Some(punc))
-            }
-            _ => Ok(None),
-        }
+    pub fn consume_binary_operator(&mut self) -> Result<Option<BinaryOp>, LexerError> {
+        let Token::Punctuation(punc) = self.peek()? else { return Ok(None); };
+        let Ok(op) = BinaryOp::try_from(punc) else { return Ok(None); };
+        self.discard();
+        Ok(Some(op))
     }
 
     /// Check if next token is provided punctuation or error otherwise.

@@ -1,4 +1,7 @@
-use crate::lexer::{number::Number, punctuation::Punctuation};
+use crate::lexer::{
+    number::Number,
+    punctuation::{BinaryOp, UnaryOp},
+};
 
 use super::{statement::Statement, Identifier};
 
@@ -15,11 +18,11 @@ pub enum Expression {
     Literal(Literal),
 
     Unary {
-        op: Punctuation,
+        op: UnaryOp,
         value: Box<Expression>,
     },
     Binary {
-        op: Punctuation,
+        op: BinaryOp,
         left: Box<Expression>,
         right: Box<Expression>,
     },

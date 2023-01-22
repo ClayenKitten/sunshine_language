@@ -134,13 +134,13 @@ fn print_expr(w: &mut impl Write, expr: &Expression, ident: usize) -> Result<()>
         Expression::Literal(Literal::Boolean(true)) => write!(w, "true")?,
         Expression::Literal(Literal::Boolean(false)) => write!(w, "false")?,
         Expression::Unary { op, value } => {
-            write!(w, "{}", op.0)?;
+            write!(w, "{}", op)?;
             print_expr(w, value, ident)?;
         }
         Expression::Binary { op, left, right } => {
             write!(w, "(")?;
             print_expr(w, left, ident)?;
-            write!(w, " {} ", op.0)?;
+            write!(w, " {} ", op)?;
             print_expr(w, right, ident)?;
             write!(w, ")")?;
         }

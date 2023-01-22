@@ -16,7 +16,7 @@ mod infix_notation {
 
     use crate::{
         ast::expression::Expression,
-        lexer::punctuation::Punctuation,
+        lexer::punctuation::{BinaryOp, UnaryOp},
         parser::{FileParser, ParserError},
     };
 
@@ -40,38 +40,36 @@ mod infix_notation {
         pub fn parse(parser: &mut FileParser) -> Result<Self, ParserError> {
             let mut depth = 0usize;
             let mut output = VecDeque::<InfixEntry>::new();
-            let mut is_last_token_an_operand = false;
 
             loop {
-                if is_last_token_an_operand {
-                    if let Some(op) = parser.lexer.consume_binary_operator()? {
-                        is_last_token_an_operand = false;
-                        output.push_back(InfixEntry::BinaryOperator(op));
-                    } else if parser.lexer.peek_punctuation(")") {
-                        if depth > 0 {
-                            parser.lexer.discard();
-                            depth -= 1;
-                            is_last_token_an_operand = true;
-                            output.push_back(InfixEntry::RightParenthesis);
+                use InfixEntry::*;
+                println!("{:?}", parser.lexer.peek());
+                match output.back() {
+                    Some(Operand(_) | RightParenthesis) => {
+                        if let Some(op) = parser.lexer.consume_binary_operator()? {
+                            output.push_back(InfixEntry::BinaryOperator(op));
+                        } else if parser.lexer.peek_punctuation(")") {
+                            if depth > 0 {
+                                parser.lexer.discard();
+                                depth -= 1;
+                                output.push_back(InfixEntry::RightParenthesis);
+                            } else {
+                                break;
+                            }
                         } else {
                             break;
                         }
-                    } else {
-                        break;
                     }
-                } else {
-                    if let Some(op) = parser.lexer.consume_unary_operator()? {
-                        is_last_token_an_operand = false;
-                        output.push_back(InfixEntry::UnaryOperator(op));
-                        continue;
-                    } else if parser.lexer.consume_punctuation("(")? {
-                        depth += 1;
-                        is_last_token_an_operand = false;
-                        output.push_back(InfixEntry::LeftParenthesis);
-                    } else {
-                        let operand = parser.parse_operand()?;
-                        output.push_back(InfixEntry::Operand(operand));
-                        is_last_token_an_operand = true;
+                    None | Some(UnaryOperator(_) | BinaryOperator(_) | LeftParenthesis) => {
+                        if let Some(op) = parser.lexer.consume_unary_operator()? {
+                            output.push_back(UnaryOperator(op));
+                        } else if parser.lexer.consume_punctuation("(")? {
+                            depth += 1;
+                            output.push_back(LeftParenthesis);
+                        } else {
+                            let operand = parser.parse_operand()?;
+                            output.push_back(Operand(operand));
+                        }
                     }
                 }
             }
@@ -81,7 +79,7 @@ mod infix_notation {
             }
 
             match output.front() {
-                Some(InfixEntry::UnaryOperator(_)) | Some(InfixEntry::BinaryOperator(_)) | None => {
+                Some(InfixEntry::BinaryOperator(_)) | None => {
                     return Err(ParserError::ExpectedExpression)
                 }
                 _ => {}
@@ -95,19 +93,22 @@ mod infix_notation {
     #[derive(Debug, PartialEq, Eq)]
     pub enum InfixEntry {
         Operand(Expression),
-        UnaryOperator(Punctuation),
-        BinaryOperator(Punctuation),
+        UnaryOperator(UnaryOp),
+        BinaryOperator(BinaryOp),
         LeftParenthesis,
         RightParenthesis,
     }
 
     #[cfg(test)]
-    mod test {
+    mod tests {
         use crate::{
-            ast::expression::{Expression, Literal},
+            ast::{
+                expression::{Expression, Literal},
+                Identifier,
+            },
             lexer::{
                 number::{Base, Number},
-                punctuation::Punctuation,
+                punctuation::{BinaryOp, UnaryOp},
             },
             parser::FileParser,
         };
@@ -115,32 +116,100 @@ mod infix_notation {
         use super::InfixExpr;
 
         #[test]
-        fn infix_parsing() {
+        fn unary() {
             use super::InfixEntry::*;
 
-            let mut parser = FileParser::new_test("1 + 2 - (3 * 4) / -5");
+            let mut parser = FileParser::new_test("-x");
+            let parsed = InfixExpr::parse(&mut parser).expect("parsing failed");
+            let expected = InfixExpr(
+                vec![
+                    UnaryOperator(UnaryOp::Sub),
+                    Operand(Expression::Var(Identifier(String::from("x")))),
+                ]
+                .into(),
+            );
+            assert!(
+                expected == parsed,
+                "infix expression parsed incorrectly. Expected:\n{:#?}\nParsed:\n{:#?}",
+                expected,
+                parsed
+            );
+        }
+
+        #[test]
+        fn binary() {
+            use super::InfixEntry::*;
+
+            let mut parser = FileParser::new_test("4 >= x");
+            let parsed = InfixExpr::parse(&mut parser).expect("parsing failed");
+            let expected = InfixExpr(
+                vec![
+                    Operand(make_num("4")),
+                    BinaryOperator(BinaryOp::MoreEq),
+                    Operand(Expression::Var(Identifier(String::from("x")))),
+                ]
+                .into(),
+            );
+            assert!(
+                expected == parsed,
+                "infix expression parsed incorrectly. Expected:\n{:#?}\nParsed:\n{:#?}",
+                expected,
+                parsed
+            );
+        }
+
+        #[test]
+        fn simple_compound() {
+            use super::InfixEntry::*;
+
+            let mut parser = FileParser::new_test("1 + -2");
             let parsed = InfixExpr::parse(&mut parser).expect("parsing failed");
             let expected = InfixExpr(
                 vec![
                     Operand(make_num("1")),
-                    BinaryOperator(Punctuation("+")),
+                    BinaryOperator(BinaryOp::Add),
+                    UnaryOperator(UnaryOp::Sub),
                     Operand(make_num("2")),
-                    BinaryOperator(Punctuation("-")),
+                ]
+                .into(),
+            );
+            assert!(
+                expected == parsed,
+                "infix expression parsed incorrectly. Expected:\n{:#?}\nParsed:\n{:#?}",
+                expected,
+                parsed
+            );
+        }
+
+        #[test]
+        fn complex_compound() {
+            use super::InfixEntry::*;
+
+            let mut parser = FileParser::new_test("1 + -2 - (3 * 4) / -5");
+            let parsed = InfixExpr::parse(&mut parser).expect("parsing failed");
+            let expected = InfixExpr(
+                vec![
+                    Operand(make_num("1")),
+                    BinaryOperator(BinaryOp::Add),
+                    UnaryOperator(UnaryOp::Sub),
+                    Operand(make_num("2")),
+                    BinaryOperator(BinaryOp::Sub),
                     LeftParenthesis,
                     Operand(make_num("3")),
-                    BinaryOperator(Punctuation("*")),
+                    BinaryOperator(BinaryOp::Mul),
                     Operand(make_num("4")),
                     RightParenthesis,
-                    BinaryOperator(Punctuation("/")),
-                    UnaryOperator(Punctuation("-")),
+                    BinaryOperator(BinaryOp::Div),
+                    UnaryOperator(UnaryOp::Sub),
                     Operand(make_num("5")),
                 ]
                 .into(),
             );
-            assert_eq!(
-                expected, parsed,
-                "infix expression parsed incorrectly. Expected: {:#?}\nParsed: {:#?}",
-                expected, parsed
+            assert!(
+                expected == parsed,
+                "infix expression parsed incorrectly. Expected:\n{:#?}\nParsed:\n{:#?}",
+                expected,
+                parsed
             );
         }
 
@@ -157,7 +226,10 @@ mod infix_notation {
 mod polish_notation {
     use std::collections::VecDeque;
 
-    use crate::{ast::expression::Expression, lexer::punctuation::Punctuation};
+    use crate::{
+        ast::expression::Expression,
+        lexer::punctuation::{BinaryOp, UnaryOp},
+    };
 
     use super::infix_notation::{InfixEntry, InfixExpr};
 
@@ -175,12 +247,12 @@ mod polish_notation {
                     InfixEntry::Operand(operand) => {
                         output.push_back(PolishEntry::Operand(operand));
                     }
-                    InfixEntry::UnaryOperator(op) => op_stack.push(Operator::Unary { punc: op }),
+                    InfixEntry::UnaryOperator(op) => op_stack.push(Operator::Unary(op)),
                     InfixEntry::BinaryOperator(op) => {
                         while let Some(top_op) = op_stack.last() {
                             let top_priority = match top_op {
-                                Operator::Unary { punc } => punc.priority(),
-                                Operator::Binary { punc, .. } => punc.priority(),
+                                Operator::Unary(_) => 0,
+                                Operator::Binary(op) => op.priority(),
                                 Operator::LeftParenthesis => break,
                             };
                             if top_priority < op.priority() {
@@ -188,14 +260,9 @@ mod polish_notation {
                             }
                             output.push_back(op_stack.pop().unwrap().try_into().unwrap());
                         }
-                        op_stack.push(Operator::Binary {
-                            punc: op,
-                            priority: op.priority(),
-                        })
+                        op_stack.push(Operator::Binary(op));
                     }
-                    InfixEntry::LeftParenthesis => {
-                        op_stack.push(Operator::LeftParenthesis);
-                    }
+                    InfixEntry::LeftParenthesis => op_stack.push(Operator::LeftParenthesis),
                     InfixEntry::RightParenthesis => {
                         while let Some(top_op) = op_stack.last() {
                             if top_op == &Operator::LeftParenthesis {
@@ -253,8 +320,8 @@ mod polish_notation {
     #[derive(Debug, PartialEq, Eq)]
     pub enum PolishEntry {
         Operand(Expression),
-        UnaryOperator(Punctuation),
-        BinaryOperator(Punctuation),
+        UnaryOperator(UnaryOp),
+        BinaryOperator(BinaryOp),
     }
 
     impl TryFrom<Operator> for PolishEntry {
@@ -262,8 +329,8 @@ mod polish_notation {
 
         fn try_from(value: Operator) -> Result<Self, Self::Error> {
             match value {
-                Operator::Unary { punc } => Ok(PolishEntry::UnaryOperator(punc)),
-                Operator::Binary { punc, .. } => Ok(PolishEntry::BinaryOperator(punc)),
+                Operator::Unary(op) => Ok(PolishEntry::UnaryOperator(op)),
+                Operator::Binary(op) => Ok(PolishEntry::BinaryOperator(op)),
                 Operator::LeftParenthesis => Err(()),
             }
         }
@@ -271,8 +338,8 @@ mod polish_notation {
 
     #[derive(Debug, PartialEq, Eq)]
     enum Operator {
-        Unary { punc: Punctuation },
-        Binary { punc: Punctuation, priority: u8 },
+        Unary(UnaryOp),
+        Binary(BinaryOp),
         LeftParenthesis,
     }
 }

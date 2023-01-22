@@ -1,5 +1,5 @@
 use once_cell::sync::Lazy;
-use std::{collections::HashMap, str::FromStr};
+use std::{fmt::Display, str::FromStr};
 use thiserror::Error;
 
 use super::{Lexer, LexerError, Token};
@@ -33,103 +33,21 @@ impl Lexer {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Punctuation(pub &'static str);
 
-/// A list of properties of punctuation token.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-struct PuncProps {
-    /// Does that punctuation represent prefixed unary operator.
-    pub is_unary_op: bool,
-    /// Does that punctuation represent binary operator.
-    pub is_binary_op: bool,
-    /// Priority of operator. Equals zero for everything except binary operators.
-    pub priority: u8,
-    /// Does that punctuation represent assignment binary operator.
-    ///
-    /// Assignment operator may only appear once in an expression.
-    pub is_assign: bool,
-}
-
-static DICT: Lazy<HashMap<&'static str, PuncProps>> = Lazy::new(|| {
-    let punc = [";", ":", "{", "}", "(", ")", "[", "]", ",", "->"];
-
-    let unary = ["+", "-", "!"];
-    let assign = ["=", "+=", "-=", "*=", "/="];
-    let binary = HashMap::from([
-        ("*", 128),
-        ("/", 128),
-        ("%", 128),
-        ("+", 96),
-        ("-", 96),
-        (">>", 64),
-        ("<<", 64),
-        ("&", 50),
-        ("^", 49),
-        ("|", 48),
-        ("&&", 32),
-        ("||", 32),
-        ("==", 16),
-        ("!=", 16),
-        (">", 16),
-        ("<", 16),
-        (">=", 16),
-        ("<=", 16),
-    ]);
-
-    punc.into_iter()
-        .chain(unary)
-        .chain(assign)
-        .chain(binary.keys().copied())
-        .map(|s| {
-            (
-                s,
-                PuncProps {
-                    is_unary_op: unary.contains(&s),
-                    is_binary_op: binary.contains_key(&s) || assign.contains(&s),
-                    priority: binary.get(&s).copied().unwrap_or(0),
-                    is_assign: assign.contains(&s),
-                },
-            )
-        })
-        .collect()
-});
+static DICT: [&'static str; 34] = [
+    ";", ":", "{", "}", "(", ")", "[", "]", ",", "->", "+", "-", "!", "*", "/", "%", ">>", "<<",
+    "&", "^", "|", "&&", "||", "==", "!=", ">", "<", ">=", "<=", "=", "+=", "-=", "*=", "/=",
+];
 
 static MAX_PUNCTUATION_LENGTH: Lazy<usize> =
-    Lazy::new(|| DICT.keys().map(|punc| punc.len()).max().unwrap_or_default());
+    Lazy::new(|| DICT.iter().map(|punc| punc.len()).max().unwrap_or_default());
 
 impl Punctuation {
     pub fn new(s: &'static str) -> Self {
-        if DICT.contains_key(s) {
+        if DICT.contains(&s) {
             Self(s)
         } else {
             panic!("Invalid punctuation `{s}`");
         }
-    }
-
-    pub fn is_operator(&self) -> bool {
-        self.is_unary_operator() || self.is_binary_operator()
-    }
-
-    pub fn is_unary_operator(&self) -> bool {
-        DICT.get(self.0)
-            .map(|prop| prop.is_unary_op)
-            .unwrap_or_default()
-    }
-
-    pub fn is_binary_operator(&self) -> bool {
-        DICT.get(self.0)
-            .map(|prop| prop.is_binary_op)
-            .unwrap_or_default()
-    }
-
-    pub fn is_assignment_operator(&self) -> bool {
-        DICT.get(self.0)
-            .map(|prop| prop.is_assign)
-            .unwrap_or_default()
-    }
-
-    pub fn priority(&self) -> u8 {
-        DICT.get(self.0)
-            .map(|prop| prop.priority)
-            .unwrap_or_default()
     }
 }
 
@@ -137,15 +55,151 @@ impl FromStr for Punctuation {
     type Err = NotPunctuation;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        DICT.get_key_value(s)
-            .map(|(key, _)| Punctuation(key))
-            .ok_or_else(|| NotPunctuation(s.to_string()))
+        if let Some(s) = DICT.iter().find(|c| *c == &s) {
+            Ok(Punctuation(s))
+        } else {
+            Err(NotPunctuation(s.to_string()))
+        }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 #[error("provided string is not punctuation")]
 pub struct NotPunctuation(String);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnaryOp {
+    Add,
+    Sub,
+    Not,
+}
+
+impl TryFrom<Punctuation> for UnaryOp {
+    type Error = ();
+
+    fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
+        use UnaryOp::*;
+        Ok(match value.0 {
+            "+" => Add,
+            "-" => Sub,
+            "!" => Not,
+            _ => return Err(()),
+        })
+    }
+}
+
+impl Display for UnaryOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use UnaryOp::*;
+        write!(
+            f,
+            "{}",
+            match self {
+                Add => "+",
+                Sub => "-",
+                Not => "!",
+            }
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BinaryOp {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+    Rsh,
+    Lsh,
+    BinAnd,
+    BinOr,
+    BinXor,
+    And,
+    Or,
+    Eq,
+    Neq,
+    More,
+    Less,
+    MoreEq,
+    LessEq,
+}
+
+impl BinaryOp {
+    pub fn priority(&self) -> usize {
+        use BinaryOp::*;
+        match self {
+            Mul | Div | Mod => 128,
+            Add | Sub => 96,
+            Rsh | Lsh => 64,
+            BinAnd => 52,
+            BinXor => 51,
+            BinOr => 50,
+            And => 31,
+            Or => 30,
+            Eq | Neq | More | Less | MoreEq | LessEq => 16,
+        }
+    }
+}
+
+impl TryFrom<Punctuation> for BinaryOp {
+    type Error = ();
+
+    fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
+        use BinaryOp::*;
+        Ok(match value.0 {
+            "+" => Add,
+            "-" => Sub,
+            "*" => Mul,
+            "/" => Div,
+            "%" => Mod,
+            ">>" => Rsh,
+            "<<" => Lsh,
+            "&" => BinAnd,
+            "|" => BinOr,
+            "^" => BinXor,
+            "&&" => And,
+            "||" => Or,
+            "==" => Eq,
+            "!=" => Neq,
+            ">" => More,
+            "<" => Less,
+            ">=" => MoreEq,
+            "<=" => LessEq,
+            _ => return Err(()),
+        })
+    }
+}
+
+impl Display for BinaryOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use BinaryOp::*;
+        write!(
+            f,
+            "{}",
+            match self {
+                Add => "+",
+                Sub => "-",
+                Mul => "*",
+                Div => "/",
+                Mod => "%",
+                Rsh => ">>",
+                Lsh => "<<",
+                BinAnd => "&",
+                BinOr => "|",
+                BinXor => "^",
+                And => "&&",
+                Or => "||",
+                Eq => "==",
+                Neq => "!=",
+                More => ">",
+                Less => "<",
+                MoreEq => ">=",
+                LessEq => "<=",
+            }
+        )
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AssignOp {
@@ -169,5 +223,22 @@ impl TryFrom<Punctuation> for AssignOp {
             "/=" => DivAssign,
             _ => return Err(()),
         })
+    }
+}
+
+impl Display for AssignOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use AssignOp::*;
+        write!(
+            f,
+            "{}",
+            match self {
+                Assign => "=",
+                AddAssign => "+=",
+                SubAssign => "-=",
+                MulAssign => "*=",
+                DivAssign => "/=",
+            }
+        )
     }
 }
