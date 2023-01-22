@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    expression::{Block, Expression, For, FunctionCall, If, Literal, While},
+    expression::{Block, Expression, Literal},
     item::{ItemKind, Module, Visibility},
     statement::{Assignment, LetStatement, Statement},
 };
@@ -89,11 +89,11 @@ fn print_stmt(w: &mut impl Write, stmt: &Statement, ident: usize) -> Result<()> 
 fn print_expr(w: &mut impl Write, expr: &Expression, ident: usize) -> Result<()> {
     match expr {
         Expression::Block(block) => print_block(w, block, ident)?,
-        Expression::If(If {
+        Expression::If {
             condition,
             body,
             else_body,
-        }) => {
+        } => {
             write!(w, "if ")?;
             print_expr(w, condition, ident)?;
             write!(w, " ")?;
@@ -103,12 +103,12 @@ fn print_expr(w: &mut impl Write, expr: &Expression, ident: usize) -> Result<()>
                 print_block(w, else_body, ident)?;
             }
         }
-        Expression::While(While { condition, body }) => {
+        Expression::While { condition, body } => {
             write!(w, "while ")?;
             print_expr(w, condition, ident)?;
             print_block(w, body, ident)?;
         }
-        Expression::For(For { var, expr, body }) => {
+        Expression::For { var, expr, body } => {
             write!(w, "for {var} in ")?;
             print_expr(w, expr, ident)?;
             print_block(w, body, ident)?;
@@ -143,7 +143,7 @@ fn print_expr(w: &mut impl Write, expr: &Expression, ident: usize) -> Result<()>
             print_expr(w, right, ident)?;
             write!(w, ")")?;
         }
-        Expression::FnCall(FunctionCall { name, params }) => {
+        Expression::FnCall { name, params } => {
             write!(w, "{name}(")?;
             for param in params {
                 print_expr(w, param, ident)?;

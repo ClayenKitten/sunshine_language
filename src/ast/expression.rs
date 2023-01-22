@@ -10,11 +10,20 @@ pub enum Expression {
     /// Block is a set of statements surrounded by opening and closing brace.
     Block(Block),
 
-    If(If),
-    While(While),
-    For(For),
-
-    Literal(Literal),
+    If {
+        condition: Box<Expression>,
+        body: Block,
+        else_body: Option<Block>,
+    },
+    While {
+        condition: Box<Expression>,
+        body: Block,
+    },
+    For {
+        var: Identifier,
+        expr: Box<Expression>,
+        body: Block,
+    },
 
     Unary {
         op: UnaryOp,
@@ -26,8 +35,12 @@ pub enum Expression {
         right: Box<Expression>,
     },
 
-    FnCall(FunctionCall),
+    FnCall {
+        name: Identifier,
+        params: Vec<Expression>,
+    },
     Var(Identifier),
+    Literal(Literal),
 }
 
 impl Expression {
@@ -38,7 +51,10 @@ impl Expression {
     pub fn is_block_expression(&self) -> bool {
         matches!(
             self,
-            Expression::Block(_) | Expression::If(_) | Expression::While(_) | Expression::For(_)
+            Expression::Block(_)
+                | Expression::If { .. }
+                | Expression::While { .. }
+                | Expression::For { .. }
         )
     }
 }
@@ -48,36 +64,6 @@ pub enum Literal {
     Number(Number),
     String(String),
     Boolean(bool),
-}
-
-/// NAME(PARAMS, ...)
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FunctionCall {
-    pub name: Identifier,
-    pub params: Vec<Expression>,
-}
-
-/// if CONDITION { BODY } else { ELSE_BODY }
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct If {
-    pub condition: Box<Expression>,
-    pub body: Block,
-    pub else_body: Option<Block>,
-}
-
-/// while CONDITION { BODY }
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct While {
-    pub condition: Box<Expression>,
-    pub body: Block,
-}
-
-/// for VAR in EXPR { BODY }
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct For {
-    pub var: Identifier,
-    pub expr: Box<Expression>,
-    pub body: Block,
 }
 
 /// Block is an expression that consists of a number of statements and an optional final expression.

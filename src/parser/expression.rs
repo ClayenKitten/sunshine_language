@@ -1,6 +1,6 @@
 use crate::{
     ast::{
-        expression::{Block, Expression, For, FunctionCall, If, Literal, While},
+        expression::{Block, Expression, Literal},
         statement::Statement,
         Identifier,
     },
@@ -32,9 +32,9 @@ impl FileParser {
             Token::Num(num) => Expression::Literal(Literal::Number(num)),
             Token::Str(str) => Expression::Literal(Literal::String(str)),
 
-            Token::Kw(If) => Expression::If(self.parse_if()?),
-            Token::Kw(While) => Expression::While(self.parse_while()?),
-            Token::Kw(For) => Expression::For(self.parse_for()?),
+            Token::Kw(If) => self.parse_if()?,
+            Token::Kw(While) => self.parse_while()?,
+            Token::Kw(For) => self.parse_for()?,
             Token::Kw(True) => Expression::Literal(Literal::Boolean(true)),
             Token::Kw(False) => Expression::Literal(Literal::Boolean(false)),
 
@@ -42,9 +42,7 @@ impl FileParser {
 
             Token::Eof => return Err(ParserError::UnexpectedEof),
 
-            Token::Punc(_) | Token::Kw(_) => {
-                return Err(UnexpectedTokenError::TokenMismatch.into())
-            }
+            Token::Punc(_) | Token::Kw(_) => return Err(UnexpectedTokenError::TokenMismatch.into()),
         })
     }
 
@@ -55,7 +53,7 @@ impl FileParser {
             loop {
                 params.push(self.parse_expr()?);
                 if self.lexer.consume_punctuation(")")? {
-                    return Ok(Expression::FnCall(FunctionCall { name, params }));
+                    return Ok(Expression::FnCall { name, params });
                 } else if self.lexer.consume_punctuation(",")? {
                 } else {
                     return Err(UnexpectedTokenError::TokenMismatch.into());
@@ -115,8 +113,8 @@ impl FileParser {
         })
     }
 
-    /// Parse if loop. Keyword [if](Keyword::If) is expected to be consumed beforehand.
-    pub fn parse_if(&mut self) -> Result<If, ParserError> {
+    /// Parse if conditional. Keyword [if](Keyword::If) is expected to be consumed beforehand.
+    pub fn parse_if(&mut self) -> Result<Expression, ParserError> {
         let condition = Box::new(self.parse_expr()?);
         self.lexer.expect_punctuation("{")?;
         let body = self.parse_block()?;
@@ -128,7 +126,7 @@ impl FileParser {
             None
         };
 
-        Ok(If {
+        Ok(Expression::If {
             condition,
             body,
             else_body,
@@ -136,20 +134,20 @@ impl FileParser {
     }
 
     /// Parse while loop. Keyword [while](Keyword::While) is expected to be consumed beforehand.
-    pub fn parse_while(&mut self) -> Result<While, ParserError> {
+    pub fn parse_while(&mut self) -> Result<Expression, ParserError> {
         let condition = Box::new(self.parse_expr()?);
         self.lexer.expect_punctuation("{")?;
         let body = self.parse_block()?;
-        Ok(While { condition, body })
+        Ok(Expression::While { condition, body })
     }
 
     /// Parse for loop. Keyword [for](Keyword::For) is expected to be consumed beforehand.
-    pub fn parse_for(&mut self) -> Result<For, ParserError> {
+    pub fn parse_for(&mut self) -> Result<Expression, ParserError> {
         let var = self.lexer.expect_identifier()?;
         self.lexer.expect_keyword(Keyword::In)?;
         let expr = Box::new(self.parse_expr()?);
         self.lexer.expect_punctuation("{")?;
         let body = self.parse_block()?;
-        Ok(For { var, expr, body })
+        Ok(Expression::For { var, expr, body })
     }
 }
