@@ -29,7 +29,6 @@ impl InfixExpr {
 
         loop {
             use InfixEntry::*;
-            println!("{:?}", parser.lexer.peek());
             match output.back() {
                 Some(Operand(_) | RightParenthesis) => {
                     if let Some(op) = parser.lexer.consume_binary_operator()? {
