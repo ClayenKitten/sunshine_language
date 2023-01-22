@@ -113,7 +113,6 @@ fn print_expr(w: &mut impl Write, expr: &Expression, ident: usize) -> Result<()>
             print_expr(w, expr, ident)?;
             print_block(w, body, ident)?;
         }
-        Expression::Ident(ident) => write!(w, "{}", ident)?,
         Expression::Literal(Literal::Number(Number {
             integer,
             fraction,

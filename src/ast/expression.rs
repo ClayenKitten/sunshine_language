@@ -14,7 +14,6 @@ pub enum Expression {
     While(While),
     For(For),
 
-    Ident(Identifier),
     Literal(Literal),
 
     Unary {
