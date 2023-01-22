@@ -13,6 +13,8 @@ use std::{
 
 use crate::ast::item::Item;
 
+use self::path::ItemPath;
+
 /// Table of all known items.
 ///
 /// See the [module documentation] for details.
@@ -20,8 +22,8 @@ use crate::ast::item::Item;
 /// [module documentation]: crate::item_table
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ItemTable {
-    pub declared: HashMap<path::ItemPath, Item>,
-    duplicated: Vec<(path::ItemPath, Item)>,
+    pub declared: HashMap<ItemPath, Item>,
+    duplicated: Vec<(ItemPath, Item)>,
 }
 
 impl ItemTable {
@@ -45,18 +47,18 @@ impl ItemTable {
     /// Add new entry to item table.
     ///
     /// `scope` is path to `item`'s parent.
-    pub fn declare(&mut self, mut scope: path::ItemPath, item: Item) {
+    pub fn declare(&mut self, mut scope: ItemPath, item: Item) {
         scope.push(item.name().clone());
         self.try_insert(scope, item);
     }
 
-    pub fn declare_anonymous(&mut self, scope: path::ItemPath, item: Item) {
+    pub fn declare_anonymous(&mut self, scope: ItemPath, item: Item) {
         self.try_insert(scope, item);
     }
 
     /// Try to insert provided [Item] to `declared`. If it already exists, push it to `duplicated`
     /// instead.
-    fn try_insert(&mut self, path: path::ItemPath, item: Item) {
+    fn try_insert(&mut self, path: ItemPath, item: Item) {
         match self.declared.entry(path) {
             Entry::Vacant(entry) => {
                 entry.insert(item);
@@ -65,11 +67,15 @@ impl ItemTable {
         }
     }
 
-    pub fn iter(&self) -> hash_map::Iter<path::ItemPath, Item> {
+    pub fn items(&self) -> hash_map::Values<ItemPath, Item> {
+        self.declared.values()
+    }
+
+    pub fn iter(&self) -> hash_map::Iter<ItemPath, Item> {
         self.declared.iter()
     }
 
-    pub fn iter_mut(&mut self) -> hash_map::IterMut<path::ItemPath, Item> {
+    pub fn iter_mut(&mut self) -> hash_map::IterMut<ItemPath, Item> {
         self.declared.iter_mut()
     }
 }
