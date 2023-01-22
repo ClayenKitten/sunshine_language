@@ -72,7 +72,7 @@ fn print_stmt(w: &mut impl Write, stmt: &Statement, ident: usize) -> Result<()> 
             operator,
             value,
         }) => {
-            write!(w, "{} {} ", assignee, operator.0)?;
+            write!(w, "{} {} ", assignee, operator)?;
             print_expr(w, value, ident)?;
             writeln!(w, ";")?;
         }

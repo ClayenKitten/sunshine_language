@@ -1,4 +1,4 @@
-use crate::lexer::punctuation::Punctuation;
+use crate::lexer::punctuation::AssignOp;
 
 use super::{expression::Expression, Identifier};
 
@@ -22,6 +22,6 @@ pub struct LetStatement {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Assignment {
     pub assignee: Identifier,
-    pub operator: Punctuation,
+    pub operator: AssignOp,
     pub value: Expression,
 }
