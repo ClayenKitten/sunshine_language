@@ -21,3 +21,8 @@ path = "src/lib.rs"
 [[bin]]
 name = "compiler_frontend"
 path = "src/bin.rs"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = "debuginfo"
