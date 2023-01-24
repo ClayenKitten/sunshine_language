@@ -37,9 +37,9 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(root: PathBuf, context: Arc<Context>) -> Result<Self, SourceError> {
+    pub fn new(main: PathBuf, context: Arc<Context>) -> Result<Self, SourceError> {
         Ok(Parser {
-            source: SourceMap::new(root, context.metadata.crate_name.clone())?,
+            source: SourceMap::new(main)?,
             context,
         })
     }
@@ -65,6 +65,7 @@ impl Parser {
     pub fn parse_file(&mut self, path: ItemPath) -> Result<ItemTable, ParserError> {
         self.source
             .insert(path.clone())
+            .map(|id| self.source.get(id))
             .and_then(|src| src.read())
             .map_err(ParserError::SourceError)
             .map(InputStream::new)

@@ -4,17 +4,19 @@ use std::{
     collections::{hash_map::Entry, HashMap},
     fs,
     io::{self, Read},
+    ops::IndexMut,
     path::{Path, PathBuf},
 };
 use thiserror::Error;
 
-use crate::{ast::Identifier, item_table::path::ItemPath};
+use crate::{item_table::path::ItemPath, util::MonotonicVec};
 
 /// The structure that holds the whole source code of the compiled program.
 #[derive(Debug)]
 pub struct SourceMap {
     root: PathBuf,
-    files: HashMap<ItemPath, SourceFile>,
+    mapping: HashMap<PathBuf, SourceId>,
+    files: MonotonicVec<SourceFile>,
 }
 
 impl SourceMap {
@@ -23,30 +25,67 @@ impl SourceMap {
     /// # Errors
     ///
     /// Error is only returned if `root` is not found or couldn't be opened.
-    pub fn new(mut main: PathBuf, krate: Identifier) -> Result<Self, SourceError> {
-        Ok(Self {
-            files: {
-                let mut files = HashMap::new();
-                files.insert(ItemPath::new(krate), SourceFile::new(&main)?);
-                files
-            },
+    pub fn new(main: PathBuf) -> Result<Self, SourceError> {
+        let mut map = Self {
+            mapping: HashMap::new(),
+            files: MonotonicVec::new(),
             root: {
-                main.pop();
-                main
+                let mut root = main.clone();
+                root.pop();
+                root
             },
+        };
+        map.insert_path(main)?;
+        Ok(map)
+    }
+
+    /// Inserts new source file to the map and returns its id.
+    pub fn insert(&mut self, path: ItemPath) -> Result<SourceId, SourceError> {
+        let mut source_path = self.root.clone();
+        source_path.extend(path.clone().into_path_buf().iter());
+        self.insert_path(source_path)
+    }
+
+    /// Inserts new source file to the map and returns its id.
+    pub fn insert_path(&mut self, path: PathBuf) -> Result<SourceId, SourceError> {
+        let id = self.generate_id();
+        Ok(match self.mapping.entry(path.clone()) {
+            Entry::Vacant(entry) => {
+                let file = SourceFile::new(path)?;
+                entry.insert(id);
+                self.files.push(file);
+                id
+            }
+            Entry::Occupied(entry) => *entry.get(),
         })
     }
 
-    /// Inserts new source file to the map and returns a reference to the file.
-    pub fn insert(&mut self, path: ItemPath) -> Result<&mut SourceFile, SourceError> {
-        let mut source_path = self.root.clone();
-        source_path.extend(path.clone().into_path_buf().iter());
-        Ok(match self.files.entry(path) {
-            Entry::Vacant(entry) => entry.insert(SourceFile::new(source_path)?),
-            Entry::Occupied(entry) => entry.into_mut(),
-        })
+    /// Gets file by id.
+    pub fn get(&mut self, id: SourceId) -> &mut SourceFile {
+        self.files.index_mut(id.0 as usize)
+    }
+
+    /// Gets path of the file.
+    ///
+    /// That function may be slow as it traverses internal HashMap to find the value.
+    pub fn get_path(&self, id: SourceId) -> &Path {
+        self.mapping
+            .iter()
+            .find_map(|(path, checked_id)| (*checked_id == id).then(|| path.as_path()))
+            .expect("each SourceId should have corresponding entry in mapping")
+    }
+
+    /// Create new [SourceId].
+    fn generate_id(&self) -> SourceId {
+        SourceId(self.files.len() as u32)
     }
 }
+
+/// A sequential id of the file.
+///
+/// It is guaranteed that every SourceId maps to a file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SourceId(u32);
 
 /// A single file of the source code.
 ///
@@ -62,9 +101,7 @@ impl SourceFile {
     pub fn new(path: impl AsRef<Path>) -> Result<SourceFile, SourceError> {
         let path = path.as_ref();
         match fs::metadata(path) {
-            Ok(meta) if !meta.is_file() => {
-                Err(SourceError::NotAFile(path.to_owned()))
-            }
+            Ok(meta) if !meta.is_file() => Err(SourceError::NotAFile(path.to_owned())),
             Ok(_) => fs::OpenOptions::new()
                 .read(true)
                 .open(path)
@@ -76,9 +113,7 @@ impl SourceFile {
             Err(err) if err.kind() == io::ErrorKind::PermissionDenied => {
                 Err(SourceError::PermissionDenied(path.to_owned()))
             }
-            Err(err) => {
-                Err(SourceError::IoErrorWithSource(path.to_owned(), err))
-            }
+            Err(err) => Err(SourceError::IoErrorWithSource(path.to_owned(), err)),
         }
     }
 
