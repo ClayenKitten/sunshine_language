@@ -13,7 +13,7 @@ pub struct ErrorReporter {
     errors: Vec<Error>,
 }
 
-impl<'a> ErrorReporter {
+impl ErrorReporter {
     /// Create new ErrorReporter.
     pub fn new() -> Self {
         Self {
@@ -22,14 +22,14 @@ impl<'a> ErrorReporter {
         }
     }
 
-    /// Build warning.
-    pub fn warn(&'a mut self) -> ErrorBuilder<'a> {
-        ErrorBuilder::new(self, Severity::Warning)
-    }
-
     /// Build error.
-    pub fn error(&'a mut self) -> ErrorBuilder<'a> {
-        ErrorBuilder::new(self, Severity::Error)
+    pub fn error(&mut self, message: impl ToString, start: Location, end: Location) {
+        let error = Error {
+            message: message.to_string(),
+            start,
+            end,
+        };
+        self.errors.push(error);
     }
 
     /// Check if any fatal error occurred.
@@ -67,68 +67,6 @@ pub struct Error {
     message: String,
     start: Location,
     end: Location,
-}
-
-#[derive(Debug)]
-pub struct ErrorBuilder<'a> {
-    reporter: &'a mut ErrorReporter,
-    severity: Severity,
-    message: Option<String>,
-    start: Option<Location>,
-    end: Option<Location>,
-}
-
-impl<'a> ErrorBuilder<'a> {
-    fn new(reporter: &'a mut ErrorReporter, severity: Severity) -> Self {
-        Self {
-            reporter,
-            severity,
-            message: None,
-            start: None,
-            end: None,
-        }
-    }
-
-    /// Set message of error. Required.
-    pub fn message(mut self, msg: String) -> ErrorBuilder<'a> {
-        self.message = Some(msg);
-        self
-    }
-
-    /// Set starting location of error. Required.
-    pub fn starts_at(mut self, location: Location) -> ErrorBuilder<'a> {
-        self.start = Some(location);
-        self
-    }
-
-    /// Set ending location of error. Defaults to starting location.
-    pub fn ends_at(mut self, location: Location) -> ErrorBuilder<'a> {
-        self.end = Some(location);
-        self
-    }
-
-    /// Build error and store it in `ErrorReporter`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if not all required fields were set.
-    pub fn report(self) {
-        let message = self.message.expect("Error message wasn't provided.");
-        let start = self
-            .start
-            .expect("Error starting location wasn't provided.");
-        let end = self.end.unwrap_or(start);
-
-        let error = Error {
-            message,
-            start,
-            end,
-        };
-        match self.severity {
-            Severity::Warning => self.reporter.warnings.push(error),
-            Severity::Error => self.reporter.errors.push(error),
-        }
-    }
 }
 
 /// How severe is error.

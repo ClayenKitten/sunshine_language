@@ -34,15 +34,11 @@ impl FileParser {
             Item::new(self.parse_module()?, visibility)
         } else {
             let token = self.lexer.next()?;
-            self.context
-                .error_reporter
-                .lock()
-                .unwrap()
-                .error()
-                .message(String::from("expected an item"))
-                .starts_at(start)
-                .ends_at(self.lexer.location)
-                .report();
+            self.context.error_reporter.lock().unwrap().error(
+                "expected an item",
+                start,
+                self.lexer.location,
+            );
             return Err(UnexpectedTokenError::UnexpectedToken(token).into());
         };
         self.item_table.declare(self.scope.clone(), item);

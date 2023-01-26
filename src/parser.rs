@@ -240,17 +240,11 @@ impl Lexer {
         if found == Token::Punc(Punctuation(expected)) {
             Ok(())
         } else {
-            self.context
-                .error_reporter
-                .lock()
-                .unwrap()
-                .error()
-                .message(format!(
-                    "Expected punctuation `{expected}`, found {found:?}"
-                ))
-                .starts_at(start)
-                .ends_at(self.location)
-                .report();
+            self.context.error_reporter.lock().unwrap().error(
+                format!("Expected punctuation `{expected}`, found {found:?}"),
+                start,
+                self.location,
+            );
             Err(UnexpectedTokenError::TokenMismatch.into())
         }
     }
@@ -262,15 +256,11 @@ impl Lexer {
         if found == Token::Kw(keyword) {
             Ok(())
         } else {
-            self.context
-                .error_reporter
-                .lock()
-                .unwrap()
-                .error()
-                .message(format!("Expected keyword `{keyword}`, found {found:?}"))
-                .starts_at(start)
-                .ends_at(self.location)
-                .report();
+            self.context.error_reporter.lock().unwrap().error(
+                format!("Expected keyword `{keyword}`, found {found:?}"),
+                start,
+                self.location,
+            );
             Err(UnexpectedTokenError::TokenMismatch.into())
         }
     }
@@ -282,15 +272,11 @@ impl Lexer {
         if let Token::Ident(ident) = found {
             Ok(Identifier(ident))
         } else {
-            self.context
-                .error_reporter
-                .lock()
-                .unwrap()
-                .error()
-                .message(format!("Expected identifier, found {found:?}"))
-                .starts_at(start)
-                .ends_at(self.location)
-                .report();
+            self.context.error_reporter.lock().unwrap().error(
+                format!("Expected identifier, found {found:?}"),
+                start,
+                self.location,
+            );
             Err(UnexpectedTokenError::TokenMismatch.into())
         }
     }
