@@ -47,10 +47,12 @@ impl Default for ErrorReporter {
 impl Display for ErrorReporter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for warning in self.warnings.iter() {
-            writeln!(f, "Warning at {}:\n\t{}", warning.start, warning.message)?;
+            writeln!(f, "Warning: {}", warning.message)?;
+            writeln!(f, " --> {}", warning.start)?;
         }
         for error in self.errors.iter() {
-            writeln!(f, "Error at {}:\n\t{}", error.start, error.message)?;
+            writeln!(f, "Error: {}", error.message)?;
+            writeln!(f, " --> {}", error.start)?;
         }
         writeln!(
             f,
