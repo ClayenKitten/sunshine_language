@@ -15,7 +15,7 @@ use thiserror::Error;
 
 use crate::{
     ast::{
-        item::{Item, ItemKind, Module, Visibility},
+        item::{Item, Visibility},
         Identifier,
     },
     context::Context,
@@ -26,20 +26,25 @@ use crate::{
         punctuation::{BinaryOp, Punctuation, UnaryOp},
         Lexer, LexerError, Token,
     },
-    source::{SourceError, SourceMap},
+    source::{SourceError, SourceId, SourceMap},
 };
 
 /// Interface to compute a [ItemTable] of the whole project.
 pub struct Parser {
     /// Path to the root folder.
     source: SourceMap,
+    pending: Vec<PendingFile>,
     pub context: Arc<Context>,
 }
 
 impl Parser {
     pub fn new(main: PathBuf, context: Arc<Context>) -> Result<Self, SourceError> {
         Ok(Parser {
-            source: SourceMap::new(main)?,
+            source: SourceMap::new(main.clone())?,
+            pending: vec![PendingFile::Specific {
+                scope: ItemPath::new(context.metadata.crate_name.clone()),
+                path: main,
+            }],
             context,
         })
     }
@@ -47,31 +52,46 @@ impl Parser {
     /// Parse the whole package.
     pub fn parse(&mut self) -> Result<ItemTable, ParserError> {
         let mut table = ItemTable::new();
-        let mut unparsed = vec![ItemPath::new(self.context.metadata.crate_name.clone())];
-        while let Some(path) = unparsed.pop() {
-            let mut parsed = self.parse_file(path)?;
-            for (path, item) in parsed.iter_mut() {
-                if let ItemKind::Module(Module::Loadable(ident)) = &mut item.kind {
-                    item.kind = ItemKind::Module(Module::Inline(ident.clone()));
-                    unparsed.push(path.clone());
-                }
-            }
-            table.extend(parsed);
+        while let Some(file) = self.pending.pop() {
+            let parsed = match file {
+                PendingFile::General(path) => self.parse_file(path.clone())?,
+                PendingFile::Specific { scope, path } => self.parse_file_by_path(scope, path)?,
+            };
+            self.pending.extend(parsed.pending);
+            table.extend(parsed.item_table);
         }
         Ok(table)
     }
 
-    /// Parse one file.
-    pub fn parse_file(&mut self, path: ItemPath) -> Result<ItemTable, ParserError> {
+    /// Parse one file at default location.
+    pub fn parse_file(&mut self, path: ItemPath) -> Result<ParsedFile, ParserError> {
+        let id = self.source.insert(path.clone())?;
+        self.parse_file_by_id(path, id)
+    }
+
+    /// Parse one file with specified location.
+    pub fn parse_file_by_path(
+        &mut self,
+        scope: ItemPath,
+        path: PathBuf,
+    ) -> Result<ParsedFile, ParserError> {
+        let id = self.source.insert_path(path)?;
+        self.parse_file_by_id(scope, id)
+    }
+
+    fn parse_file_by_id(
+        &mut self,
+        scope: ItemPath,
+        id: SourceId,
+    ) -> Result<ParsedFile, ParserError> {
         self.source
-            .insert(path.clone())
-            .map(|id| self.source.get(id))
-            .and_then(|src| src.read())
+            .get(id)
+            .read()
             .map_err(ParserError::SourceError)
             .map(InputStream::new)
             .map(|input| Lexer::new(input, Arc::clone(&self.context)))
-            .map(|lexer| FileParser::new(lexer, path, Arc::clone(&self.context)))
-            .and_then(|mut parser| parser.parse())
+            .map(|lexer| FileParser::new(lexer, scope, Arc::clone(&self.context)))
+            .and_then(|parser| parser.parse())
     }
 }
 
@@ -80,6 +100,7 @@ pub struct FileParser {
     pub item_table: ItemTable,
     pub lexer: Lexer,
     scope: ItemPath,
+    pending: Vec<PendingFile>,
     pub context: Arc<Context>,
 }
 
@@ -89,6 +110,7 @@ impl FileParser {
             item_table: ItemTable::new(),
             lexer,
             scope,
+            pending: Vec::new(),
             context,
         }
     }
@@ -100,15 +122,19 @@ impl FileParser {
             item_table: ItemTable::new(),
             lexer: Lexer::new(InputStream::new(src), Arc::clone(&context)),
             scope: ItemPath::new(Identifier(String::from("crate"))),
+            pending: Vec::new(),
             context,
         }
     }
 
-    pub fn parse(&mut self) -> Result<ItemTable, ParserError> {
+    pub fn parse(mut self) -> Result<ParsedFile, ParserError> {
         let module = self.parse_top_module(self.scope.last().clone())?;
         self.item_table
             .declare_anonymous(self.scope.clone(), Item::new(module, Visibility::Public));
-        Ok(self.item_table.clone())
+        Ok(ParsedFile {
+            item_table: self.item_table,
+            pending: self.pending,
+        })
     }
 }
 
@@ -135,6 +161,18 @@ pub enum UnexpectedTokenError {
     UnexpectedToken(Token),
     #[error("token mismatch")]
     TokenMismatch,
+}
+
+/// Result of the file parse.
+pub struct ParsedFile {
+    pub item_table: ItemTable,
+    pub pending: Vec<PendingFile>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum PendingFile {
+    General(ItemPath),
+    Specific { scope: ItemPath, path: PathBuf },
 }
 
 impl Lexer {

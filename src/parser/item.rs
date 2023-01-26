@@ -6,7 +6,7 @@ use crate::{
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
 };
 
-use super::{FileParser, ParserError, UnexpectedTokenError};
+use super::{FileParser, ParserError, PendingFile, UnexpectedTokenError};
 
 /// [Item]'s parsing.
 ///
@@ -61,6 +61,11 @@ impl FileParser {
         let name = self.lexer.expect_identifier()?;
 
         if self.lexer.consume_punctuation(";")? {
+            self.pending.push({
+                let mut path = self.scope.clone();
+                path.push(name.clone());
+                PendingFile::General(path)
+            });
             return Ok(Module::Loadable(name));
         }
 
