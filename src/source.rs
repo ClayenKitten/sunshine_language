@@ -39,6 +39,17 @@ impl SourceMap {
         Ok(map)
     }
 
+    #[cfg(test)]
+    pub fn new_test() -> Result<Self, SourceError> {
+        use std::str::FromStr;
+
+        Ok(Self {
+            mapping: HashMap::new(),
+            files: MonotonicVec::new(),
+            root: PathBuf::from_str("/dev/null").unwrap(),
+        })
+    }
+
     /// Inserts new source file to the map and returns its id.
     pub fn insert(&mut self, path: ItemPath) -> Result<SourceId, SourceError> {
         let mut source_path = self.root.clone();

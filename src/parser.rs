@@ -26,13 +26,11 @@ use crate::{
         punctuation::{BinaryOp, Punctuation, UnaryOp},
         Lexer, LexerError, Token,
     },
-    source::{SourceError, SourceId, SourceMap},
+    source::{SourceError, SourceId},
 };
 
 /// Interface to compute a [ItemTable] of the whole project.
 pub struct Parser {
-    /// Path to the root folder.
-    source: SourceMap,
     pending: Vec<PendingFile>,
     pub context: Arc<Context>,
 }
@@ -40,7 +38,6 @@ pub struct Parser {
 impl Parser {
     pub fn new(main: PathBuf, context: Arc<Context>) -> Result<Self, SourceError> {
         Ok(Parser {
-            source: SourceMap::new(main.clone())?,
             pending: vec![PendingFile::Specific {
                 scope: ItemPath::new(context.metadata.crate_name.clone()),
                 path: main,
@@ -65,7 +62,7 @@ impl Parser {
 
     /// Parse one file at default location.
     pub fn parse_file(&mut self, path: ItemPath) -> Result<ParsedFile, ParserError> {
-        let id = self.source.insert(path.clone())?;
+        let id = self.context.source.lock().unwrap().insert(path.clone())?;
         self.parse_file_by_id(path, id)
     }
 
@@ -75,7 +72,7 @@ impl Parser {
         scope: ItemPath,
         path: PathBuf,
     ) -> Result<ParsedFile, ParserError> {
-        let id = self.source.insert_path(path)?;
+        let id = self.context.source.lock().unwrap().insert_path(path)?;
         self.parse_file_by_id(scope, id)
     }
 
@@ -84,7 +81,10 @@ impl Parser {
         scope: ItemPath,
         id: SourceId,
     ) -> Result<ParsedFile, ParserError> {
-        self.source
+        self.context
+            .source
+            .lock()
+            .unwrap()
             .get(id)
             .read()
             .map_err(ParserError::SourceError)

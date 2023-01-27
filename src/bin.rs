@@ -2,15 +2,9 @@ use clap::Parser as ArgParser;
 use compiler::{
     ast::{pretty_print::print_table, Identifier},
     context::{Context, Emit, Metadata},
-    error::ErrorReporter,
     parser::Parser,
 };
-use std::{
-    io::stdout,
-    path::PathBuf,
-    str::FromStr,
-    sync::{Arc, Mutex},
-};
+use std::{io::stdout, path::PathBuf, str::FromStr, sync::Arc};
 
 #[derive(ArgParser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -36,13 +30,13 @@ fn main() -> anyhow::Result<()> {
             Identifier::from_str(&x)?
         }
     };
-    let context = Context {
-        metadata: Metadata {
+    let context = Context::new(
+        args.path.clone(),
+        Metadata {
             crate_name,
             emit_type: args.emit,
         },
-        error_reporter: Mutex::new(ErrorReporter::new()),
-    };
+    )?;
     let mut parser = Parser::new(args.path, Arc::new(context))?;
 
     let item_table = parser.parse();
