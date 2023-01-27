@@ -1,4 +1,4 @@
-use crate::lexer::punctuation::AssignOp;
+use crate::lexer::operator::AssignOp;
 
 use super::{expression::Expression, Identifier};
 

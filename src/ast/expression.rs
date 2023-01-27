@@ -1,6 +1,6 @@
 use crate::lexer::{
     number::Number,
-    punctuation::{BinaryOp, UnaryOp},
+    operator::{BinaryOp, UnaryOp},
 };
 
 use super::{statement::Statement, Identifier};

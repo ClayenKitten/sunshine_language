@@ -2,7 +2,8 @@ use crate::{
     ast::Identifier,
     lexer::{
         keyword::Keyword,
-        punctuation::{BinaryOp, Punctuation, UnaryOp},
+        operator::{BinaryOp, UnaryOp},
+        punctuation::Punctuation,
         Lexer, LexerError, Token,
     },
     parser::{ParserError, UnexpectedTokenError},

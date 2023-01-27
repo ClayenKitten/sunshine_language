@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use crate::{
     ast::expression::Expression,
-    lexer::punctuation::{BinaryOp, UnaryOp},
+    lexer::operator::{BinaryOp, UnaryOp},
 };
 
 use super::infix_notation::{InfixEntry, InfixExpr};

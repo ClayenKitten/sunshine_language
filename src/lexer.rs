@@ -2,6 +2,7 @@
 
 pub mod keyword;
 pub mod number;
+pub mod operator;
 pub mod punctuation;
 mod util;
 
