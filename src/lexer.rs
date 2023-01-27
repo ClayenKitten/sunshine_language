@@ -3,6 +3,7 @@
 pub mod keyword;
 pub mod number;
 pub mod punctuation;
+mod util;
 
 use std::{mem::take, str::FromStr};
 
@@ -10,7 +11,8 @@ use thiserror::Error;
 
 use crate::{
     context::Context,
-    input_stream::{InputStream, Location}, source::SourceId,
+    input_stream::{InputStream, Location},
+    source::SourceId,
 };
 
 use self::{
