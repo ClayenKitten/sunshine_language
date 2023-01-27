@@ -69,39 +69,43 @@ pub struct NotPunctuation(String);
 
 macro_rules! define_operator {
     (
-        $(#[doc = $doc:expr])?
-        enum $name:ident {
-            $($field:ident = $value:literal,)*
-        }
+        $(
+            $(#[doc = $doc:expr])?
+            enum $name:ident {
+                $($field:ident = $value:literal,)*
+            }
+        )*
     ) => {
-        $(#[doc = $doc])?
-        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-        pub enum $name {
-            $($field,)*
-        }
-
-        impl std::fmt::Display for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(
-                    f,
-                    "{}",
-                    match self {
-                        $($name::$field => $value,)*
-                    }
-                )
+        $(
+            $(#[doc = $doc])?
+            #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+            pub enum $name {
+                $($field,)*
             }
-        }
 
-        impl TryFrom<Punctuation> for $name {
-            type Error = ();
-
-            fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
-                Ok(match value.0 {
-                    $($value => $name::$field,)*
-                    _ => return Err(()),
-                })
+            impl std::fmt::Display for $name {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    write!(
+                        f,
+                        "{}",
+                        match self {
+                            $($name::$field => $value,)*
+                        }
+                    )
+                }
             }
-        }
+
+            impl TryFrom<Punctuation> for $name {
+                type Error = ();
+
+                fn try_from(value: Punctuation) -> Result<Self, Self::Error> {
+                    Ok(match value.0 {
+                        $($value => $name::$field,)*
+                        _ => return Err(()),
+                    })
+                }
+            }
+        )*
     }
 }
 
@@ -112,9 +116,7 @@ define_operator!(
         Sub = "-",
         Not = "!",
     }
-);
 
-define_operator!(
     /// An operator with two operands.
     enum BinaryOp {
         Add = "+",
@@ -136,6 +138,15 @@ define_operator!(
         MoreEq = ">=",
         LessEq = "<=",
     }
+
+    /// An operator with two operands: assignee and value.
+    enum AssignOp {
+        Assign = "=",
+        AddAssign = "+=",
+        SubAssign = "-=",
+        MulAssign = "*=",
+        DivAssign = "/=",
+    }
 );
 
 impl BinaryOp {
@@ -154,14 +165,3 @@ impl BinaryOp {
         }
     }
 }
-
-define_operator!(
-    /// An operator with two operands: assignee and value.
-    enum AssignOp {
-        Assign = "=",
-        AddAssign = "+=",
-        SubAssign = "-=",
-        MulAssign = "*=",
-        DivAssign = "/=",
-    }
-);
