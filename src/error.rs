@@ -1,17 +1,20 @@
 //! Error reporting.
 
-use std::{fmt::Display, sync::{Arc, Mutex}};
+use std::{
+    fmt::Display,
+    sync::{Arc, Mutex},
+};
 
-use crate::{input_stream::Location, source::{SourceMap, SourceId}};
+use crate::{
+    input_stream::Location,
+    source::{SourceId, SourceMap},
+};
 
 /// Interface to report errors conveniently.
 #[derive(Debug, Clone)]
 pub struct ErrorReporter {
     source_map: Arc<Mutex<SourceMap>>,
-    /// Valid code that looks suspicious to compiler.
-    warnings: Vec<Error>,
-    /// Invalid code that doesn't allow compilation to proceed.
-    errors: Vec<Error>,
+    errors: Vec<(Severity, Error)>,
 }
 
 impl ErrorReporter {
@@ -19,56 +22,83 @@ impl ErrorReporter {
     pub fn new(source_map: Arc<Mutex<SourceMap>>) -> Self {
         Self {
             source_map,
-            warnings: Vec::new(),
             errors: Vec::new(),
         }
     }
 
-    /// Build error.
-    pub fn error(&mut self, message: impl ToString, file: Option<SourceId>, start: Location, end: Location) {
+    /// Build warning.
+    pub fn warn(
+        &mut self,
+        message: impl ToString,
+        file: Option<SourceId>,
+        start: Location,
+        end: Location,
+    ) {
         let error = Error {
             message: message.to_string(),
             file,
             start,
             end,
         };
-        self.errors.push(error);
+        self.errors.push((Severity::Warning, error));
+    }
+
+    /// Build error.
+    pub fn error(
+        &mut self,
+        message: impl ToString,
+        file: Option<SourceId>,
+        start: Location,
+        end: Location,
+    ) {
+        let error = Error {
+            message: message.to_string(),
+            file,
+            start,
+            end,
+        };
+        self.errors.push((Severity::Error, error));
     }
 
     /// Check if any fatal error occurred.
     pub fn compilation_failed(&self) -> bool {
         !self.errors.is_empty()
     }
+
+    /// Calculates number of warnings and errors.
+    fn calc_number(&self) -> (usize, usize) {
+        self.errors
+            .iter()
+            .fold((0, 0), |(w, e), (severity, _)| match severity {
+                Severity::Warning => (w + 1, e),
+                Severity::Error => (w, e + 1),
+            })
+    }
 }
 
 impl Display for ErrorReporter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for warning in self.warnings.iter() {
-            writeln!(f, "Warning: {}", warning.message)?;
-            writeln!(f, " --> {}", warning.start)?;
-        }
-        for error in self.errors.iter() {
-            writeln!(f, "Error: {}", error.message)?;
-            if let Some(file) = error.file {
-                writeln!(
-                    f, " --> {}:{}",
+        for (severity, error) in self.errors.iter() {
+            match severity {
+                Severity::Warning => writeln!(f, "Warning: {}", error.message)?,
+                Severity::Error => writeln!(f, "Error: {}", error.message)?,
+            }
+            match error.file {
+                Some(file) => writeln!(
+                    f,
+                    " --> {}:{}",
                     self.source_map
                         .lock()
                         .unwrap()
                         .get_path(file)
                         .to_string_lossy(),
                     error.start
-                )?
-            } else {
-                writeln!(f, " --> {}", error.start)?
+                )?,
+                None => writeln!(f, " --> {}", error.start)?,
             }
         }
-        writeln!(
-            f,
-            "{} warning(s), {} error(s)",
-            self.warnings.len(),
-            self.errors.len()
-        )?;
+        let (warnings, error) = self.calc_number();
+        writeln!(f, "{warnings} warning(s), {error} error(s)",)?;
         Ok(())
     }
 }
