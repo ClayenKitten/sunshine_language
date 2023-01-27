@@ -5,7 +5,7 @@ mod item;
 pub mod operator_expression;
 mod statement;
 
-use std::{path::PathBuf, sync::Arc};
+use std::path::PathBuf;
 
 pub use expression::*;
 pub use item::*;
@@ -32,11 +32,11 @@ use crate::{
 /// Interface to compute a [ItemTable] of the whole project.
 pub struct Parser {
     pending: Vec<PendingFile>,
-    pub context: Arc<Context>,
+    pub context: Context,
 }
 
 impl Parser {
-    pub fn new(main: PathBuf, context: Arc<Context>) -> Result<Self, SourceError> {
+    pub fn new(main: PathBuf, context: Context) -> Result<Self, SourceError> {
         Ok(Parser {
             pending: vec![PendingFile::Specific {
                 scope: ItemPath::new(context.metadata.crate_name.clone()),
@@ -89,8 +89,8 @@ impl Parser {
             .read()
             .map_err(ParserError::SourceError)
             .map(InputStream::new)
-            .map(|input| Lexer::new(input, Arc::clone(&self.context)))
-            .map(|lexer| FileParser::new(lexer, scope, Arc::clone(&self.context)))
+            .map(|input| Lexer::new(input, self.context.clone()))
+            .map(|lexer| FileParser::new(lexer, scope, self.context.clone()))
             .and_then(|parser| parser.parse())
     }
 }
@@ -101,11 +101,11 @@ pub struct FileParser {
     pub lexer: Lexer,
     scope: ItemPath,
     pending: Vec<PendingFile>,
-    pub context: Arc<Context>,
+    pub context: Context,
 }
 
 impl FileParser {
-    pub fn new(lexer: Lexer, scope: ItemPath, context: Arc<Context>) -> Self {
+    pub fn new(lexer: Lexer, scope: ItemPath, context: Context) -> Self {
         Self {
             item_table: ItemTable::new(),
             lexer,
@@ -117,10 +117,10 @@ impl FileParser {
 
     #[cfg(test)]
     pub fn new_test(src: &str) -> Self {
-        let context = Arc::new(Context::new_test());
+        let context = Context::new_test();
         Self {
             item_table: ItemTable::new(),
-            lexer: Lexer::new(InputStream::new(src), Arc::clone(&context)),
+            lexer: Lexer::new(InputStream::new(src), context.clone()),
             scope: ItemPath::new(Identifier(String::from("crate"))),
             pending: Vec::new(),
             context,

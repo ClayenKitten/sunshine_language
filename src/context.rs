@@ -1,6 +1,9 @@
 //! Compiler context.
 
-use std::{path::PathBuf, sync::Mutex};
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 use clap::ValueEnum;
 
@@ -10,31 +13,34 @@ use crate::{
     source::{SourceError, SourceMap},
 };
 
-#[derive(Debug)]
+/// Context of the compilation.
+///
+/// That structure is cheap to clone as it only contains [`Arc`]s.
+#[derive(Debug, Clone)]
 pub struct Context {
-    pub metadata: Metadata,
-    pub source: Mutex<SourceMap>,
-    pub error_reporter: Mutex<ErrorReporter>,
+    pub metadata: Arc<Metadata>,
+    pub source: Arc<Mutex<SourceMap>>,
+    pub error_reporter: Arc<Mutex<ErrorReporter>>,
 }
 
 impl Context {
     pub fn new(main: PathBuf, metadata: Metadata) -> Result<Context, SourceError> {
         Ok(Context {
-            metadata,
-            source: Mutex::new(SourceMap::new(main)?),
-            error_reporter: Mutex::new(ErrorReporter::new()),
+            metadata: Arc::new(metadata),
+            source: Arc::new(Mutex::new(SourceMap::new(main)?)),
+            error_reporter: Arc::new(Mutex::new(ErrorReporter::new())),
         })
     }
 
     #[cfg(test)]
     pub fn new_test() -> Self {
         Self {
-            metadata: Metadata {
+            metadata: Arc::new(Metadata {
                 crate_name: Identifier(String::from("_TEST")),
                 emit_type: Emit::default(),
-            },
-            source: Mutex::new(SourceMap::new_test().unwrap()),
-            error_reporter: Mutex::new(ErrorReporter::new()),
+            }),
+            source: Arc::new(Mutex::new(SourceMap::new_test().unwrap())),
+            error_reporter: Arc::new(Mutex::new(ErrorReporter::new())),
         }
     }
 }

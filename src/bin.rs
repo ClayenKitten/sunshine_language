@@ -4,7 +4,7 @@ use compiler::{
     context::{Context, Emit, Metadata},
     parser::Parser,
 };
-use std::{io::stdout, path::PathBuf, str::FromStr, sync::Arc};
+use std::{io::stdout, path::PathBuf, str::FromStr};
 
 #[derive(ArgParser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -37,7 +37,7 @@ fn main() -> anyhow::Result<()> {
             emit_type: args.emit,
         },
     )?;
-    let mut parser = Parser::new(args.path, Arc::new(context))?;
+    let mut parser = Parser::new(args.path, context)?;
 
     let item_table = parser.parse();
 

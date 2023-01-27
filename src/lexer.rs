@@ -4,7 +4,7 @@ pub mod keyword;
 pub mod number;
 pub mod punctuation;
 
-use std::{mem::take, str::FromStr, sync::Arc};
+use std::{mem::take, str::FromStr};
 
 use thiserror::Error;
 
@@ -26,11 +26,11 @@ pub struct Lexer {
     current: Option<Token>,
     input: InputStream,
     pub location: Location,
-    pub context: Arc<Context>,
+    pub context: Context,
 }
 
 impl Lexer {
-    pub fn new(input: InputStream, context: Arc<Context>) -> Self {
+    pub fn new(input: InputStream, context: Context) -> Self {
         let location = input.location();
         Self {
             current: None,
@@ -47,7 +47,7 @@ impl Lexer {
             current: None,
             location: input.location(),
             input,
-            context: Arc::new(Context::new_test()),
+            context: Context::new_test(),
         }
     }
 
