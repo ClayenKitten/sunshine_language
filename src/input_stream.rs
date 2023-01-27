@@ -8,9 +8,12 @@ use std::{
 
 use owned_chars::{OwnedCharIndices, OwnedCharsExt};
 
+use crate::source::SourceId;
+
 /// Input stream provides compiler with characters of input and tracks their location.
 #[derive(Debug)]
 pub struct InputStream {
+    file: Option<SourceId>,
     iter: OwnedCharIndices,
     buf: VecDeque<(usize, char)>,
     // Location of next character.
@@ -38,9 +41,10 @@ impl Iterator for InputStream {
 }
 
 impl InputStream {
-    pub fn new(src: impl ToString) -> Self {
+    pub fn new(src: impl ToString, file: Option<SourceId>) -> Self {
         InputStream {
             buf: VecDeque::new(),
+            file,
             iter: src.to_string().into_char_indices(),
             location: Location {
                 pos: 0,
@@ -76,6 +80,11 @@ impl InputStream {
     /// Get location of next character.
     pub fn location(&self) -> Location {
         self.location
+    }
+
+    /// Returns source if any.
+    pub fn source(&self) -> Option<SourceId> {
+        self.file
     }
 }
 
@@ -115,7 +124,7 @@ mod test {
     #[test]
     fn iteration() {
         let s = "Hello, мир 🌐! ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ?";
-        let mut stream = InputStream::new(s);
+        let mut stream = InputStream::new(s, None);
         for ch in s.chars() {
             print!("{}", ch);
             assert_eq!(Some(ch), stream.next());
@@ -125,7 +134,7 @@ mod test {
 
     #[test]
     fn location() {
-        let mut stream = InputStream::new("x = 5;\ny = 2;");
+        let mut stream = InputStream::new("x = 5;\ny = 2;", None);
         assert_eq!(0, stream.location.line);
 
         assert_eq!(Some('x'), stream.next());
@@ -145,7 +154,7 @@ mod test {
 
     #[test]
     fn slice_one() {
-        let mut stream = InputStream::new("123");
+        let mut stream = InputStream::new("123", None);
         assert_eq!(Some('1'), stream.next());
         let from = stream.location();
         assert_eq!(Some('2'), stream.next());
@@ -155,7 +164,7 @@ mod test {
 
     #[test]
     fn slice() {
-        let mut stream = InputStream::new("print(\"Hello world\");");
+        let mut stream = InputStream::new("print(\"Hello world\");", None);
         assert_eq!(Some('('), stream.nth(5));
         let from = stream.location();
         assert_eq!(Some('"'), stream.nth(12));
@@ -165,7 +174,7 @@ mod test {
 
     #[test]
     fn slice_unicode() {
-        let mut stream = InputStream::new("Привет!:) 😀😀✨! 祝你好运!");
+        let mut stream = InputStream::new("Привет!:) 😀😀✨! 祝你好运!", None);
         let location1 = stream.location();
         assert_eq!(Some('!'), stream.nth(6));
         let location2 = stream.location();

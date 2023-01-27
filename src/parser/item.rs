@@ -36,6 +36,7 @@ impl FileParser {
             let token = self.lexer.next()?;
             self.context.error_reporter.lock().unwrap().error(
                 "expected an item",
+                self.source(),
                 start,
                 self.lexer.location,
             );

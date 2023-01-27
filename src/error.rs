@@ -1,12 +1,13 @@
 //! Error reporting.
 
-use std::fmt::Display;
+use std::{fmt::Display, sync::{Arc, Mutex}};
 
-use crate::input_stream::Location;
+use crate::{input_stream::Location, source::{SourceMap, SourceId}};
 
 /// Interface to report errors conveniently.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct ErrorReporter {
+    source_map: Arc<Mutex<SourceMap>>,
     /// Valid code that looks suspicious to compiler.
     warnings: Vec<Error>,
     /// Invalid code that doesn't allow compilation to proceed.
@@ -15,17 +16,19 @@ pub struct ErrorReporter {
 
 impl ErrorReporter {
     /// Create new ErrorReporter.
-    pub fn new() -> Self {
+    pub fn new(source_map: Arc<Mutex<SourceMap>>) -> Self {
         Self {
+            source_map,
             warnings: Vec::new(),
             errors: Vec::new(),
         }
     }
 
     /// Build error.
-    pub fn error(&mut self, message: impl ToString, start: Location, end: Location) {
+    pub fn error(&mut self, message: impl ToString, file: Option<SourceId>, start: Location, end: Location) {
         let error = Error {
             message: message.to_string(),
+            file,
             start,
             end,
         };
@@ -38,12 +41,6 @@ impl ErrorReporter {
     }
 }
 
-impl Default for ErrorReporter {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Display for ErrorReporter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for warning in self.warnings.iter() {
@@ -52,7 +49,19 @@ impl Display for ErrorReporter {
         }
         for error in self.errors.iter() {
             writeln!(f, "Error: {}", error.message)?;
-            writeln!(f, " --> {}", error.start)?;
+            if let Some(file) = error.file {
+                writeln!(
+                    f, " --> {}:{}",
+                    self.source_map
+                        .lock()
+                        .unwrap()
+                        .get_path(file)
+                        .to_string_lossy(),
+                    error.start
+                )?
+            } else {
+                writeln!(f, " --> {}", error.start)?
+            }
         }
         writeln!(
             f,
@@ -67,6 +76,7 @@ impl Display for ErrorReporter {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Error {
     message: String,
+    file: Option<SourceId>,
     start: Location,
     end: Location,
 }

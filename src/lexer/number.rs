@@ -105,7 +105,7 @@ mod test {
 
     #[test]
     fn parse_integer() {
-        let mut stream = InputStream::new("0");
+        let mut stream = InputStream::new("0", None);
         let sign = Number::parse(&mut stream);
         assert_eq!(
             sign,
@@ -116,7 +116,7 @@ mod test {
             })
         );
 
-        let mut stream = InputStream::new("1234");
+        let mut stream = InputStream::new("1234", None);
         let sign = Number::parse(&mut stream);
         assert_eq!(
             sign,
@@ -127,7 +127,7 @@ mod test {
             })
         );
 
-        let mut stream = InputStream::new("0xF422");
+        let mut stream = InputStream::new("0xF422", None);
         let sign = Number::parse(&mut stream);
         assert_eq!(
             sign,
@@ -141,7 +141,7 @@ mod test {
 
     #[test]
     fn parse_float() {
-        let mut stream = InputStream::new("1234.56789");
+        let mut stream = InputStream::new("1234.56789", None);
         let sign = Number::parse(&mut stream);
         assert_eq!(
             sign,
@@ -152,7 +152,7 @@ mod test {
             })
         );
 
-        let mut stream = InputStream::new("0xABC.DEF");
+        let mut stream = InputStream::new("0xABC.DEF", None);
         let sign = Number::parse(&mut stream);
         assert_eq!(
             sign,
@@ -167,27 +167,27 @@ mod test {
     #[test]
     #[should_panic]
     fn invalid_base_binary() {
-        let num = Number::parse(&mut InputStream::new("0b2130"));
+        let num = Number::parse(&mut InputStream::new("0b2130", None));
         num.unwrap();
     }
 
     #[test]
     #[should_panic]
     fn invalid_base_octal() {
-        let num = Number::parse(&mut InputStream::new("0o91"));
+        let num = Number::parse(&mut InputStream::new("0o91", None));
         num.unwrap();
     }
 
     #[test]
     #[should_panic]
     fn invalid_base_decimal() {
-        let num = Number::parse(&mut InputStream::new("ABC"));
+        let num = Number::parse(&mut InputStream::new("ABC", None));
         num.unwrap();
     }
 
     #[test]
     fn half_empty_float_parse() {
-        let mut stream = InputStream::new("1234.");
+        let mut stream = InputStream::new("1234.", None);
         let sign = Number::parse(&mut stream);
         assert_eq!(
             sign,
@@ -198,7 +198,7 @@ mod test {
             })
         );
 
-        let mut stream = InputStream::new(".1234");
+        let mut stream = InputStream::new(".1234", None);
         let sign = Number::parse(&mut stream);
         assert_eq!(
             sign,
@@ -209,7 +209,7 @@ mod test {
             })
         );
 
-        let mut stream = InputStream::new("0xABCD.");
+        let mut stream = InputStream::new("0xABCD.", None);
         let sign = Number::parse(&mut stream);
         assert_eq!(
             sign,
@@ -220,7 +220,7 @@ mod test {
             })
         );
 
-        let mut stream = InputStream::new("0x.001B");
+        let mut stream = InputStream::new("0x.001B", None);
         let sign = Number::parse(&mut stream);
         assert_eq!(
             sign,

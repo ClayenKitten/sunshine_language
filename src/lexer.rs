@@ -10,7 +10,7 @@ use thiserror::Error;
 
 use crate::{
     context::Context,
-    input_stream::{InputStream, Location},
+    input_stream::{InputStream, Location}, source::SourceId,
 };
 
 use self::{
@@ -42,7 +42,7 @@ impl Lexer {
 
     #[cfg(test)]
     pub fn new_test(src: &str) -> Self {
-        let input = InputStream::new(src);
+        let input = InputStream::new(src, None);
         Self {
             current: None,
             location: input.location(),
@@ -88,6 +88,7 @@ impl Lexer {
             Err(err) => {
                 self.context.error_reporter.lock().unwrap().error(
                     &err,
+                    self.source(),
                     start,
                     self.input.location(),
                 );
@@ -225,6 +226,10 @@ impl Lexer {
             Token::Ident(buffer)
         };
         Ok(token)
+    }
+
+    pub fn source(&self) -> Option<SourceId> {
+        self.input.source()
     }
 }
 

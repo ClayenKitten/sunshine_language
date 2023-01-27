@@ -25,22 +25,24 @@ pub struct Context {
 
 impl Context {
     pub fn new(main: PathBuf, metadata: Metadata) -> Result<Context, SourceError> {
+        let source = Arc::new(Mutex::new(SourceMap::new(main)?));
         Ok(Context {
             metadata: Arc::new(metadata),
-            source: Arc::new(Mutex::new(SourceMap::new(main)?)),
-            error_reporter: Arc::new(Mutex::new(ErrorReporter::new())),
+            error_reporter: Arc::new(Mutex::new(ErrorReporter::new(Arc::clone(&source)))),
+            source,
         })
     }
 
     #[cfg(test)]
     pub fn new_test() -> Self {
+        let source = Arc::new(Mutex::new(SourceMap::new_test().unwrap()));
         Self {
             metadata: Arc::new(Metadata {
                 crate_name: Identifier(String::from("_TEST")),
                 emit_type: Emit::default(),
             }),
-            source: Arc::new(Mutex::new(SourceMap::new_test().unwrap())),
-            error_reporter: Arc::new(Mutex::new(ErrorReporter::new())),
+            error_reporter: Arc::new(Mutex::new(ErrorReporter::new(Arc::clone(&source)))),
+            source,
         }
     }
 }

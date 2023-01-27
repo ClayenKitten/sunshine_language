@@ -88,7 +88,7 @@ impl Parser {
             .get(id)
             .read()
             .map_err(ParserError::SourceError)
-            .map(InputStream::new)
+            .map(|s| InputStream::new(s, Some(id)))
             .map(|input| Lexer::new(input, self.context.clone()))
             .map(|lexer| FileParser::new(lexer, scope, self.context.clone()))
             .and_then(|parser| parser.parse())
@@ -120,7 +120,7 @@ impl FileParser {
         let context = Context::new_test();
         Self {
             item_table: ItemTable::new(),
-            lexer: Lexer::new(InputStream::new(src), context.clone()),
+            lexer: Lexer::new(InputStream::new(src, None), context.clone()),
             scope: ItemPath::new(Identifier(String::from("crate"))),
             pending: Vec::new(),
             context,
@@ -135,6 +135,10 @@ impl FileParser {
             item_table: self.item_table,
             pending: self.pending,
         })
+    }
+
+    pub fn source(&self) -> Option<SourceId> {
+        self.lexer.source()
     }
 }
 
@@ -242,6 +246,7 @@ impl Lexer {
         } else {
             self.context.error_reporter.lock().unwrap().error(
                 format!("Expected punctuation `{expected}`, found {found:?}"),
+                self.source(),
                 start,
                 self.location,
             );
@@ -258,6 +263,7 @@ impl Lexer {
         } else {
             self.context.error_reporter.lock().unwrap().error(
                 format!("Expected keyword `{keyword}`, found {found:?}"),
+                self.source(),
                 start,
                 self.location,
             );
@@ -274,6 +280,7 @@ impl Lexer {
         } else {
             self.context.error_reporter.lock().unwrap().error(
                 format!("Expected identifier, found {found:?}"),
+                self.source(),
                 start,
                 self.location,
             );
