@@ -8,7 +8,7 @@ use crate::{
 use super::{
     expression::{Block, Expression, Literal},
     item::{ItemKind, Module, Visibility},
-    statement::{Assignment, LetStatement, Statement},
+    statement::{LetStatement, Statement},
 };
 
 pub fn print_table(w: &mut impl Write, table: &ItemTable) -> Result<()> {
@@ -67,13 +67,13 @@ fn print_stmt(w: &mut impl Write, stmt: &Statement, ident: usize) -> Result<()> 
             }
             writeln!(w, ";")?;
         }
-        Statement::Assignment(Assignment {
+        Statement::Assignment {
             assignee,
             operator,
-            value,
-        }) => {
+            expression,
+        } => {
             write!(w, "{} {} ", assignee, operator)?;
-            print_expr(w, value, ident)?;
+            print_expr(w, expression, ident)?;
             writeln!(w, ";")?;
         }
         Statement::Return(expr) => {

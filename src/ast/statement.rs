@@ -6,7 +6,11 @@ use super::{expression::Expression, Identifier};
 pub enum Statement {
     ExprStmt(Expression),
     LetStmt(LetStatement),
-    Assignment(Assignment),
+    Assignment {
+        assignee: Identifier,
+        operator: AssignOp,
+        expression: Expression,
+    },
     Return(Expression),
     Break,
 }
@@ -17,11 +21,4 @@ pub struct LetStatement {
     pub name: Identifier,
     pub type_: Option<Identifier>,
     pub value: Option<Box<Expression>>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Assignment {
-    pub assignee: Identifier,
-    pub operator: AssignOp,
-    pub value: Expression,
 }
