@@ -156,7 +156,7 @@ pub enum ParserError {
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum UnexpectedTokenError {
-    #[error("unexpected token: ")]
+    #[error("unexpected token: `{0:?}`")]
     UnexpectedToken(Token),
     #[error("token mismatch")]
     TokenMismatch,
