@@ -1,5 +1,6 @@
 //! Infix operator expressions.
 use std::collections::VecDeque;
+use thiserror::Error;
 
 use crate::{
     ast::expression::Expression as AstExpression,
@@ -34,16 +35,16 @@ impl FileParser {
         loop {
             use InfixEntry::*;
 
-            'assignment: {
-                if output.len() != 1 {
-                    break 'assignment;
+            if let Some(operator) = self.lexer.consume_assignment_operator()? {
+                if assignment.is_some() {
+                    return Err(AssignmentError::DoubleAssignment.into());
                 }
-                let Some(operator) = self.lexer.consume_assignment_operator()? else {
-                    break 'assignment;
-                };
                 let Some(Operand(AstExpression::Var(assignee))) = output.pop_back() else {
-                    break 'assignment;
+                    return Err(AssignmentError::AssigneeIsNotVariable.into());
                 };
+                if output.len() != 0 {
+                    return Err(AssignmentError::AssigneeIsNotVariable.into());
+                }
                 assignment = Some((assignee, operator));
             }
 
@@ -110,6 +111,14 @@ pub enum InfixEntry {
     BinaryOperator(BinaryOp),
     LeftParenthesis,
     RightParenthesis,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+pub enum AssignmentError {
+    #[error("attempted to assign twice")]
+    DoubleAssignment,
+    #[error("assignee is not variable: only variable assignees are supported at the moment")]
+    AssigneeIsNotVariable,
 }
 
 #[cfg(test)]
