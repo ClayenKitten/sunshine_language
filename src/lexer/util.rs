@@ -9,6 +9,8 @@ use crate::{
     parser::{ParserError, UnexpectedTokenError},
 };
 
+use super::operator::AssignOp;
+
 /// Utility methods over basic Lexer's iteration.
 impl Lexer {
     /// Check if the following token is provided punctuation without advancing.
@@ -64,6 +66,14 @@ impl Lexer {
     pub fn consume_binary_operator(&mut self) -> Result<Option<BinaryOp>, LexerError> {
         let Token::Punc(punc) = self.peek()? else { return Ok(None); };
         let Ok(op) = BinaryOp::try_from(punc) else { return Ok(None); };
+        self.discard();
+        Ok(Some(op))
+    }
+
+    /// Checks if next token is assignment operator and consumes it if so.
+    pub fn consume_assignment_operator(&mut self) -> Result<Option<AssignOp>, LexerError> {
+        let Token::Punc(punc) = self.peek()? else { return Ok(None); };
+        let Ok(op) = AssignOp::try_from(punc) else { return Ok(None); };
         self.discard();
         Ok(Some(op))
     }
