@@ -34,7 +34,7 @@ impl FileParser {
             Item::new(self.parse_module()?, visibility)
         } else {
             let token = self.lexer.next()?;
-            self.context.error_reporter.lock().unwrap().error(
+            self.context.error_reporter.error(
                 "expected an item",
                 self.source(),
                 start,

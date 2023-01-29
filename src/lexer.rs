@@ -89,7 +89,7 @@ impl Lexer {
         match self.read_token_inner() {
             Ok(token) => Ok(token),
             Err(err) => {
-                self.context.error_reporter.lock().unwrap().error(
+                self.context.error_reporter.error(
                     &err,
                     self.source(),
                     start,

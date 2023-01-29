@@ -85,7 +85,7 @@ impl Lexer {
         if found == Token::Punc(Punctuation(expected)) {
             Ok(())
         } else {
-            self.context.error_reporter.lock().unwrap().error(
+            self.context.error_reporter.error(
                 format!("Expected punctuation `{expected}`, found {found:?}"),
                 self.source(),
                 start,
@@ -102,7 +102,7 @@ impl Lexer {
         if found == Token::Kw(keyword) {
             Ok(())
         } else {
-            self.context.error_reporter.lock().unwrap().error(
+            self.context.error_reporter.error(
                 format!("Expected keyword `{keyword}`, found {found:?}"),
                 self.source(),
                 start,
@@ -119,7 +119,7 @@ impl Lexer {
         if let Token::Ident(ident) = found {
             Ok(Identifier(ident))
         } else {
-            self.context.error_reporter.lock().unwrap().error(
+            self.context.error_reporter.error(
                 format!("Expected identifier, found {found:?}"),
                 self.source(),
                 start,

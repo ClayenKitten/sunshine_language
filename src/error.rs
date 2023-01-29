@@ -11,10 +11,10 @@ use crate::{
 };
 
 /// Interface to report errors conveniently.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ErrorReporter {
     source_map: Arc<Mutex<SourceMap>>,
-    errors: Vec<(Severity, Error)>,
+    errors: Mutex<Vec<(Severity, Error)>>,
 }
 
 impl ErrorReporter {
@@ -22,52 +22,58 @@ impl ErrorReporter {
     pub fn new(source_map: Arc<Mutex<SourceMap>>) -> Self {
         Self {
             source_map,
-            errors: Vec::new(),
+            errors: Mutex::new(Vec::new()),
         }
     }
 
     /// Build warning.
     pub fn warn(
-        &mut self,
+        &self,
         message: impl ToString,
         file: Option<SourceId>,
         start: Location,
         end: Location,
     ) {
-        let error = Error {
-            message: message.to_string(),
-            file,
-            start,
-            end,
-        };
-        self.errors.push((Severity::Warning, error));
+        self.errors.lock().unwrap().push((
+            Severity::Warning,
+            Error {
+                message: message.to_string(),
+                file,
+                start,
+                end,
+            },
+        ));
     }
 
     /// Build error.
     pub fn error(
-        &mut self,
+        &self,
         message: impl ToString,
         file: Option<SourceId>,
         start: Location,
         end: Location,
     ) {
-        let error = Error {
-            message: message.to_string(),
-            file,
-            start,
-            end,
-        };
-        self.errors.push((Severity::Error, error));
+        self.errors.lock().unwrap().push((
+            Severity::Error,
+            Error {
+                message: message.to_string(),
+                file,
+                start,
+                end,
+            },
+        ));
     }
 
     /// Check if any fatal error occurred.
     pub fn compilation_failed(&self) -> bool {
-        !self.errors.is_empty()
+        !self.errors.lock().unwrap().is_empty()
     }
 
     /// Calculates number of warnings and errors.
     fn calc_number(&self) -> (usize, usize) {
         self.errors
+            .lock()
+            .unwrap()
             .iter()
             .fold((0, 0), |(w, e), (severity, _)| match severity {
                 Severity::Warning => (w + 1, e),
@@ -78,7 +84,7 @@ impl ErrorReporter {
 
 impl Display for ErrorReporter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (severity, error) in self.errors.iter() {
+        for (severity, error) in self.errors.lock().unwrap().iter() {
             match severity {
                 Severity::Warning => writeln!(f, "Warning: {}", error.message)?,
                 Severity::Error => writeln!(f, "Error: {}", error.message)?,

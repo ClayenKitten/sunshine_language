@@ -41,7 +41,7 @@ fn main() -> anyhow::Result<()> {
 
     let item_table = parser.parse();
 
-    println!("{}", parser.context.error_reporter.lock().unwrap());
+    println!("{}", parser.context.error_reporter);
 
     match parser.context.metadata.emit_type {
         Emit::Ast => print_table(&mut stdout(), &item_table?)?,

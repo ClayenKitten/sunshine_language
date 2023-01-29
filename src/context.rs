@@ -20,7 +20,7 @@ use crate::{
 pub struct Context {
     pub metadata: Arc<Metadata>,
     pub source: Arc<Mutex<SourceMap>>,
-    pub error_reporter: Arc<Mutex<ErrorReporter>>,
+    pub error_reporter: Arc<ErrorReporter>,
 }
 
 impl Context {
@@ -28,7 +28,7 @@ impl Context {
         let source = Arc::new(Mutex::new(SourceMap::new(main)?));
         Ok(Context {
             metadata: Arc::new(metadata),
-            error_reporter: Arc::new(Mutex::new(ErrorReporter::new(Arc::clone(&source)))),
+            error_reporter: Arc::new(ErrorReporter::new(Arc::clone(&source))),
             source,
         })
     }
@@ -41,7 +41,7 @@ impl Context {
                 crate_name: Identifier(String::from("_TEST")),
                 emit_type: Emit::default(),
             }),
-            error_reporter: Arc::new(Mutex::new(ErrorReporter::new(Arc::clone(&source)))),
+            error_reporter: Arc::new(ErrorReporter::new(Arc::clone(&source))),
             source,
         }
     }
