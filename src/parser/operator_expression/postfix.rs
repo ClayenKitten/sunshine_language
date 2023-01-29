@@ -1,3 +1,4 @@
+//! Postfix operator expressions.
 use std::collections::VecDeque;
 
 use crate::{
@@ -7,23 +8,24 @@ use crate::{
 };
 
 use super::{
-    infix_notation::{InfixEntry, InfixNotation},
+    infix::{InfixEntry, InfixNotation},
     MaybeAssignment, Tree,
 };
 
 /// A sequence of operands and operators in [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation).
-pub type PolishNotation = MaybeAssignment<VecDeque<PolishEntry>>;
+pub type PostfixNotation = MaybeAssignment<VecDeque<PostfixEntry>>;
 
-impl PolishNotation {
+impl PostfixNotation {
+    /// Converts from infix to postfix notation.
     pub fn from_infix(infix: InfixNotation) -> Self {
         infix.map_expr(|entries| {
-            let mut output = VecDeque::<PolishEntry>::with_capacity(entries.capacity());
+            let mut output = VecDeque::<PostfixEntry>::with_capacity(entries.capacity());
             let mut op_stack = Vec::<Operator>::with_capacity(4);
 
             for entry in entries {
                 match entry {
                     InfixEntry::Operand(operand) => {
-                        output.push_back(PolishEntry::Operand(operand));
+                        output.push_back(PostfixEntry::Operand(operand));
                     }
                     InfixEntry::UnaryOperator(op) => op_stack.push(Operator::Unary(op)),
                     InfixEntry::BinaryOperator(op) => {
@@ -65,13 +67,13 @@ impl PolishNotation {
         })
     }
 
-    /// Convert an RPN to operator tree.
+    /// Converts from postfix notation to tree.
     pub fn into_tree(self) -> Tree {
         match self {
-            PolishNotation::Expression(mut expression) => {
+            PostfixNotation::Expression(mut expression) => {
                 MaybeAssignment::Expression(Self::get_node(&mut expression))
             }
-            PolishNotation::Assignment {
+            PostfixNotation::Assignment {
                 assignee,
                 operator,
                 mut expression,
@@ -83,23 +85,23 @@ impl PolishNotation {
         }
     }
 
-    /// Convert an RPN to expression tree, issuing a error if it is not possible.
+    /// Converts from postfix notation to expression tree, issuing a error if it is not possible.
     pub fn into_expression(self) -> Result<Expression, ParserError> {
-        if let PolishNotation::Expression(mut expression) = self {
+        if let PostfixNotation::Expression(mut expression) = self {
             Ok(Self::get_node(&mut expression))
         } else {
             Err(ParserError::ExpectedExpression)
         }
     }
 
-    fn get_node(buf: &mut VecDeque<PolishEntry>) -> Expression {
+    fn get_node(buf: &mut VecDeque<PostfixEntry>) -> Expression {
         match buf.pop_back().unwrap() {
-            PolishEntry::Operand(expr) => expr,
-            PolishEntry::UnaryOperator(punc) => {
+            PostfixEntry::Operand(expr) => expr,
+            PostfixEntry::UnaryOperator(punc) => {
                 let value = Box::new(Self::get_node(buf));
                 Expression::Unary { op: punc, value }
             }
-            PolishEntry::BinaryOperator(punc) => {
+            PostfixEntry::BinaryOperator(punc) => {
                 let right = Box::new(Self::get_node(buf));
                 let left = Box::new(Self::get_node(buf));
                 Expression::Binary {
@@ -112,21 +114,21 @@ impl PolishNotation {
     }
 }
 
-/// An entry of RPN expression: operand or operator (unary or binary).
+/// An entry of postfix expression: operand or operator (unary or binary).
 #[derive(Debug, PartialEq, Eq)]
-pub enum PolishEntry {
+pub enum PostfixEntry {
     Operand(Expression),
     UnaryOperator(UnaryOp),
     BinaryOperator(BinaryOp),
 }
 
-impl TryFrom<Operator> for PolishEntry {
+impl TryFrom<Operator> for PostfixEntry {
     type Error = ();
 
     fn try_from(value: Operator) -> Result<Self, Self::Error> {
         match value {
-            Operator::Unary(op) => Ok(PolishEntry::UnaryOperator(op)),
-            Operator::Binary(op) => Ok(PolishEntry::BinaryOperator(op)),
+            Operator::Unary(op) => Ok(PostfixEntry::UnaryOperator(op)),
+            Operator::Binary(op) => Ok(PostfixEntry::BinaryOperator(op)),
             Operator::LeftParenthesis => Err(()),
         }
     }

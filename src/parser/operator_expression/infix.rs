@@ -1,3 +1,4 @@
+//! Infix operator expressions.
 use std::collections::VecDeque;
 
 use crate::{

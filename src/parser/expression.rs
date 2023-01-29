@@ -5,7 +5,7 @@ use crate::{
         Identifier,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
-    parser::{operator_expression::PolishNotation, FileParser, ParserError},
+    parser::{operator_expression::postfix::PostfixNotation, FileParser, ParserError},
 };
 
 use super::operator_expression::Tree;
@@ -17,8 +17,8 @@ impl FileParser {
     /// Parse expression.
     pub fn parse_expr(&mut self) -> Result<Expression, ParserError> {
         let infix = self.parse_infix()?;
-        let polish = PolishNotation::from_infix(infix);
-        let tree = polish.into_expression()?;
+        let postfix = PostfixNotation::from_infix(infix);
+        let tree = postfix.into_expression()?;
         Ok(tree)
     }
 
@@ -98,8 +98,8 @@ impl FileParser {
             }
 
             let infix = self.parse_infix()?;
-            let polish = PolishNotation::from_infix(infix);
-            let tree = polish.into_tree();
+            let postfix = PostfixNotation::from_infix(infix);
+            let tree = postfix.into_tree();
             match tree {
                 Tree::Assignment {
                     assignee,
