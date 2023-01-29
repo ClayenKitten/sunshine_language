@@ -140,26 +140,18 @@ impl FileParser {
 /// Error that has occured during parsing.
 #[derive(Debug, Error)]
 pub enum ParserError {
-    #[error(transparent)]
-    UnexpectedToken(#[from] UnexpectedTokenError),
-    #[error("Unexpected EOF")]
+    #[error("unexpected token: `{0:?}`")]
+    UnexpectedToken(Token),
+    #[error("unexpected EOF")]
     UnexpectedEof,
     #[error("expected expression")]
     ExpectedExpression,
     #[error("unclosed parenthesis")]
     UnclosedParenthesis,
-    #[error("Lexer error occured: {0}.")]
+    #[error("lexer error occured: {0}")]
     LexerError(#[from] LexerError),
-    #[error("source error occured: {0}.")]
+    #[error("source error occured: {0}")]
     SourceError(#[from] SourceError),
-}
-
-#[derive(Debug, Error, PartialEq, Eq)]
-pub enum UnexpectedTokenError {
-    #[error("unexpected token: `{0:?}`")]
-    UnexpectedToken(Token),
-    #[error("token mismatch")]
-    TokenMismatch,
 }
 
 /// Result of the file parse.

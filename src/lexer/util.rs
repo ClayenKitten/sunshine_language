@@ -6,7 +6,7 @@ use crate::{
         punctuation::Punctuation,
         Lexer, LexerError, Token,
     },
-    parser::{ParserError, UnexpectedTokenError},
+    parser::ParserError,
 };
 
 use super::operator::AssignOp;
@@ -91,7 +91,7 @@ impl Lexer {
                 start,
                 self.location,
             );
-            Err(UnexpectedTokenError::TokenMismatch.into())
+            Err(ParserError::UnexpectedToken(found))
         }
     }
 
@@ -108,7 +108,7 @@ impl Lexer {
                 start,
                 self.location,
             );
-            Err(UnexpectedTokenError::TokenMismatch.into())
+            Err(ParserError::UnexpectedToken(found))
         }
     }
 
@@ -125,7 +125,7 @@ impl Lexer {
                 start,
                 self.location,
             );
-            Err(UnexpectedTokenError::TokenMismatch.into())
+            Err(ParserError::UnexpectedToken(found))
         }
     }
 }

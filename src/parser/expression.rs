@@ -5,7 +5,7 @@ use crate::{
         Identifier,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
-    parser::{operator_expression::PolishNotation, FileParser, ParserError, UnexpectedTokenError},
+    parser::{operator_expression::PolishNotation, FileParser, ParserError},
 };
 
 use super::operator_expression::Tree;
@@ -42,7 +42,7 @@ impl FileParser {
             Token::Eof => return Err(ParserError::UnexpectedEof),
 
             token @ (Token::Punc(_) | Token::Kw(_)) => {
-                return Err(UnexpectedTokenError::UnexpectedToken(token).into())
+                return Err(ParserError::UnexpectedToken(token))
             }
         })
     }
@@ -57,7 +57,7 @@ impl FileParser {
                     return Ok(Expression::FnCall { name, params });
                 } else if self.lexer.consume_punctuation(",")? {
                 } else {
-                    return Err(UnexpectedTokenError::UnexpectedToken(self.lexer.next()?).into());
+                    return Err(ParserError::UnexpectedToken(self.lexer.peek()?));
                 }
             }
         } else {

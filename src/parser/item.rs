@@ -6,7 +6,7 @@ use crate::{
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
 };
 
-use super::{FileParser, ParserError, PendingFile, UnexpectedTokenError};
+use super::{FileParser, ParserError, PendingFile};
 
 /// [Item]'s parsing.
 ///
@@ -40,7 +40,7 @@ impl FileParser {
                 start,
                 self.lexer.location,
             );
-            return Err(UnexpectedTokenError::UnexpectedToken(token).into());
+            return Err(ParserError::UnexpectedToken(token));
         };
         self.item_table.declare(self.scope.clone(), item);
         Ok(())
@@ -133,7 +133,7 @@ impl FileParser {
             let name = match self.lexer.next()? {
                 Token::Ident(ident) => Identifier(ident),
                 Token::Punc(Punctuation(")")) => break,
-                token => return Err(UnexpectedTokenError::UnexpectedToken(token).into()),
+                token => return Err(ParserError::UnexpectedToken(token)),
             };
             self.lexer.expect_punctuation(":")?;
             let type_ = self.lexer.expect_identifier()?;
@@ -157,7 +157,7 @@ impl FileParser {
                 Ok(Some(return_type))
             }
             Token::Punc(Punctuation("{")) => Ok(None),
-            token => Err(UnexpectedTokenError::UnexpectedToken(token).into()),
+            token => Err(ParserError::UnexpectedToken(token)),
         }
     }
 }
