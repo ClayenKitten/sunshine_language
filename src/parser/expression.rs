@@ -5,11 +5,10 @@ use crate::{
         Identifier,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
-    parser::{
-        operator_expression::{InfixExpr, ReversePolishExpr},
-        FileParser, ParserError, UnexpectedTokenError,
-    },
+    parser::{operator_expression::PolishNotation, FileParser, ParserError, UnexpectedTokenError},
 };
+
+use super::operator_expression::Tree;
 
 /// [Expression]'s parsing.
 ///
@@ -17,9 +16,9 @@ use crate::{
 impl FileParser {
     /// Parse expression.
     pub fn parse_expr(&mut self) -> Result<Expression, ParserError> {
-        let infix = InfixExpr::parse(self)?;
-        let polish = Into::<ReversePolishExpr>::into(infix);
-        let tree = polish.into_tree();
+        let infix = self.parse_infix()?;
+        let polish = PolishNotation::from_infix(infix);
+        let tree = polish.into_expression()?;
         Ok(tree)
     }
 
@@ -42,7 +41,9 @@ impl FileParser {
 
             Token::Eof => return Err(ParserError::UnexpectedEof),
 
-            Token::Punc(_) | Token::Kw(_) => return Err(UnexpectedTokenError::TokenMismatch.into()),
+            token @ (Token::Punc(_) | Token::Kw(_)) => {
+                return Err(UnexpectedTokenError::UnexpectedToken(token).into())
+            }
         })
     }
 
@@ -56,7 +57,7 @@ impl FileParser {
                     return Ok(Expression::FnCall { name, params });
                 } else if self.lexer.consume_punctuation(",")? {
                 } else {
-                    return Err(UnexpectedTokenError::TokenMismatch.into());
+                    return Err(UnexpectedTokenError::UnexpectedToken(self.lexer.next()?).into());
                 }
             }
         } else {
@@ -96,16 +97,31 @@ impl FileParser {
                 continue;
             }
 
-            let expr = self.parse_expr()?;
-            if self.lexer.consume_punctuation("}")? {
-                break Some(expr);
+            let infix = self.parse_infix()?;
+            let polish = PolishNotation::from_infix(infix);
+            let tree = polish.into_tree();
+            match tree {
+                Tree::Assignment {
+                    assignee,
+                    operator,
+                    expression,
+                } => buffer.push(Statement::Assignment {
+                    assignee,
+                    operator,
+                    expression,
+                }),
+                Tree::Expression(expr) => {
+                    if self.lexer.consume_punctuation("}")? {
+                        break Some(expr);
+                    }
+                    if expr.is_block_expression() {
+                        self.lexer.consume_punctuation(";")?;
+                    } else {
+                        self.lexer.expect_punctuation(";")?;
+                    }
+                    buffer.push(Statement::ExprStmt(expr));
+                }
             }
-            if expr.is_block_expression() {
-                self.lexer.consume_punctuation(";")?;
-            } else {
-                self.lexer.expect_punctuation(";")?;
-            }
-            buffer.push(Statement::ExprStmt(expr));
         };
         Ok(Block {
             statements: buffer,

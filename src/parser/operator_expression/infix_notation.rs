@@ -1,16 +1,18 @@
 use std::collections::VecDeque;
 
 use crate::{
-    ast::expression::Expression,
-    lexer::operator::{BinaryOp, UnaryOp},
+    ast::expression::Expression as AstExpression,
+    ast::{expression::Expression, Identifier},
+    lexer::operator::{AssignOp, BinaryOp, UnaryOp},
     parser::{FileParser, ParserError},
 };
 
-/// A sequence of operands and operators in [infix notation](https://en.wikipedia.org/wiki/Infix_notation).
-#[derive(Debug, PartialEq, Eq)]
-pub struct InfixExpr(pub VecDeque<InfixEntry>);
+use super::MaybeAssignment;
 
-impl InfixExpr {
+/// A sequence of operands and operators in [infix notation](https://en.wikipedia.org/wiki/Infix_notation).
+pub type InfixNotation = MaybeAssignment<VecDeque<InfixEntry>>;
+
+impl FileParser {
     /// Parse and validate infix expression.
     ///
     /// Parsing continues while valid infix expression may be produced.
@@ -23,21 +25,36 @@ impl InfixExpr {
     /// # Errors
     ///
     /// Error will only be produced if parenthesis mismatches or operator without following operand occurs.
-    pub fn parse(parser: &mut FileParser) -> Result<Self, ParserError> {
+    pub fn parse_infix(&mut self) -> Result<InfixNotation, ParserError> {
         let mut depth = 0usize;
         let mut output = VecDeque::<InfixEntry>::new();
+        let mut assignment: Option<(Identifier, AssignOp)> = None;
 
         loop {
             use InfixEntry::*;
+
+            'assignment: {
+                if output.len() != 1 {
+                    break 'assignment;
+                }
+                let Some(operator) = self.lexer.consume_assignment_operator()? else {
+                    break 'assignment;
+                };
+                let Some(Operand(AstExpression::Var(assignee))) = output.pop_back() else {
+                    break 'assignment;
+                };
+                assignment = Some((assignee, operator));
+            }
+
             match output.back() {
                 Some(Operand(_) | RightParenthesis) => {
-                    if let Some(op) = parser.lexer.consume_binary_operator()? {
-                        output.push_back(InfixEntry::BinaryOperator(op));
-                    } else if parser.lexer.peek_punctuation(")") {
+                    if let Some(op) = self.lexer.consume_binary_operator()? {
+                        output.push_back(BinaryOperator(op));
+                    } else if self.lexer.peek_punctuation(")") {
                         if depth > 0 {
-                            parser.lexer.discard();
+                            self.lexer.discard();
                             depth -= 1;
-                            output.push_back(InfixEntry::RightParenthesis);
+                            output.push_back(RightParenthesis);
                         } else {
                             break;
                         }
@@ -46,13 +63,13 @@ impl InfixExpr {
                     }
                 }
                 None | Some(UnaryOperator(_) | BinaryOperator(_) | LeftParenthesis) => {
-                    if let Some(op) = parser.lexer.consume_unary_operator()? {
+                    if let Some(op) = self.lexer.consume_unary_operator()? {
                         output.push_back(UnaryOperator(op));
-                    } else if parser.lexer.consume_punctuation("(")? {
+                    } else if self.lexer.consume_punctuation("(")? {
                         depth += 1;
                         output.push_back(LeftParenthesis);
                     } else {
-                        let operand = parser.parse_operand()?;
+                        let operand = self.parse_operand()?;
                         output.push_back(Operand(operand));
                     }
                 }
@@ -70,7 +87,17 @@ impl InfixExpr {
             _ => {}
         }
 
-        Ok(InfixExpr(output))
+        Ok(match assignment {
+            Some((assignee, operator)) => {
+                self.lexer.expect_punctuation(";")?;
+                InfixNotation::Assignment {
+                    assignee,
+                    operator,
+                    expression: output,
+                }
+            }
+            None => InfixNotation::Expression(output),
+        })
     }
 }
 
@@ -98,15 +125,15 @@ mod tests {
         parser::FileParser,
     };
 
-    use super::InfixExpr;
+    use super::InfixNotation;
 
     #[test]
     fn unary() {
         use super::InfixEntry::*;
 
         let mut parser = FileParser::new_test("-x");
-        let parsed = InfixExpr::parse(&mut parser).expect("parsing failed");
-        let expected = InfixExpr(
+        let parsed = parser.parse_infix().expect("parsing failed");
+        let expected = InfixNotation::Expression(
             vec![
                 UnaryOperator(UnaryOp::Sub),
                 Operand(Expression::Var(Identifier(String::from("x")))),
@@ -126,8 +153,8 @@ mod tests {
         use super::InfixEntry::*;
 
         let mut parser = FileParser::new_test("4 >= x");
-        let parsed = InfixExpr::parse(&mut parser).expect("parsing failed");
-        let expected = InfixExpr(
+        let parsed = parser.parse_infix().expect("parsing failed");
+        let expected = InfixNotation::Expression(
             vec![
                 Operand(make_num("4")),
                 BinaryOperator(BinaryOp::MoreEq),
@@ -148,8 +175,8 @@ mod tests {
         use super::InfixEntry::*;
 
         let mut parser = FileParser::new_test("1 + -2");
-        let parsed = InfixExpr::parse(&mut parser).expect("parsing failed");
-        let expected = InfixExpr(
+        let parsed = parser.parse_infix().expect("parsing failed");
+        let expected = InfixNotation::Expression(
             vec![
                 Operand(make_num("1")),
                 BinaryOperator(BinaryOp::Add),
@@ -171,8 +198,8 @@ mod tests {
         use super::InfixEntry::*;
 
         let mut parser = FileParser::new_test("1 + -2 - (3 * 4) / -5");
-        let parsed = InfixExpr::parse(&mut parser).expect("parsing failed");
-        let expected = InfixExpr(
+        let parsed = parser.parse_infix().expect("parsing failed");
+        let expected = InfixNotation::Expression(
             vec![
                 Operand(make_num("1")),
                 BinaryOperator(BinaryOp::Add),
