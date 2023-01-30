@@ -44,7 +44,7 @@ fn main() -> anyhow::Result<()> {
     println!("{}", parser.context.error_reporter);
 
     match parser.context.metadata.emit_type {
-        Emit::Ast => print_table(&mut stdout(), &item_table?)?,
+        Emit::Ast => print_table(stdout(), &item_table?)?,
         Emit::LlvmIr => todo!(),
         Emit::Binary => todo!(),
     };

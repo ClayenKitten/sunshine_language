@@ -1,9 +1,9 @@
-use std::io::{Result, Write};
-
-use crate::{
-    item_table::ItemTable,
-    lexer::number::{Base, Number},
+use std::{
+    fmt::Display,
+    io::{Result, Write},
 };
+
+use crate::item_table::ItemTable;
 
 use super::{
     expression::{Block, Expression, Literal},
@@ -11,167 +11,202 @@ use super::{
     statement::{LetStatement, Statement},
 };
 
-pub fn print_table(w: &mut impl Write, table: &ItemTable) -> Result<()> {
+pub fn print_table(w: impl Write + 'static, table: &ItemTable) -> Result<()> {
+    let mut printer = Printer {
+        writer: Box::new(w),
+        indent: 0,
+    };
     for (path, item) in table.declared.iter() {
-        writeln!(w, "[{path}]")?;
-        if item.visibility == Visibility::Public {
-            write!(w, "pub ")?;
+        printer.println(format!("[{path}]"))?;
+        if let Visibility::Public = item.visibility {
+            write!(printer.writer, "PUB ")?
         }
         match &item.kind {
             ItemKind::Module(Module::Inline(name) | Module::Loadable(name)) => {
-                writeln!(w, "mod {name};")?
+                writeln!(printer.writer, "MOD {name};")?
             }
             ItemKind::Struct(s) => {
-                writeln!(w, "struct {} {{", s.name)?;
-                for field in s.fields.iter() {
-                    writeln!(w, "    {}: {},", field.name, field.type_)?;
-                }
-                writeln!(w, "}}")?;
+                printer.println(format!("STRUCT {}", s.name))?;
+                printer.with_indent(|printer| {
+                    for field in s.fields.iter() {
+                        printer.println(format!("{}: {}", field.name, field.type_,))?;
+                    }
+                    Ok(())
+                })?;
             }
             ItemKind::Function(func) => {
-                write!(w, "fn {} (", func.name)?;
-                for param in func.params.iter() {
-                    write!(w, "\n    {}: {},", param.name, param.type_)?;
-                }
-                if !func.params.is_empty() {
-                    writeln!(w)?;
-                }
-                if let Some(ret_type) = &func.return_type {
-                    writeln!(w, ") -> {ret_type} {{")?;
+                printer.println(format!("FN `{}`", func.name))?;
+                printer.with_indent(|printer| {
+                    if !func.params.is_empty() {
+                        printer.println("PARAMS")?;
+                        printer.with_indent(|printer| {
+                            for param in func.params.iter() {
+                                printer.println(format!("`{}`: `{}`", param.name, param.type_))?;
+                            }
+                            Ok(())
+                        })?;
+                    }
+                    if let Some(ret_type) = &func.return_type {
+                        printer.println(format!("RETURN `{ret_type}`"))?;
+                    }
+                    printer.println("BODY")?;
+                    printer.print_block(&func.body)?;
+                    Ok(())
+                })?;
+            }
+        }
+        printer.newline()?;
+    }
+    Ok(())
+}
+
+struct Printer {
+    writer: Box<dyn Write>,
+    indent: usize,
+}
+
+impl Printer {
+    /// Width of a single indentation.
+    const IDENT_WIDTH: usize = 4;
+
+    fn print_stmt(&mut self, stmt: &Statement) -> Result<()> {
+        match stmt {
+            Statement::ExprStmt(expr) => {
+                self.print_expr(expr)?;
+            }
+            Statement::LetStmt(LetStatement { name, type_, value }) => {
+                if let Some(type_) = type_ {
+                    self.println(format!("LET `{name}`: `{type_}`"))?;
                 } else {
-                    write!(w, ") ")?;
+                    self.println(format!("LET `{name}`"))?;
                 }
-                print_block(w, &func.body, 0)?;
+                if let Some(value) = value {
+                    self.with_indent(|printer| printer.print_expr(value))?;
+                }
             }
+            Statement::Assignment {
+                assignee,
+                operator,
+                expression,
+            } => {
+                self.println("ASSIGN")?;
+                self.with_indent(|printer| {
+                    printer.println(format!("ASSIGNEE `{assignee}`"))?;
+                    printer.println(format!("OPERATOR `{operator}`"))?;
+                    Ok(())
+                })?;
+                self.println(format!("VALUE"))?;
+                self.with_indent(|printer| printer.print_expr(expression))?;
+            }
+            Statement::Return(expr) => {
+                self.println("RETURN")?;
+                self.with_indent(|printer| printer.print_expr(expr))?;
+            }
+            Statement::Break => self.println("BREAK")?,
         }
-        writeln!(w)?;
+        Ok(())
     }
-    Ok(())
-}
 
-fn print_stmt(w: &mut impl Write, stmt: &Statement, ident: usize) -> Result<()> {
-    print_ident(w, ident)?;
-    match stmt {
-        Statement::ExprStmt(expr) => {
-            print_expr(w, expr, ident)?;
-            writeln!(w, ";")?;
-        }
-        Statement::LetStmt(LetStatement { name, type_, value }) => {
-            write!(w, "let {name}")?;
-            if let Some(type_) = type_ {
-                write!(w, ": {type_}")?;
-            }
-            if let Some(value) = value {
-                write!(w, " = ")?;
-                print_expr(w, value, ident)?;
-            }
-            writeln!(w, ";")?;
-        }
-        Statement::Assignment {
-            assignee,
-            operator,
-            expression,
-        } => {
-            write!(w, "{assignee} {operator} ")?;
-            print_expr(w, expression, ident)?;
-            writeln!(w, ";")?;
-        }
-        Statement::Return(expr) => {
-            write!(w, "return ")?;
-            print_expr(w, expr, ident)?;
-            writeln!(w, ";")?;
-        }
-        Statement::Break => writeln!(w, "break;")?,
-    }
-    Ok(())
-}
+    fn print_expr(&mut self, expr: &Expression) -> Result<()> {
+        match expr {
+            Expression::Block(block) => self.print_block(block)?,
+            Expression::If {
+                condition,
+                body,
+                else_body,
+            } => {
+                self.println("IF")?;
+                self.with_indent(|printer| printer.print_expr(condition))?;
 
-fn print_expr(w: &mut impl Write, expr: &Expression, ident: usize) -> Result<()> {
-    match expr {
-        Expression::Block(block) => print_block(w, block, ident)?,
-        Expression::If {
-            condition,
-            body,
-            else_body,
-        } => {
-            write!(w, "if ")?;
-            print_expr(w, condition, ident)?;
-            write!(w, " ")?;
-            print_block(w, body, ident)?;
-            if let Some(else_body) = else_body {
-                write!(w, " else ")?;
-                print_block(w, else_body, ident)?;
-            }
-        }
-        Expression::While { condition, body } => {
-            write!(w, "while ")?;
-            print_expr(w, condition, ident)?;
-            print_block(w, body, ident)?;
-        }
-        Expression::For { var, expr, body } => {
-            write!(w, "for {var} in ")?;
-            print_expr(w, expr, ident)?;
-            print_block(w, body, ident)?;
-        }
-        Expression::Literal(Literal::Number(Number {
-            integer,
-            fraction,
-            base,
-        })) => {
-            match base {
-                Base::Binary => write!(w, "0b")?,
-                Base::Octal => write!(w, "0o")?,
-                Base::Hexadecimal => write!(w, "0x")?,
-                Base::Decimal => {}
-            }
-            write!(w, "{integer}")?;
-            if let Some(fraction) = fraction {
-                write!(w, "{fraction}")?;
-            }
-        }
-        Expression::Literal(Literal::String(s)) => write!(w, "\"{s}\"")?,
-        Expression::Literal(Literal::Boolean(true)) => write!(w, "true")?,
-        Expression::Literal(Literal::Boolean(false)) => write!(w, "false")?,
-        Expression::Unary { op, value } => {
-            write!(w, "{op}")?;
-            print_expr(w, value, ident)?;
-        }
-        Expression::Binary { op, left, right } => {
-            write!(w, "(")?;
-            print_expr(w, left, ident)?;
-            write!(w, " {op} ")?;
-            print_expr(w, right, ident)?;
-            write!(w, ")")?;
-        }
-        Expression::FnCall { name, params } => {
-            write!(w, "{name}(")?;
-            for param in params {
-                print_expr(w, param, ident)?;
-                write!(w, ",")?;
-            }
-            write!(w, ")")?;
-        }
-        Expression::Var(var) => write!(w, "{var}")?,
-    }
-    Ok(())
-}
+                self.println("THEN")?;
+                self.print_block(body)?;
 
-fn print_block(w: &mut impl Write, block: &Block, ident: usize) -> Result<()> {
-    writeln!(w, "{{")?;
-    for stmt in block.statements.iter() {
-        print_stmt(w, stmt, ident + 1)?;
-    }
-    if let Some(expr) = &block.expression {
-        print_ident(w, ident + 1)?;
-        print_expr(w, expr, ident + 1)?;
-        writeln!(w)?;
-    }
-    print_ident(w, ident)?;
-    write!(w, "}}")?;
-    Ok(())
-}
+                if let Some(else_body) = else_body {
+                    self.println("ELSE")?;
+                    self.print_block(else_body)?;
+                }
+            }
+            Expression::While { condition, body } => {
+                self.println("WHILE")?;
+                self.with_indent(|printer| printer.print_expr(condition))?;
+                self.println("BODY")?;
+                self.print_block(body)?;
+            }
+            Expression::For { var, expr, body } => {
+                self.println(format!("FOR `{var}`"))?;
+                self.println("IN")?;
+                self.with_indent(|printer| printer.print_expr(expr))?;
+                self.println("BODY")?;
+                self.print_block(body)?;
+            }
+            Expression::Literal(Literal::Number(num)) => self.println(format!("`{num}`"))?,
+            Expression::Literal(Literal::String(s)) => self.println(format!("`\"{s}\"`"))?,
+            Expression::Literal(Literal::Boolean(true)) => self.println("`true`")?,
+            Expression::Literal(Literal::Boolean(false)) => self.println("`false`")?,
+            Expression::Var(var) => self.println(var)?,
+            Expression::Unary { op, value } => {
+                self.println(format!("UNARY `{op}`"))?;
+                self.with_indent(|printer| printer.print_expr(value))?;
+            }
+            Expression::Binary { op, left, right } => {
+                self.println(format!("BINARY `{op}`"))?;
+                self.with_indent(|printer| {
+                    printer.println("LEFT")?;
+                    printer.with_indent(|printer| printer.print_expr(left))?;
+                    printer.println("RIGHT")?;
+                    printer.with_indent(|printer| printer.print_expr(right))?;
+                    Ok(())
+                })?;
+            }
+            Expression::FnCall { name, params } => {
+                self.println(format!("FNCALL `{name}`"))?;
 
-const IDENT_WIDTH: usize = 4;
-fn print_ident(w: &mut impl Write, ident: usize) -> Result<()> {
-    write!(w, "{}", " ".repeat(ident * IDENT_WIDTH))
+                self.with_indent(|printer| {
+                    for param in params {
+                        printer.print_expr(param)?;
+                    }
+                    Ok(())
+                })?;
+            }
+        }
+        Ok(())
+    }
+
+    fn print_block(&mut self, block: &Block) -> Result<()> {
+        self.with_indent(|printer| {
+            for stmt in block.statements.iter() {
+                printer.print_stmt(stmt)?;
+            }
+            if let Some(expr) = &block.expression {
+                printer.print_expr(expr)?;
+            }
+            Ok(())
+        })
+    }
+
+    fn with_indent(&mut self, f: impl Fn(&mut Self) -> Result<()>) -> Result<()> {
+        self.indent += 1;
+        f(self)?;
+        self.indent -= 1;
+        Ok(())
+    }
+
+    fn newline(&mut self) -> Result<()> {
+        writeln!(self.writer)
+    }
+
+    fn println(&mut self, line: impl Display) -> Result<()> {
+        self.print_indent()?;
+        write!(self.writer, "{}", line)?;
+        self.newline()?;
+        Ok(())
+    }
+
+    fn print_indent(&mut self) -> Result<()> {
+        write!(
+            self.writer,
+            "{}",
+            " ".repeat(self.indent * Self::IDENT_WIDTH)
+        )
+    }
 }
