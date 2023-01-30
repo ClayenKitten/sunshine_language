@@ -11,6 +11,17 @@ pub mod parser {
         /// Expected an item.
         deny ExpectedItem = "expected an item";
 
+        /// Expected expression.
+        deny ExpectedExpression = "expected expression";
+
+        /// Assignment in expression position.
+        ///
+        /// Assignment is not an expression.
+        deny AssignmentInExpressionPosition = "assignment in expression position";
+
+        /// Unclosed parenthesis.
+        deny UnclosedParenthesis = "unclosed parenthesis";
+
         /// Else may only be used directly after if conditional's body.
         ///
         /// ```notrust

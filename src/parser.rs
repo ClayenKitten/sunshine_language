@@ -22,8 +22,6 @@ use crate::{
     source::{SourceError, SourceId},
 };
 
-use self::operator_expression::infix::AssignmentError;
-
 /// Interface to compute a [ItemTable] of the whole project.
 pub struct Parser {
     pending: Vec<PendingFile>,
@@ -139,15 +137,7 @@ impl FileParser {
 #[derive(Debug, Error)]
 pub enum ParserError {
     #[error("")]
-    Obsolete,
-    #[error(transparent)]
-    AssignmentError(#[from] AssignmentError),
-    #[error("unexpected EOF")]
-    UnexpectedEof,
-    #[error("expected expression")]
-    ExpectedExpression,
-    #[error("unclosed parenthesis")]
-    UnclosedParenthesis,
+    ParserError,
     #[error("lexer error occured: {0}")]
     LexerError(#[from] LexerError),
     #[error("source error occured: {0}")]

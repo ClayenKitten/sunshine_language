@@ -1,11 +1,15 @@
 //! Infix operator expressions.
 use std::collections::VecDeque;
-use thiserror::Error;
 
 use crate::{
     ast::expression::Expression as AstExpression,
     ast::{expression::Expression, Identifier},
-    error::{library::parser::ChainedAssignment, ReportProvider},
+    error::{
+        library::parser::{
+            ChainedAssignment, ExpectedExpression, InvalidAssignee, UnclosedParenthesis,
+        },
+        ReportProvider,
+    },
     lexer::operator::{AssignOp, BinaryOp, UnaryOp},
     parser::{FileParser, ParserError},
 };
@@ -29,6 +33,7 @@ impl FileParser {
     ///
     /// Error will only be produced if parenthesis mismatches or operator without following operand occurs.
     pub fn parse_infix(&mut self) -> Result<InfixNotation, ParserError> {
+        let start = self.location();
         let mut depth = 0usize;
         let mut output = VecDeque::<InfixEntry>::new();
         let mut assignment: Option<(Identifier, AssignOp)> = None;
@@ -40,13 +45,15 @@ impl FileParser {
             if let Some(operator) = self.lexer.consume_assignment_operator()? {
                 if assignment.is_some() {
                     ChainedAssignment::report(self, start);
-                    return Err(AssignmentError::DoubleAssignment.into());
+                    return Err(ParserError::ParserError);
                 }
                 let Some(Operand(AstExpression::Var(assignee))) = output.pop_back() else {
-                    return Err(AssignmentError::AssigneeIsNotVariable.into());
+                    InvalidAssignee::report(self, start);
+                    return Err(ParserError::ParserError);
                 };
                 if output.len() != 0 {
-                    return Err(AssignmentError::AssigneeIsNotVariable.into());
+                    InvalidAssignee::report(self, start);
+                    return Err(ParserError::ParserError);
                 }
                 assignment = Some((assignee, operator));
             }
@@ -82,12 +89,14 @@ impl FileParser {
         }
 
         if depth != 0 {
-            return Err(ParserError::UnclosedParenthesis);
+            UnclosedParenthesis::report(self, start);
+            return Err(ParserError::ParserError);
         }
 
         match output.front() {
             Some(InfixEntry::BinaryOperator(_)) | None => {
-                return Err(ParserError::ExpectedExpression)
+                ExpectedExpression::report(self, start);
+                return Err(ParserError::ParserError);
             }
             _ => {}
         }
@@ -114,14 +123,6 @@ pub enum InfixEntry {
     BinaryOperator(BinaryOp),
     LeftParenthesis,
     RightParenthesis,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Error)]
-pub enum AssignmentError {
-    #[error("attempted to assign twice")]
-    DoubleAssignment,
-    #[error("assignee is not variable: only variable assignees are supported at the moment")]
-    AssigneeIsNotVariable,
 }
 
 #[cfg(test)]

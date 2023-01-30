@@ -87,7 +87,7 @@ impl Lexer {
             Ok(())
         } else {
             TokenMismatch::report(self, start, vec![Punctuation::new(expected).into()], found);
-            Err(ParserError::Obsolete)
+            Err(ParserError::ParserError)
         }
     }
 
@@ -99,7 +99,7 @@ impl Lexer {
             Ok(())
         } else {
             TokenMismatch::report(self, start, vec![Keyword::In.into()], found);
-            Err(ParserError::Obsolete)
+            Err(ParserError::ParserError)
         }
     }
 
@@ -111,7 +111,7 @@ impl Lexer {
             Ok(Identifier(ident))
         } else {
             TokenMismatch::report(self, start, vec![ExpectedToken::Identifier], found);
-            Err(ParserError::Obsolete)
+            Err(ParserError::ParserError)
         }
     }
 }

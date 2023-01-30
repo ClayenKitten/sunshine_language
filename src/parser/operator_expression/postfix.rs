@@ -90,7 +90,7 @@ impl PostfixNotation {
         if let PostfixNotation::Expression(mut expression) = self {
             Ok(Self::get_node(&mut expression))
         } else {
-            Err(ParserError::ExpectedExpression)
+            Err(ParserError::ParserError)
         }
     }
 

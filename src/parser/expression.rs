@@ -5,9 +5,12 @@ use crate::{
         Identifier,
     },
     error::{
-        library::parser::{
-            InvalidPunctuation, KeywordNotAllowedInOperatorExpression,
-            UnexpectedTokenInFunctionCall,
+        library::{
+            lexer::UnexpectedEOF,
+            parser::{
+                AssignmentInExpressionPosition, InvalidPunctuation,
+                KeywordNotAllowedInOperatorExpression, UnexpectedTokenInFunctionCall,
+            },
         },
         ReportProvider,
     },
@@ -23,10 +26,16 @@ use super::operator_expression::Tree;
 impl FileParser {
     /// Parse expression.
     pub fn parse_expr(&mut self) -> Result<Expression, ParserError> {
+        let start = self.location();
         let infix = self.parse_infix()?;
         let postfix = PostfixNotation::from_infix(infix);
-        let tree = postfix.into_expression()?;
-        Ok(tree)
+        match postfix.into_expression() {
+            Ok(tree) => Ok(tree),
+            Err(e) => {
+                AssignmentInExpressionPosition::report(self, start);
+                Err(e)
+            }
+        }
     }
 
     /// Parse a single operand.
@@ -47,15 +56,18 @@ impl FileParser {
 
             Token::Ident(ident) => self.maybe_function_call(Identifier(ident))?,
 
-            Token::Eof => return Err(ParserError::UnexpectedEof),
+            Token::Eof => {
+                UnexpectedEOF::report(self, start);
+                return Err(ParserError::ParserError);
+            }
 
             Token::Kw(kw) => {
                 KeywordNotAllowedInOperatorExpression::report(self, start, kw);
-                return Err(ParserError::Obsolete);
+                return Err(ParserError::ParserError);
             }
             Token::Punc(punc) => {
                 InvalidPunctuation::report(self, start, punc);
-                return Err(ParserError::Obsolete);
+                return Err(ParserError::ParserError);
             }
         })
     }
@@ -73,7 +85,7 @@ impl FileParser {
                 } else {
                     let token = self.lexer.peek()?;
                     UnexpectedTokenInFunctionCall::report(self, start, token);
-                    return Err(ParserError::Obsolete);
+                    return Err(ParserError::ParserError);
                 }
             }
         } else {

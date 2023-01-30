@@ -38,7 +38,7 @@ impl FileParser {
             Item::new(self.parse_module()?, visibility)
         } else {
             ExpectedItem::report(self, start);
-            return Err(ParserError::Obsolete);
+            return Err(ParserError::ParserError);
         };
         self.item_table.declare(self.scope.clone(), item);
         Ok(())
@@ -139,7 +139,7 @@ impl FileParser {
                         vec![ExpectedToken::Identifier, Punctuation::RParent.into()],
                         token,
                     );
-                    return Err(ParserError::Obsolete);
+                    return Err(ParserError::ParserError);
                 }
             };
             self.lexer.expect_punctuation(":")?;
@@ -172,7 +172,7 @@ impl FileParser {
                     vec![Punctuation::Arrow.into(), Punctuation::LBrace.into()],
                     token,
                 );
-                Err(ParserError::Obsolete)
+                Err(ParserError::ParserError)
             }
         }
     }
