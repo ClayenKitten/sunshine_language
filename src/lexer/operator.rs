@@ -30,7 +30,7 @@ macro_rules! define_operator {
                 type Error = ();
 
                 fn try_from(value: crate::lexer::punctuation::Punctuation) -> Result<Self, Self::Error> {
-                    Ok(match value.0 {
+                    Ok(match value.as_str() {
                         $($value => $name::$field,)*
                         _ => return Err(()),
                     })

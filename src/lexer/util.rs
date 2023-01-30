@@ -20,7 +20,7 @@ impl Lexer {
     /// Check if the following token is provided punctuation without advancing.
     pub fn peek_punctuation(&mut self, punc: &'static str) -> bool {
         let Ok(token) = self.peek() else { return false; };
-        token == Token::Punc(Punctuation(punc))
+        token == Token::Punc(Punctuation::new(punc))
     }
 
     /// Checks if next token is provided punctuation and consumes it if so.
@@ -29,7 +29,7 @@ impl Lexer {
     ///
     /// Returns `true` if provided punctuation matches.
     pub fn consume_punctuation(&mut self, punc: &'static str) -> Result<bool, LexerError> {
-        if self.peek()? == Token::Punc(Punctuation(punc)) {
+        if self.peek()? == Token::Punc(Punctuation::new(punc)) {
             self.discard();
             Ok(true)
         } else {
@@ -86,10 +86,10 @@ impl Lexer {
     pub fn expect_punctuation(&mut self, expected: &'static str) -> Result<(), ParserError> {
         let start = self.location();
         let found = self.next()?;
-        if found == Token::Punc(Punctuation(expected)) {
+        if found == Token::Punc(Punctuation::new(expected)) {
             Ok(())
         } else {
-            ExpectedPunctuation::report(self, start, Punctuation(expected), found);
+            ExpectedPunctuation::report(self, start, Punctuation::new(expected), found);
             Err(ParserError::Obsolete)
         }
     }

@@ -34,7 +34,7 @@ impl FileParser {
         use Keyword::*;
         let start = self.location();
         Ok(match self.lexer.next()? {
-            Token::Punc(Punctuation("{")) => Expression::Block(self.parse_block()?),
+            Token::Punc(Punctuation::LBrace) => Expression::Block(self.parse_block()?),
 
             Token::Num(num) => Expression::Literal(Literal::Number(num)),
             Token::Str(str) => Expression::Literal(Literal::String(str)),

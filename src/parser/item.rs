@@ -131,7 +131,7 @@ impl FileParser {
             let start = self.location();
             let name = match self.lexer.next()? {
                 Token::Ident(ident) => Identifier(ident),
-                Token::Punc(Punctuation(")")) => break,
+                Token::Punc(Punctuation::RParent) => break,
                 token => {
                     ExpectedOneOf::report(self, start, vec!["IDENTIFIER", ")"], token);
                     return Err(ParserError::Obsolete);
@@ -154,12 +154,12 @@ impl FileParser {
     fn parse_return_type(&mut self) -> Result<Option<Identifier>, ParserError> {
         let start = self.location();
         match self.lexer.next()? {
-            Token::Punc(Punctuation("->")) => {
+            Token::Punc(Punctuation::Arrow) => {
                 let return_type = self.lexer.expect_identifier()?;
                 self.lexer.expect_punctuation("{")?;
                 Ok(Some(return_type))
             }
-            Token::Punc(Punctuation("{")) => Ok(None),
+            Token::Punc(Punctuation::LBrace) => Ok(None),
             token => {
                 ExpectedOneOf::report(self, start, vec!["`->`", "{"], token);
                 Err(ParserError::Obsolete)
