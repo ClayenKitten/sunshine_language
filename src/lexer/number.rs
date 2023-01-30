@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::input_stream::InputStream;
 
 use super::LexerError;
@@ -74,6 +76,26 @@ impl Number {
         } else {
             (integer, None)
         }
+    }
+}
+
+impl Display for Number {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self.base {
+                Base::Binary => "0b",
+                Base::Octal => "0o",
+                Base::Decimal => "",
+                Base::Hexadecimal => "0x",
+            }
+        )?;
+        write!(f, "{}", self.integer)?;
+        if let Some(fraction) = &self.fraction {
+            write!(f, "{fraction}")?;
+        }
+        Ok(())
     }
 }
 
