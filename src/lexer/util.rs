@@ -1,5 +1,9 @@
 use crate::{
     ast::Identifier,
+    error::{
+        library::lexer::{ExpectedIdentifier, ExpectedKeyword, ExpectedPunctuation},
+        ReportProvider,
+    },
     lexer::{
         keyword::Keyword,
         operator::{BinaryOp, UnaryOp},
@@ -80,52 +84,37 @@ impl Lexer {
 
     /// Check if next token is provided punctuation or error otherwise.
     pub fn expect_punctuation(&mut self, expected: &'static str) -> Result<(), ParserError> {
-        let start = self.location;
+        let start = self.location();
         let found = self.next()?;
         if found == Token::Punc(Punctuation(expected)) {
             Ok(())
         } else {
-            self.context.error_reporter.error(
-                format!("Expected punctuation `{expected}`, found {found:?}"),
-                self.source(),
-                start,
-                self.location,
-            );
-            Err(ParserError::UnexpectedToken(found))
+            ExpectedPunctuation::report(self, start, Punctuation(expected), found);
+            Err(ParserError::Obsolete)
         }
     }
 
     /// Check if next token is provided punctuation or error otherwise.
     pub fn expect_keyword(&mut self, keyword: Keyword) -> Result<(), ParserError> {
-        let start = self.location;
+        let start = self.location();
         let found = self.next()?;
         if found == Token::Kw(keyword) {
             Ok(())
         } else {
-            self.context.error_reporter.error(
-                format!("Expected keyword `{keyword}`, found {found:?}"),
-                self.source(),
-                start,
-                self.location,
-            );
-            Err(ParserError::UnexpectedToken(found))
+            ExpectedKeyword::report(self, start, keyword, found);
+            Err(ParserError::Obsolete)
         }
     }
 
     /// Check if next token is identifier or error otherwise.
     pub fn expect_identifier(&mut self) -> Result<Identifier, ParserError> {
-        let start = self.location;
+        let start = self.location();
         let found = self.next()?;
         if let Token::Ident(ident) = found {
             Ok(Identifier(ident))
         } else {
-            self.context.error_reporter.error(
-                format!("Expected identifier, found {found:?}"),
-                self.source(),
-                start,
-                self.location,
-            );
-            Err(ParserError::UnexpectedToken(found))
+            ExpectedIdentifier::report(self, start, found);
+            Err(ParserError::Obsolete)
         }
     }
 }

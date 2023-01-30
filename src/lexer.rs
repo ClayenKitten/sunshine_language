@@ -10,11 +10,7 @@ use std::{mem::take, str::FromStr};
 
 use thiserror::Error;
 
-use crate::{
-    context::Context,
-    input_stream::{InputStream, Location},
-    source::SourceId,
-};
+use crate::{context::Context, input_stream::InputStream};
 
 use self::{
     keyword::Keyword,
@@ -27,18 +23,15 @@ use self::{
 pub struct Lexer {
     /// Cached token.
     current: Option<Token>,
-    input: InputStream,
-    pub location: Location,
+    pub input: InputStream,
     pub context: Context,
 }
 
 impl Lexer {
     pub fn new(input: InputStream, context: Context) -> Self {
-        let location = input.location();
         Self {
             current: None,
             input,
-            location,
             context,
         }
     }
@@ -48,7 +41,6 @@ impl Lexer {
         let input = InputStream::new(src, None);
         Self {
             current: None,
-            location: input.location(),
             input,
             context: Context::new_test(),
         }
@@ -56,7 +48,6 @@ impl Lexer {
 
     /// Get next token.
     pub fn next(&mut self) -> Result<Token, LexerError> {
-        self.location = self.input.location();
         match take(&mut self.current) {
             Some(token) => Ok(token),
             None => self.read_token(),
@@ -85,22 +76,7 @@ impl Lexer {
 
     fn read_token(&mut self) -> Result<Token, LexerError> {
         self.clean();
-        let start = self.input.location();
-        match self.read_token_inner() {
-            Ok(token) => Ok(token),
-            Err(err) => {
-                self.context.error_reporter.error(
-                    &err,
-                    self.source(),
-                    start,
-                    self.input.location(),
-                );
-                Err(err)
-            }
-        }
-    }
 
-    fn read_token_inner(&mut self) -> Result<Token, LexerError> {
         let ch = match self.input.peek() {
             Some(ch) => ch,
             None => return Ok(Token::Eof),
@@ -187,7 +163,7 @@ impl Lexer {
         loop {
             match self.input.next().ok_or(LexerError::UnterminatedString)? {
                 '\\' => {
-                    let escaped = self.input.next().ok_or(LexerError::UnexpectedEOF)?;
+                    let escaped = self.input.next().ok_or(LexerError::UnterminatedString)?;
                     let value = match escaped {
                         '\'' => '\'',
                         '"' => '"',
@@ -230,10 +206,6 @@ impl Lexer {
         };
         Ok(token)
     }
-
-    pub fn source(&self) -> Option<SourceId> {
-        self.input.source()
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -248,8 +220,6 @@ pub enum Token {
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum LexerError {
-    #[error("unexpected EOF")]
-    UnexpectedEOF,
     #[error("string literal wasn't terminated")]
     UnterminatedString,
     #[error("identifier must contain only ascii alphanumeric and underscore characters")]

@@ -3,6 +3,10 @@ use crate::{
         item::{Field, Function, Item, Module, Parameter, Struct, Visibility},
         Identifier,
     },
+    error::{
+        library::{lexer::ExpectedOneOf, parser::ExpectedItem},
+        ReportProvider,
+    },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
 };
 
@@ -18,7 +22,7 @@ impl FileParser {
     ///
     /// [ItemTable]: crate::item_table::ItemTable
     pub fn parse_item(&mut self) -> Result<(), ParserError> {
-        let start = self.lexer.location;
+        let start = self.location();
 
         let visibility = if self.lexer.consume_keyword(Keyword::Pub)? {
             Visibility::Public
@@ -33,14 +37,8 @@ impl FileParser {
         } else if self.lexer.consume_keyword(Keyword::Mod)? {
             Item::new(self.parse_module()?, visibility)
         } else {
-            let token = self.lexer.next()?;
-            self.context.error_reporter.error(
-                "expected an item",
-                self.source(),
-                start,
-                self.lexer.location,
-            );
-            return Err(ParserError::UnexpectedToken(token));
+            ExpectedItem::report(self, start);
+            return Err(ParserError::Obsolete);
         };
         self.item_table.declare(self.scope.clone(), item);
         Ok(())
@@ -130,10 +128,14 @@ impl FileParser {
     fn parse_params(&mut self) -> Result<Vec<Parameter>, ParserError> {
         let mut params = Vec::new();
         loop {
+            let start = self.location();
             let name = match self.lexer.next()? {
                 Token::Ident(ident) => Identifier(ident),
                 Token::Punc(Punctuation(")")) => break,
-                token => return Err(ParserError::UnexpectedToken(token)),
+                token => {
+                    ExpectedOneOf::report(self, start, vec!["IDENTIFIER", ")"], token);
+                    return Err(ParserError::Obsolete);
+                }
             };
             self.lexer.expect_punctuation(":")?;
             let type_ = self.lexer.expect_identifier()?;
@@ -150,6 +152,7 @@ impl FileParser {
 
     /// Try to parse return type if any. Consumes opening brace `{` which is required for function body.
     fn parse_return_type(&mut self) -> Result<Option<Identifier>, ParserError> {
+        let start = self.location();
         match self.lexer.next()? {
             Token::Punc(Punctuation("->")) => {
                 let return_type = self.lexer.expect_identifier()?;
@@ -157,7 +160,10 @@ impl FileParser {
                 Ok(Some(return_type))
             }
             Token::Punc(Punctuation("{")) => Ok(None),
-            token => Err(ParserError::UnexpectedToken(token)),
+            token => {
+                ExpectedOneOf::report(self, start, vec!["`->`", "{"], token);
+                Err(ParserError::Obsolete)
+            }
         }
     }
 }

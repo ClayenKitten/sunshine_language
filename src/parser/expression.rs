@@ -4,6 +4,13 @@ use crate::{
         statement::Statement,
         Identifier,
     },
+    error::{
+        library::parser::{
+            InvalidPunctuation, KeywordNotAllowedInOperatorExpression,
+            UnexpectedTokenInFunctionCall,
+        },
+        ReportProvider,
+    },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
     parser::{operator_expression::postfix::PostfixNotation, FileParser, ParserError},
 };
@@ -25,6 +32,7 @@ impl FileParser {
     /// Parse a single operand.
     pub(super) fn parse_operand(&mut self) -> Result<Expression, ParserError> {
         use Keyword::*;
+        let start = self.location();
         Ok(match self.lexer.next()? {
             Token::Punc(Punctuation("{")) => Expression::Block(self.parse_block()?),
 
@@ -41,8 +49,13 @@ impl FileParser {
 
             Token::Eof => return Err(ParserError::UnexpectedEof),
 
-            token @ (Token::Punc(_) | Token::Kw(_)) => {
-                return Err(ParserError::UnexpectedToken(token))
+            Token::Kw(kw) => {
+                KeywordNotAllowedInOperatorExpression::report(self, start, kw);
+                return Err(ParserError::Obsolete);
+            }
+            Token::Punc(punc) => {
+                InvalidPunctuation::report(self, start, punc);
+                return Err(ParserError::Obsolete);
             }
         })
     }
@@ -52,12 +65,15 @@ impl FileParser {
         if self.lexer.consume_punctuation("(")? {
             let mut params = Vec::new();
             loop {
+                let start = self.location();
                 params.push(self.parse_expr()?);
                 if self.lexer.consume_punctuation(")")? {
                     return Ok(Expression::FnCall { name, params });
                 } else if self.lexer.consume_punctuation(",")? {
                 } else {
-                    return Err(ParserError::UnexpectedToken(self.lexer.peek()?));
+                    let token = self.lexer.peek()?;
+                    UnexpectedTokenInFunctionCall::report(self, start, token);
+                    return Err(ParserError::Obsolete);
                 }
             }
         } else {

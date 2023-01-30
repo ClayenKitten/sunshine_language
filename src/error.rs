@@ -1,5 +1,8 @@
 //! Error reporting.
 
+pub mod library;
+mod types;
+
 use std::{
     fmt::Display,
     sync::{Arc, Mutex},
@@ -10,11 +13,13 @@ use crate::{
     source::{SourceId, SourceMap},
 };
 
+pub use self::types::*;
+
 /// Interface to report errors conveniently.
 #[derive(Debug)]
 pub struct ErrorReporter {
     source_map: Arc<Mutex<SourceMap>>,
-    errors: Mutex<Vec<(Severity, Error)>>,
+    errors: Mutex<Vec<Box<dyn ReportableError>>>,
 }
 
 impl ErrorReporter {
@@ -26,42 +31,8 @@ impl ErrorReporter {
         }
     }
 
-    /// Build warning.
-    pub fn warn(
-        &self,
-        message: impl ToString,
-        file: Option<SourceId>,
-        start: Location,
-        end: Location,
-    ) {
-        self.errors.lock().unwrap().push((
-            Severity::Warning,
-            Error {
-                message: message.to_string(),
-                file,
-                start,
-                end,
-            },
-        ));
-    }
-
-    /// Build error.
-    pub fn error(
-        &self,
-        message: impl ToString,
-        file: Option<SourceId>,
-        start: Location,
-        end: Location,
-    ) {
-        self.errors.lock().unwrap().push((
-            Severity::Error,
-            Error {
-                message: message.to_string(),
-                file,
-                start,
-                end,
-            },
-        ));
+    pub fn report(&self, error: impl ReportableError + 'static) {
+        self.errors.lock().unwrap().push(Box::new(error));
     }
 
     /// Check if any fatal error occurred.
@@ -75,21 +46,21 @@ impl ErrorReporter {
             .lock()
             .unwrap()
             .iter()
-            .fold((0, 0), |(w, e), (severity, _)| match severity {
-                Severity::Warning => (w + 1, e),
-                Severity::Error => (w, e + 1),
+            .fold((0, 0), |(w, e), err| match err.severity() {
+                Severity::Warn => (w + 1, e),
+                Severity::Deny => (w, e + 1),
             })
     }
 }
 
 impl Display for ErrorReporter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (severity, error) in self.errors.lock().unwrap().iter() {
-            match severity {
-                Severity::Warning => writeln!(f, "Warning: {}", error.message)?,
-                Severity::Error => writeln!(f, "Error: {}", error.message)?,
+        for error in self.errors.lock().unwrap().iter() {
+            match error.severity() {
+                Severity::Warn => writeln!(f, "Warning: {}", error)?,
+                Severity::Deny => writeln!(f, "Error: {}", error)?,
             }
-            match error.file {
+            match error.span().source {
                 Some(file) => writeln!(
                     f,
                     " --> {}:{}",
@@ -98,10 +69,11 @@ impl Display for ErrorReporter {
                         .unwrap()
                         .get_path(file)
                         .to_string_lossy(),
-                    error.start
+                    error.span().start
                 )?,
-                None => writeln!(f, " --> {}", error.start)?,
+                None => writeln!(f, " --> {}", error.span().start)?,
             }
+            writeln!(f)?;
         }
         let (warnings, error) = self.calc_number();
         writeln!(f, "{warnings} warning(s), {error} error(s)",)?;
@@ -112,14 +84,7 @@ impl Display for ErrorReporter {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Error {
     message: String,
-    file: Option<SourceId>,
+    source: Option<SourceId>,
     start: Location,
     end: Location,
-}
-
-/// How severe is error.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum Severity {
-    Warning,
-    Error,
 }

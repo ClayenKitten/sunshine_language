@@ -13,7 +13,7 @@ use crate::source::SourceId;
 /// Input stream provides compiler with characters of input and tracks their location.
 #[derive(Debug)]
 pub struct InputStream {
-    file: Option<SourceId>,
+    source: Option<SourceId>,
     iter: OwnedCharIndices,
     buf: VecDeque<(usize, char)>,
     // Location of next character.
@@ -41,10 +41,10 @@ impl Iterator for InputStream {
 }
 
 impl InputStream {
-    pub fn new(src: impl ToString, file: Option<SourceId>) -> Self {
+    pub fn new(src: impl ToString, source: Option<SourceId>) -> Self {
         InputStream {
             buf: VecDeque::new(),
-            file,
+            source,
             iter: src.to_string().into_char_indices(),
             location: Location {
                 pos: 0,
@@ -84,7 +84,7 @@ impl InputStream {
 
     /// Returns source if any.
     pub fn source(&self) -> Option<SourceId> {
-        self.file
+        self.source
     }
 }
 

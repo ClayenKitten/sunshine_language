@@ -18,7 +18,7 @@ use crate::{
     context::Context,
     input_stream::InputStream,
     item_table::{path::ItemPath, ItemTable},
-    lexer::{Lexer, LexerError, Token},
+    lexer::{Lexer, LexerError},
     source::{SourceError, SourceId},
 };
 
@@ -133,17 +133,13 @@ impl FileParser {
             pending: self.pending,
         })
     }
-
-    pub fn source(&self) -> Option<SourceId> {
-        self.lexer.source()
-    }
 }
 
 /// Error that has occured during parsing.
 #[derive(Debug, Error)]
 pub enum ParserError {
-    #[error("unexpected token: `{0:?}`")]
-    UnexpectedToken(Token),
+    #[error("")]
+    Obsolete,
     #[error(transparent)]
     AssignmentError(#[from] AssignmentError),
     #[error("unexpected EOF")]

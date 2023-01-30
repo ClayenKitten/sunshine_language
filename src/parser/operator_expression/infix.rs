@@ -5,6 +5,7 @@ use thiserror::Error;
 use crate::{
     ast::expression::Expression as AstExpression,
     ast::{expression::Expression, Identifier},
+    error::{library::parser::ChainedAssignment, ReportProvider},
     lexer::operator::{AssignOp, BinaryOp, UnaryOp},
     parser::{FileParser, ParserError},
 };
@@ -34,9 +35,11 @@ impl FileParser {
 
         loop {
             use InfixEntry::*;
+            let start = self.location();
 
             if let Some(operator) = self.lexer.consume_assignment_operator()? {
                 if assignment.is_some() {
+                    ChainedAssignment::report(self, start);
                     return Err(AssignmentError::DoubleAssignment.into());
                 }
                 let Some(Operand(AstExpression::Var(assignee))) = output.pop_back() else {
