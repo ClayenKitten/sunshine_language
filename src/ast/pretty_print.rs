@@ -13,13 +13,13 @@ use super::{
 
 pub fn print_table(w: &mut impl Write, table: &ItemTable) -> Result<()> {
     for (path, item) in table.declared.iter() {
-        writeln!(w, "[{}]", path)?;
+        writeln!(w, "[{path}]")?;
         if item.visibility == Visibility::Public {
             write!(w, "pub ")?;
         }
         match &item.kind {
             ItemKind::Module(Module::Inline(name) | Module::Loadable(name)) => {
-                writeln!(w, "mod {};", name)?
+                writeln!(w, "mod {name};")?
             }
             ItemKind::Struct(s) => {
                 writeln!(w, "struct {} {{", s.name)?;
@@ -37,7 +37,7 @@ pub fn print_table(w: &mut impl Write, table: &ItemTable) -> Result<()> {
                     writeln!(w)?;
                 }
                 if let Some(ret_type) = &func.return_type {
-                    writeln!(w, ") -> {} {{", ret_type)?;
+                    writeln!(w, ") -> {ret_type} {{")?;
                 } else {
                     write!(w, ") ")?;
                 }
@@ -72,7 +72,7 @@ fn print_stmt(w: &mut impl Write, stmt: &Statement, ident: usize) -> Result<()> 
             operator,
             expression,
         } => {
-            write!(w, "{} {} ", assignee, operator)?;
+            write!(w, "{assignee} {operator} ")?;
             print_expr(w, expression, ident)?;
             writeln!(w, ";")?;
         }
@@ -129,17 +129,17 @@ fn print_expr(w: &mut impl Write, expr: &Expression, ident: usize) -> Result<()>
                 write!(w, "{fraction}")?;
             }
         }
-        Expression::Literal(Literal::String(s)) => write!(w, "\"{}\"", s)?,
+        Expression::Literal(Literal::String(s)) => write!(w, "\"{s}\"")?,
         Expression::Literal(Literal::Boolean(true)) => write!(w, "true")?,
         Expression::Literal(Literal::Boolean(false)) => write!(w, "false")?,
         Expression::Unary { op, value } => {
-            write!(w, "{}", op)?;
+            write!(w, "{op}")?;
             print_expr(w, value, ident)?;
         }
         Expression::Binary { op, left, right } => {
             write!(w, "(")?;
             print_expr(w, left, ident)?;
-            write!(w, " {} ", op)?;
+            write!(w, " {op} ")?;
             print_expr(w, right, ident)?;
             write!(w, ")")?;
         }

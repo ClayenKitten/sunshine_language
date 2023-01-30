@@ -51,7 +51,7 @@ impl FileParser {
                     InvalidAssignee::report(self, start);
                     return Err(ParserError::ParserError);
                 };
-                if output.len() != 0 {
+                if !output.is_empty() {
                     InvalidAssignee::report(self, start);
                     return Err(ParserError::ParserError);
                 }

@@ -61,8 +61,8 @@ impl Display for ErrorReporter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for error in self.errors.lock().unwrap().iter() {
             match error.severity() {
-                Severity::Warn => writeln!(f, "Warning: {}", error)?,
-                Severity::Deny => writeln!(f, "Error: {}", error)?,
+                Severity::Warn => writeln!(f, "Warning: {error}")?,
+                Severity::Deny => writeln!(f, "Error: {error}")?,
             }
             match error.span().source {
                 Some(file) => writeln!(

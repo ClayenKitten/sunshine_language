@@ -89,7 +89,7 @@ impl Default for ItemTable {
 impl Display for ItemTable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (path, item) in self.declared.iter() {
-            writeln!(f, "{}\n{:#?}", path, item)?;
+            writeln!(f, "{path}\n{item:#?}")?;
         }
         Ok(())
     }
@@ -167,7 +167,7 @@ pub mod path {
                 .chain(self.other.iter())
                 .map(|ident| ident.0.as_str())
                 .intersperse("::")
-                .try_for_each(|s| write!(f, "{}", s))
+                .try_for_each(|s| write!(f, "{s}"))
         }
     }
 

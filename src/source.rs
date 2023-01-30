@@ -53,7 +53,7 @@ impl SourceMap {
     /// Inserts new source file to the map and returns its id.
     pub fn insert(&mut self, path: ItemPath) -> Result<SourceId, SourceError> {
         let mut source_path = self.root.clone();
-        source_path.extend(path.clone().into_path_buf().iter());
+        source_path.extend(path.into_path_buf().iter());
         self.insert_path(source_path)
     }
 
@@ -82,7 +82,7 @@ impl SourceMap {
     pub fn get_path(&self, id: SourceId) -> &Path {
         self.mapping
             .iter()
-            .find_map(|(path, checked_id)| (*checked_id == id).then(|| path.as_path()))
+            .find_map(|(path, checked_id)| (*checked_id == id).then_some(path.as_path()))
             .expect("each SourceId should have corresponding entry in mapping")
     }
 

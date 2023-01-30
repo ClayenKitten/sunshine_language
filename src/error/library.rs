@@ -81,7 +81,7 @@ pub mod lexer {
             [expected1, expected2] => format!("expected {expected1} or {expected2}, found {}", found.pretty_print()),
             _ => format!(
                 "expected one of: {}, found {}",
-                expected.into_iter()
+                expected.iter()
                     .map(|x| x.to_string())
                     .intersperse(String::from(", "))
                     .collect::<String>(),
