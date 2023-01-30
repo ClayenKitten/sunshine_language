@@ -8,10 +8,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::{
-    input_stream::Location,
-    source::{SourceId, SourceMap},
-};
+use crate::source::SourceMap;
 
 pub use self::types::*;
 
@@ -79,12 +76,4 @@ impl Display for ErrorReporter {
         writeln!(f, "{warnings} warning(s), {error} error(s)",)?;
         Ok(())
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Error {
-    message: String,
-    source: Option<SourceId>,
-    start: Location,
-    end: Location,
 }
