@@ -1,9 +1,6 @@
 use crate::{
     ast::Identifier,
-    error::{
-        library::lexer::{ExpectedIdentifier, ExpectedKeyword, ExpectedPunctuation},
-        ReportProvider,
-    },
+    error::{library::lexer::TokenMismatch, ExpectedToken, ReportProvider},
     lexer::{
         keyword::Keyword,
         operator::{BinaryOp, UnaryOp},
@@ -89,7 +86,7 @@ impl Lexer {
         if found == Token::Punc(Punctuation::new(expected)) {
             Ok(())
         } else {
-            ExpectedPunctuation::report(self, start, Punctuation::new(expected), found);
+            TokenMismatch::report(self, start, vec![Punctuation::new(expected).into()], found);
             Err(ParserError::Obsolete)
         }
     }
@@ -101,7 +98,7 @@ impl Lexer {
         if found == Token::Kw(keyword) {
             Ok(())
         } else {
-            ExpectedKeyword::report(self, start, keyword, found);
+            TokenMismatch::report(self, start, vec![Keyword::In.into()], found);
             Err(ParserError::Obsolete)
         }
     }
@@ -113,7 +110,7 @@ impl Lexer {
         if let Token::Ident(ident) = found {
             Ok(Identifier(ident))
         } else {
-            ExpectedIdentifier::report(self, start, found);
+            TokenMismatch::report(self, start, vec![ExpectedToken::Identifier], found);
             Err(ParserError::Obsolete)
         }
     }

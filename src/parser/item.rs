@@ -4,8 +4,8 @@ use crate::{
         Identifier,
     },
     error::{
-        library::{lexer::ExpectedOneOf, parser::ExpectedItem},
-        ReportProvider,
+        library::{lexer::TokenMismatch, parser::ExpectedItem},
+        ExpectedToken, ReportProvider,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
 };
@@ -133,7 +133,12 @@ impl FileParser {
                 Token::Ident(ident) => Identifier(ident),
                 Token::Punc(Punctuation::RParent) => break,
                 token => {
-                    ExpectedOneOf::report(self, start, vec!["IDENTIFIER", ")"], token);
+                    TokenMismatch::report(
+                        self,
+                        start,
+                        vec![ExpectedToken::Identifier, Punctuation::RParent.into()],
+                        token,
+                    );
                     return Err(ParserError::Obsolete);
                 }
             };
@@ -161,7 +166,12 @@ impl FileParser {
             }
             Token::Punc(Punctuation::LBrace) => Ok(None),
             token => {
-                ExpectedOneOf::report(self, start, vec!["`->`", "{"], token);
+                TokenMismatch::report(
+                    self,
+                    start,
+                    vec![Punctuation::Arrow.into(), Punctuation::LBrace.into()],
+                    token,
+                );
                 Err(ParserError::Obsolete)
             }
         }

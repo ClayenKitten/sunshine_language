@@ -56,26 +56,30 @@ pub mod parser {
 }
 
 /// Errors issued by lexer.
+#[allow(unstable_name_collisions)]
 pub mod lexer {
-    use crate::lexer::{keyword::Keyword, punctuation::Punctuation, Token};
+    use itertools::Itertools;
+
+    use crate::{error::ExpectedToken, lexer::Token};
 
     define_error! {
-        /// Punctuation was expected, but something else was found.
-        deny ExpectedPunctuation { expected: Punctuation, found: Token }
-        = "Expected punctuation {expected:?}, found {found:?}";
+        /// Token mismatch occured.
+        deny TokenMismatch { expected: Vec<ExpectedToken>, found: Token }
+        = match expected.as_slice() {
+            [expected] => format!("expected {expected}, found {}", found.pretty_print()),
+            [expected1, expected2] => format!("expected {expected1} or {expected2}, found {}", found.pretty_print()),
+            _ => format!(
+                "expected one of: {}, found {}",
+                expected.into_iter()
+                    .map(|x| x.to_string())
+                    .intersperse(String::from(", "))
+                    .collect::<String>(),
+                found.pretty_print()
+            ),
+        };
+    }
 
-        /// Identifier was expected, but something else was found.
-        deny ExpectedIdentifier { found: Token }
-        = "Expected identifier, found {found:?}";
-
-        /// Keyword was expected, but something else was found.
-        deny ExpectedKeyword { keyword: Keyword, found: Token }
-        = "Expected keyword `{keyword}`, found {found:?}";
-
-        /// Expected one of the following tokens.
-        deny ExpectedOneOf { possible: Vec<&'static str>, found: Token }
-        = "expected one of: {possible:?}; {found:?} encountered";
-
+    define_error! {
         /// String literal wasn't terminated.
         deny UnterminatedString = "string literal wasn't terminated";
 

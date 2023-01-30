@@ -1,16 +1,23 @@
 //! Error reporting.
 
+mod expected_token;
 pub mod library;
-mod types;
+mod report_provider;
+
+pub use expected_token::*;
+pub use report_provider::*;
 
 use std::{
+    error::Error,
     fmt::Display,
     sync::{Arc, Mutex},
 };
 
-use crate::source::SourceMap;
-
-pub use self::types::*;
+use crate::{
+    input_stream::Location,
+    lexer::Token,
+    source::{SourceId, SourceMap},
+};
 
 /// Interface to report errors conveniently.
 #[derive(Debug)]
@@ -75,5 +82,41 @@ impl Display for ErrorReporter {
         let (warnings, error) = self.calc_number();
         writeln!(f, "{warnings} warning(s), {error} error(s)",)?;
         Ok(())
+    }
+}
+
+/// Error that may be reported.
+pub trait ReportableError: Error {
+    fn severity(&self) -> Severity;
+    fn span(&self) -> ErrorSpan;
+}
+
+/// How severe is the error.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Severity {
+    /// User attention requested.
+    Warn,
+    /// Compilation failed.
+    Deny,
+}
+
+/// Location of the error.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ErrorSpan {
+    pub source: Option<SourceId>,
+    pub start: Location,
+    pub end: Location,
+}
+
+impl Token {
+    fn pretty_print(&self) -> String {
+        match self {
+            Token::Punc(punc) => format!("`{punc}`"),
+            Token::Num(num) => format!("number `{num}`"),
+            Token::Str(s) => format!("\"{s}\""),
+            Token::Kw(kw) => format!("keyword `{kw}`"),
+            Token::Ident(ident) => format!("`{ident}`"),
+            Token::Eof => todo!(),
+        }
     }
 }

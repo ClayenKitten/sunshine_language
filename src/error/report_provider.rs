@@ -1,31 +1,8 @@
-use std::{error::Error, sync::Arc};
+use std::sync::Arc;
 
 use crate::{input_stream::Location, lexer::Lexer, parser::FileParser, source::SourceId};
 
 use super::ErrorReporter;
-
-/// Error that may be reported.
-pub trait ReportableError: Error {
-    fn severity(&self) -> Severity;
-    fn span(&self) -> ErrorSpan;
-}
-
-/// How severe is the error.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Severity {
-    /// User attention requested.
-    Warn,
-    /// Compilation failed.
-    Deny,
-}
-
-/// Location of the error.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ErrorSpan {
-    pub source: Option<SourceId>,
-    pub start: Location,
-    pub end: Location,
-}
 
 /// A struct that has all information required to report a error.
 pub trait ReportProvider {

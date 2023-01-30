@@ -5,14 +5,14 @@ macro_rules! define_error {
         $(#[doc = $doc:expr])*
         $severity:ident $name:ident
         $({$($field:ident: $type:ty),*})?
-        = $message:literal
+        = $message:expr
         $(=> $into:ty = $into_by:expr)*
         ;
     )*) => ($(
         $(#[doc = $doc])*
         #[derive(Debug)]
         pub struct $name {
-            span: crate::error::types::ErrorSpan,
+            span: crate::error::ErrorSpan,
             $($(
                 $field: $type,
             )*)?
@@ -20,12 +20,12 @@ macro_rules! define_error {
 
         impl $name {
             pub fn report(
-                provider: &impl crate::error::types::ReportProvider,
+                provider: &impl crate::error::ReportProvider,
                 start: crate::input_stream::Location,
                 $($($field: $type,)*)?
             ) {
                 let error = Self {
-                    span: crate::error::types::ErrorSpan {
+                    span: crate::error::ErrorSpan {
                         source: provider.source(),
                         start,
                         end: provider.location(),
@@ -36,12 +36,12 @@ macro_rules! define_error {
             }
         }
 
-        impl crate::error::types::ReportableError for $name {
-            fn severity(&self) -> crate::error::types::Severity {
+        impl crate::error::ReportableError for $name {
+            fn severity(&self) -> crate::error::Severity {
                 severity!($severity)
             }
 
-            fn span(&self) -> crate::error::types::ErrorSpan {
+            fn span(&self) -> crate::error::ErrorSpan {
                 self.span
             }
         }
@@ -51,7 +51,7 @@ macro_rules! define_error {
         impl std::fmt::Display for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 $($(let $field = &self.$field;)*)?
-                write!(f, $message)
+                message!(f $message)
             }
         }
 
@@ -67,9 +67,18 @@ macro_rules! define_error {
 
 macro_rules! severity {
     (deny) => {
-        crate::error::types::Severity::Deny
+        crate::error::Severity::Deny
     };
     (warn) => {
-        crate::error::types::Severity::Warn
+        crate::error::Severity::Warn
+    };
+}
+
+macro_rules! message {
+    ($fmt:ident $message:literal) => {
+        write!($fmt, $message)
+    };
+    ($fmt:ident $message:expr) => {
+        write!($fmt, "{}", { $message })
     };
 }
