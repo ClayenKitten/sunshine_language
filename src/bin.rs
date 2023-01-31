@@ -41,10 +41,13 @@ fn main() -> anyhow::Result<()> {
 
     let item_table = parser.parse();
 
-    println!("{}", parser.context.error_reporter);
-
     match parser.context.metadata.emit_type {
-        Emit::Ast => print_table(stdout(), &item_table?)?,
+        Emit::Ast => match &item_table {
+            Ok(table) => print_table(stdout(), table)?,
+            Err(_) => {
+                println!("{}", parser.context.error_reporter);
+            }
+        },
         Emit::LlvmIr => todo!(),
         Emit::Binary => todo!(),
     };
