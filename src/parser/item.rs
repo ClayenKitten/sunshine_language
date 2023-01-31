@@ -55,6 +55,7 @@ impl FileParser {
     pub fn parse_module(&mut self) -> Result<Module, ParserError> {
         let name = self.lexer.expect_identifier()?;
 
+        let start = self.location();
         if self.lexer.consume_punctuation(";")? {
             self.pending.push({
                 let mut path = self.scope.clone();
@@ -63,8 +64,16 @@ impl FileParser {
             });
             return Ok(Module::Loadable(name));
         }
-
-        self.lexer.expect_punctuation("{")?;
+        if !self.lexer.consume_punctuation("{")? {
+            let found = self.lexer.peek()?;
+            TokenMismatch::report(
+                self,
+                start,
+                vec![Punctuation::LBrace.into(), Punctuation::Semicolon.into()],
+                found,
+            );
+            return Err(ParserError::ParserError);
+        }
         while !self.lexer.consume_punctuation("}")? {
             self.subscope(name.clone(), |parser| parser.parse_item())?;
         }
