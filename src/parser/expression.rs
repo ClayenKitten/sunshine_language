@@ -6,13 +6,13 @@ use crate::{
     },
     error::{
         library::{
-            lexer::UnexpectedEOF,
+            lexer::{UnexpectedEOF, TokenMismatch},
             parser::{
                 AssignmentInExpressionPosition, InvalidPunctuation,
-                KeywordNotAllowedInOperatorExpression, UnexpectedTokenInFunctionCall,
+                KeywordNotAllowedInOperatorExpression,
             },
         },
-        ReportProvider,
+        ReportProvider, ExpectedToken,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
     parser::{operator_expression::postfix::PostfixNotation, FileParser, ParserError},
@@ -84,7 +84,15 @@ impl FileParser {
                 } else if self.lexer.consume_punctuation(",")? {
                 } else {
                     let token = self.lexer.peek()?;
-                    UnexpectedTokenInFunctionCall::report(self, start, token);
+                    TokenMismatch::report(
+                        self,
+                        start,
+                        vec![
+                            ExpectedToken::Punctuation(Punctuation::Comma),
+                            ExpectedToken::Punctuation(Punctuation::RParent),
+                        ],
+                        token,
+                    );
                     return Err(ParserError::ParserError);
                 }
             }

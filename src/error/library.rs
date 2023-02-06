@@ -5,7 +5,7 @@ mod r#macro;
 
 /// Errors issued by parser.
 pub mod parser {
-    use crate::lexer::{keyword::Keyword, punctuation::Punctuation, Token};
+    use crate::lexer::{keyword::Keyword, punctuation::Punctuation};
 
     define_error! {
         /// Expected an item.
@@ -59,10 +59,6 @@ pub mod parser {
         /// Keyword is not allowed in operator expression.
         deny KeywordNotAllowedInOperatorExpression { kw: Keyword }
         = "keyword `{kw}` is not allowed in operator expression";
-
-        /// Function call may only.
-        deny UnexpectedTokenInFunctionCall { token: Token }
-        = "Expected one of the following: `)`, `,`, OPERAND; {token:?} encountered";
     }
 }
 
@@ -77,10 +73,11 @@ pub mod lexer {
         /// Token mismatch occured.
         deny TokenMismatch { expected: Vec<ExpectedToken>, found: Token }
         = match expected.as_slice() {
+            [] => panic!("empty token mismatch error"),
             [expected] => format!("expected {expected}, found {}", found.pretty_print()),
             [expected1, expected2] => format!("expected {expected1} or {expected2}, found {}", found.pretty_print()),
-            _ => format!(
-                "expected one of: {}, found {}",
+            [expected @ .., last] => format!(
+                "expected one of: {}, or {last}, found {}",
                 expected.iter()
                     .map(|x| x.to_string())
                     .intersperse(String::from(", "))
