@@ -6,6 +6,7 @@ use crate::lexer::{keyword::Keyword, punctuation::Punctuation};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExpectedToken {
     Identifier,
+    Expression,
     Keyword(Keyword),
     Punctuation(Punctuation),
 }
@@ -25,7 +26,8 @@ impl From<Punctuation> for ExpectedToken {
 impl Display for ExpectedToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ExpectedToken::Identifier => write!(f, "identifier"),
+            ExpectedToken::Identifier => write!(f, "an identifier"),
+            ExpectedToken::Expression => write!(f, "an expression"),
             ExpectedToken::Keyword(kw) => write!(f, "keyword `{kw}`"),
             ExpectedToken::Punctuation(punc) => write!(f, "`{punc}`"),
         }
