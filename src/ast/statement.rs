@@ -1,6 +1,4 @@
-use crate::lexer::operator::AssignOp;
-
-use super::{expression::Expression, Identifier};
+use crate::{lexer::operator::AssignOp, ast::expression::Expression, Identifier};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {

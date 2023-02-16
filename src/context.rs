@@ -8,7 +8,7 @@ use std::{
 use clap::ValueEnum;
 
 use crate::{
-    ast::Identifier,
+    Identifier,
     error::ErrorReporter,
     source::{SourceError, SourceMap},
 };

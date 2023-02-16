@@ -1,5 +1,5 @@
 use crate::{
-    ast::Identifier,
+    Identifier,
     error::{library::lexer::TokenMismatch, ExpectedToken, ReportProvider},
     lexer::{
         keyword::Keyword,

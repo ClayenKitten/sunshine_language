@@ -15,7 +15,8 @@ pub mod infix;
 pub mod postfix;
 
 use crate::{
-    ast::{expression::Expression, Identifier},
+    Identifier,
+    ast::expression::Expression,
     lexer::operator::AssignOp,
 };
 

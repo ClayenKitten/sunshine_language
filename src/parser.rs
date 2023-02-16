@@ -125,7 +125,7 @@ impl FileParser {
 
     #[cfg(test)]
     pub fn new_test(src: &str) -> Self {
-        use crate::ast::Identifier;
+        use crate::Identifier;
 
         let context = Context::new_test();
         Self {

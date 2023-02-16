@@ -8,3 +8,6 @@ pub mod lexer;
 pub mod parser;
 pub mod source;
 pub mod util;
+pub mod identifier;
+
+pub use identifier::Identifier;

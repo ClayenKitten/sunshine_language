@@ -1,9 +1,11 @@
-use crate::lexer::{
-    number::Number,
-    operator::{BinaryOp, UnaryOp},
+use crate::{
+    lexer::{
+        number::Number,
+        operator::{BinaryOp, UnaryOp},
+    },
+    ast::statement::Statement,
+    Identifier
 };
-
-use super::{statement::Statement, Identifier};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expression {

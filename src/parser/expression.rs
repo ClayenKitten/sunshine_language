@@ -1,8 +1,8 @@
 use crate::{
+    Identifier,
     ast::{
         expression::{Block, Expression, Literal},
         statement::Statement,
-        Identifier,
     },
     error::{
         library::{

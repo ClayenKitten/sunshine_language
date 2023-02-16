@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{ast::Identifier, item_table::path::ItemPath};
+use crate::{Identifier, item_table::path::ItemPath};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Scope(Rc<RefCell<ScopeInner>>);

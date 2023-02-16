@@ -2,8 +2,8 @@
 use std::collections::VecDeque;
 
 use crate::{
+    Identifier,
     ast::expression::Expression as AstExpression,
-    ast::{expression::Expression, Identifier},
     error::{
         library::parser::{
             ChainedAssignment, ExpectedExpression, InvalidAssignee, UnclosedParenthesis,
@@ -118,7 +118,7 @@ impl FileParser {
 /// An entry of infix expression: operand, operator (unary or binary) or parenthesis.
 #[derive(Debug, PartialEq, Eq)]
 pub enum InfixEntry {
-    Operand(Expression),
+    Operand(AstExpression),
     UnaryOperator(UnaryOp),
     BinaryOperator(BinaryOp),
     LeftParenthesis,
@@ -128,10 +128,8 @@ pub enum InfixEntry {
 #[cfg(test)]
 mod tests {
     use crate::{
-        ast::{
-            expression::{Expression, Literal},
-            Identifier,
-        },
+        Identifier,
+        ast::expression::{Expression, Literal},
         lexer::{
             number::{Base, Number},
             operator::{BinaryOp, UnaryOp},

@@ -104,7 +104,7 @@ pub mod path {
     use std::str::FromStr;
     use thiserror::Error;
 
-    use crate::ast::{Identifier, IdentifierParseError};
+    use crate::identifier::{Identifier, IdentifierParseError};
 
     /// Path to Item.
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -143,7 +143,7 @@ pub mod path {
         ///
         /// ```rust
         /// # use std::path::PathBuf;
-        /// # use compiler::{ast::Identifier, item_table::path::ItemPath};
+        /// # use compiler::{Identifier, item_table::path::ItemPath};
         /// let mut path = ItemPath::new(Identifier(String::from("example")));
         /// path.push(Identifier(String::from("mod1")));
         /// path.push(Identifier(String::from("mod2")));
@@ -214,7 +214,7 @@ pub mod path {
     mod test {
         use std::str::FromStr;
 
-        use crate::{ast::Identifier, item_table::path::ItemPath};
+        use crate::{Identifier, item_table::path::ItemPath};
 
         #[test]
         fn display() {

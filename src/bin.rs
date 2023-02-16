@@ -1,6 +1,7 @@
 use clap::Parser as ArgParser;
 use compiler::{
-    ast::{pretty_print::print_table, Identifier},
+    Identifier,
+    ast::pretty_print::print_table,
     context::{Context, Emit, Metadata},
     parser::Parser,
 };
