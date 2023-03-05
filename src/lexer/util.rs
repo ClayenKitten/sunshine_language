@@ -1,5 +1,4 @@
 use crate::{
-    Identifier,
     error::{library::lexer::TokenMismatch, ExpectedToken, ReportProvider},
     lexer::{
         keyword::Keyword,
@@ -8,6 +7,7 @@ use crate::{
         Lexer, LexerError, Token,
     },
     parser::ParserError,
+    Identifier,
 };
 
 use super::operator::AssignOp;

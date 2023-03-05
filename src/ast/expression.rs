@@ -1,10 +1,10 @@
 use crate::{
+    ast::statement::Statement,
     lexer::{
         number::Number,
         operator::{BinaryOp, UnaryOp},
     },
-    ast::statement::Statement,
-    Identifier
+    Identifier,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

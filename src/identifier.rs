@@ -5,6 +5,12 @@ use thiserror::Error;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Identifier(pub String);
 
+impl Identifier {
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
 impl Display for Identifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)

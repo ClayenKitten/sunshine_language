@@ -1,9 +1,10 @@
 use clap::Parser as ArgParser;
 use compiler::{
-    Identifier,
     ast::pretty_print::print_table,
     context::{Context, Emit, Metadata},
+    hir::HirData,
     parser::Parser,
+    Identifier,
 };
 use std::{io::stdout, path::PathBuf, str::FromStr};
 
@@ -45,6 +46,17 @@ fn main() -> anyhow::Result<()> {
     match parser.context.metadata.emit_type {
         Emit::Ast => match &item_table {
             Ok(table) => print_table(stdout(), table)?,
+            Err(_) => {
+                println!("{}", parser.context.error_reporter);
+            }
+        },
+        Emit::Hir => match item_table {
+            Ok(item_table) => {
+                match HirData::translate(item_table) {
+                    Ok(hir) => println!("{:#?}", hir),
+                    Err(err) => println!("{}", err),
+                };
+            }
             Err(_) => {
                 println!("{}", parser.context.error_reporter);
             }

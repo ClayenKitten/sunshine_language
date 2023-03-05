@@ -1,11 +1,11 @@
 use crate::{
-    Identifier,
     ast::item::{Field, Function, Item, Module, Parameter, Struct, Visibility},
     error::{
         library::{lexer::TokenMismatch, parser::ExpectedItem},
         ExpectedToken, ReportProvider,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
+    Identifier,
 };
 
 use super::{FileParser, ParserError, PendingFile};
@@ -187,7 +187,7 @@ impl FileParser {
 
 #[cfg(test)]
 mod test {
-    use crate::{Identifier, parser::FileParser};
+    use crate::{parser::FileParser, Identifier};
 
     use super::{Field, Struct};
 

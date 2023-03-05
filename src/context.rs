@@ -8,9 +8,9 @@ use std::{
 use clap::ValueEnum;
 
 use crate::{
-    Identifier,
     error::ErrorReporter,
     source::{SourceError, SourceMap},
+    Identifier,
 };
 
 /// Context of the compilation.
@@ -56,6 +56,7 @@ pub struct Metadata {
 #[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Emit {
     Ast,
+    Hir,
     LlvmIr,
     #[default]
     Binary,

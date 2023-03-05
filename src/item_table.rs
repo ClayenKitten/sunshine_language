@@ -80,6 +80,15 @@ impl ItemTable {
     }
 }
 
+impl IntoIterator for ItemTable {
+    type Item = (ItemPath, Item);
+    type IntoIter = hash_map::IntoIter<ItemPath, Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.declared.into_iter()
+    }
+}
+
 impl Default for ItemTable {
     fn default() -> Self {
         Self::new()
@@ -214,7 +223,7 @@ pub mod path {
     mod test {
         use std::str::FromStr;
 
-        use crate::{Identifier, item_table::path::ItemPath};
+        use crate::{item_table::path::ItemPath, Identifier};
 
         #[test]
         fn display() {

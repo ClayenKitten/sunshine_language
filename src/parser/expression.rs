@@ -1,21 +1,21 @@
 use crate::{
-    Identifier,
     ast::{
         expression::{Block, Expression, Literal},
         statement::Statement,
     },
     error::{
         library::{
-            lexer::{UnexpectedEOF, TokenMismatch},
+            lexer::{TokenMismatch, UnexpectedEOF},
             parser::{
                 AssignmentInExpressionPosition, InvalidPunctuation,
                 KeywordNotAllowedInOperatorExpression,
             },
         },
-        ReportProvider, ExpectedToken,
+        ExpectedToken, ReportProvider,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
     parser::{operator_expression::postfix::PostfixNotation, FileParser, ParserError},
+    Identifier,
 };
 
 use super::operator_expression::Tree;
