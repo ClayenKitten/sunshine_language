@@ -65,7 +65,8 @@ fn translate_block(
     let scope = scope.child();
     let mut result = Vec::new();
     for stmt in block.statements {
-        translate_stmt(type_table, scope.clone(), stmt)?;
+        let stmt = translate_stmt(type_table, scope.clone(), stmt)?;
+        result.push(stmt);
     }
     if let Some(expr) = block.expression {
         let expr = translate_expr(type_table, scope, *expr)?;
