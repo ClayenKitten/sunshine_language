@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, collections::HashMap, ops::AddAssign, str::FromStr};
+use std::{borrow::Borrow, collections::HashMap, str::FromStr};
 
 use crate::{
     ast::item::{Field, ItemKind, Struct},
@@ -11,7 +11,7 @@ use thiserror::Error;
 
 #[derive(Debug)]
 pub struct TypeTable {
-    latest: TypeId,
+    latest_compound: u32,
     mapping: HashMap<Identifier, TypeId>,
     fields: MonotonicVec<HashMap<Identifier, TypeId>>,
 }
@@ -20,7 +20,7 @@ impl TypeTable {
     /// Creates new [TypeTable] by gathering type declarations from provided [ItemTable].
     pub fn gather(item_table: &ItemTable) -> TypeResult<TypeTable> {
         let mut type_table = TypeTable {
-            latest: TypeId::Compound(0),
+            latest_compound: 0,
             fields: MonotonicVec::new(),
             mapping: HashMap::new(),
         };
@@ -56,14 +56,12 @@ impl TypeTable {
             .ok_or_else(|| TypeError::NotFound(id.borrow().clone()))
     }
 
-    /// Defines the type without its internals.
+    /// Defines the compound type without its internals.
     fn define(&mut self, name: Identifier) -> TypeId {
-        let id = self.latest;
+        let id = TypeId::Compound(self.latest_compound);
         self.mapping.insert(name, id);
         self.fields.push(HashMap::default());
-        if let TypeId::Compound(ref mut latest) = self.latest {
-            latest.add_assign(1);
-        }
+        self.latest_compound += 1;
         id
     }
 
