@@ -28,6 +28,7 @@ pub struct HirBuilder {
     functions: Vec<Function>,
     errors: Vec<TranslationError>,
     scope: Scope,
+    current_function: Option<ItemPath>,
 }
 
 impl HirBuilder {
@@ -44,6 +45,7 @@ impl HirBuilder {
 
     pub fn populate(&mut self, item_table: ItemTable) {
         let mut strukts: Vec<(TypeId, Vec<Field>)> = Vec::new();
+        let mut functions: Vec<(ItemPath, AstFunction)> = Vec::new();
 
         for (path, item) in item_table.into_iter() {
             match item.kind {
@@ -53,15 +55,9 @@ impl HirBuilder {
                     strukts.push((id, strukt.fields));
                 }
                 ItemKind::Function(function) => {
-                    let function = self.translate_func(function);
-                    match function {
-                        Ok(function) => {
-                            let id = FunctionId(self.functions.len() as u32);
-                            self.functions.push(function);
-                            self.function_mapping.insert(path, id);
-                        },
-                        Err(error) => self.errors.push(error),
-                    }
+                    let id = FunctionId(self.function_mapping.len() as u32);
+                    self.function_mapping.insert(path.clone(), id);
+                    functions.push((path, function));
                 }
             }
         }
@@ -74,6 +70,16 @@ impl HirBuilder {
                 }
             }
         }
+
+        for (path, function) in functions {
+            self.current_function = Some(path);
+            let function = self.translate_func(function);
+            match function {
+                Ok(function) => self.functions.push(function),
+                Err(error) => self.errors.push(error),
+            }
+            self.current_function = None;
+        }
     }
 
     pub fn new() -> Self {
@@ -82,13 +88,12 @@ impl HirBuilder {
 
     fn translate_func(&mut self, func: AstFunction) -> Result<Function, TranslationError> {
         let AstFunction {
-            name,
+            name: _,
             params,
             return_type,
             body,
         } = func;
         Ok(Function {
-            name,
             params: params
                 .into_iter()
                 .map(|Parameter { name, type_ }| Ok::<_, TypeError>((name, self.type_table.get(type_)?)))
@@ -158,7 +163,17 @@ impl HirBuilder {
                 for param in ast_params {
                     params.push(self.translate_expr(param)?);
                 }
-                Expression::FnCall(path, params)
+                
+                let mut context_path = self.current_function.clone()
+                    .expect("`current_function` should be set");
+                context_path.pop();
+                for segment in path {
+                    context_path.push(segment);
+                }
+                let Some(id) = self.function_mapping.get(&context_path).copied() else {
+                    return Err(TranslationError::FunctionNotFound(context_path.clone()));
+                };
+                Expression::FnCall(id, params)
             }
             AstExpression::Var(name) => todo!(),
             AstExpression::Literal(lit) => Expression::Literal(lit),
@@ -170,6 +185,8 @@ impl HirBuilder {
 pub enum TranslationError {
     #[error("type inference is not implemented yet, so type annotation is required for every variable binding")]
     TypeInference,
+    #[error("function {0} is not found")]
+    FunctionNotFound(ItemPath),
     #[error(transparent)]
     TypeError(#[from] TypeError),
 }

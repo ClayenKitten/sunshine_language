@@ -26,15 +26,14 @@ impl Hir {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VarId(u32);
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FunctionId(u32);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Function {
-    pub name: Identifier,
     pub params: HashMap<Identifier, TypeId>,
     pub return_type: Option<TypeId>,
     pub body: Block,
@@ -50,7 +49,7 @@ enum Expression {
     },
     Loop(Block),
     Literal(Literal),
-    FnCall(Vec<Identifier>, Vec<Expression>),
+    FnCall(FunctionId, Vec<Expression>),
     Var(VarId),
 }
 
