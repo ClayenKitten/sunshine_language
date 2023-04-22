@@ -3,32 +3,34 @@
 //! AST to HIR translation includes type checking and desugaring.
 
 pub mod scope;
-mod translation;
 pub mod types;
+mod builder;
+
+pub use builder::{HirBuilder, TranslationError};
 
 use std::collections::HashMap;
 
-use crate::{ast::expression::Literal, item_table::ItemTable, Identifier};
+use crate::{ast::expression::Literal, Identifier};
 
-use self::{
-    translation::TranslationError,
-    types::{TypeId, TypeTable},
-};
+use self::types::{TypeId, TypeTable};
 
-#[derive(Debug)]
-pub struct HirData {
+#[derive(Debug, Default)]
+pub struct Hir {
     type_table: TypeTable,
     functions: Vec<Function>,
 }
 
-impl HirData {
-    pub fn translate(item_table: ItemTable) -> Result<Self, TranslationError> {
-        translation::translate(item_table)
+impl Hir {
+    pub fn get_function(&self, id: FunctionId) -> Option<&Function> {
+        self.functions.get(id.0 as usize)
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VarId(u32);
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FunctionId(u32);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Function {

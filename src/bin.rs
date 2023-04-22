@@ -2,7 +2,7 @@ use clap::Parser as ArgParser;
 use compiler::{
     ast::pretty_print::print_table,
     context::{Context, Emit, Metadata},
-    hir::HirData,
+    hir::HirBuilder,
     parser::Parser,
     Identifier,
 };
@@ -52,9 +52,15 @@ fn main() -> anyhow::Result<()> {
         },
         Emit::Hir => match item_table {
             Ok(item_table) => {
-                match HirData::translate(item_table) {
+                let mut builder = HirBuilder::new();
+                builder.populate(item_table);
+                match builder.build() {
                     Ok(hir) => println!("{:#?}", hir),
-                    Err(err) => println!("{}", err),
+                    Err(errors) => {
+                        for err in errors {
+                            println!("{}", err);
+                        }
+                    },
                 };
             }
             Err(_) => {

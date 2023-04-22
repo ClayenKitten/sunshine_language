@@ -1,47 +1,20 @@
 use std::{borrow::Borrow, collections::HashMap, str::FromStr};
 
-use crate::{
-    ast::item::{Field, ItemKind, Struct},
-    item_table::ItemTable,
-    util::MonotonicVec,
-    Identifier,
-};
+use crate::{util::MonotonicVec, Identifier};
 
 use thiserror::Error;
 
-#[derive(Debug)]
+/// Type table is a representation of all types defined in the program.
+#[derive(Debug, Default)]
 pub struct TypeTable {
-    latest_compound: u32,
-    mapping: HashMap<Identifier, TypeId>,
-    fields: MonotonicVec<HashMap<Identifier, TypeId>>,
+    pub(super) latest_compound: u32,
+    pub(super) mapping: HashMap<Identifier, TypeId>,
+    pub(super) fields: MonotonicVec<HashMap<Identifier, TypeId>>,
 }
 
 impl TypeTable {
-    /// Creates new [TypeTable] by gathering type declarations from provided [ItemTable].
-    pub fn gather(item_table: &ItemTable) -> TypeResult<TypeTable> {
-        let mut type_table = TypeTable {
-            latest_compound: 0,
-            fields: MonotonicVec::new(),
-            mapping: HashMap::new(),
-        };
-        for item in item_table.items() {
-            if let ItemKind::Struct(Struct { ref name, .. }) = item.kind {
-                type_table.define(name.clone());
-            }
-        }
-        for item in item_table.items() {
-            if let ItemKind::Struct(Struct {
-                ref name,
-                ref fields,
-            }) = item.kind
-            {
-                let strukt = type_table.get(name)?;
-                for Field { name, type_ } in fields {
-                    type_table.add_field(strukt, name.clone(), type_.clone())?;
-                }
-            }
-        }
-        Ok(type_table)
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn get(&self, id: impl Borrow<Identifier>) -> TypeResult<TypeId> {
@@ -56,8 +29,8 @@ impl TypeTable {
             .ok_or_else(|| TypeError::NotFound(id.borrow().clone()))
     }
 
-    /// Defines the compound type without its internals.
-    fn define(&mut self, name: Identifier) -> TypeId {
+    /// Adds user-defined type's name to the table.
+    pub(super) fn define_name(&mut self, name: Identifier) -> TypeId {
         let id = TypeId::Compound(self.latest_compound);
         self.mapping.insert(name, id);
         self.fields.push(HashMap::default());
@@ -65,8 +38,8 @@ impl TypeTable {
         id
     }
 
-    /// Adds field of the struct to the table.
-    fn add_field(&mut self, strukt: TypeId, name: Identifier, type_: Identifier) -> TypeResult<()> {
+    /// Adds field to defined struct.
+    pub(super) fn add_field(&mut self, strukt: TypeId, name: Identifier, type_: Identifier) -> TypeResult<()> {
         let type_ = self.get(type_)?;
         if let TypeId::Compound(index) = strukt {
             self.fields[index as usize].insert(name, type_);
