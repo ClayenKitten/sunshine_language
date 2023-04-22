@@ -160,15 +160,12 @@ impl HirBuilder {
             AstExpression::For { var, expr, body } => todo!(),
             AstExpression::Unary { op, value } => todo!(),
             AstExpression::Binary { op, left, right } => todo!(),
-            AstExpression::FnCall {
-                name,
-                params: ast_params,
-            } => {
+            AstExpression::FnCall { path, params: ast_params } => {
                 let mut params = Vec::with_capacity(ast_params.capacity());
                 for param in ast_params {
                     params.push(self.translate_expr(scope.clone(), param)?);
                 }
-                Expression::FnCall(name, params)
+                Expression::FnCall(path, params)
             }
             AstExpression::Var(name) => todo!(),
             AstExpression::Literal(lit) => Expression::Literal(lit),

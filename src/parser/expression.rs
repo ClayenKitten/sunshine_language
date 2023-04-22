@@ -40,10 +40,11 @@ impl FileParser {
 
     /// Parse a single operand.
     pub(super) fn parse_operand(&mut self) -> Result<Expression, ParserError> {
-        use Keyword::*;
+        use {Keyword::*, Punctuation::*};
+
         let start = self.location();
-        Ok(match self.lexer.next()? {
-            Token::Punc(Punctuation::LBrace) => Expression::Block(self.parse_block()?),
+        let token = match self.lexer.next()? {
+            Token::Punc(LBrace) => Expression::Block(self.parse_block()?),
 
             Token::Num(num) => Expression::Literal(Literal::Number(num)),
             Token::Str(str) => Expression::Literal(Literal::String(str)),
@@ -54,7 +55,49 @@ impl FileParser {
             Token::Kw(True) => Expression::Literal(Literal::Boolean(true)),
             Token::Kw(False) => Expression::Literal(Literal::Boolean(false)),
 
-            Token::Ident(ident) => self.maybe_function_call(Identifier(ident))?,
+            Token::Ident(ident) => {
+                let mut path = vec![Identifier(ident)];
+                while self.lexer.consume_punctuation("::")? {
+                    let ident = self.lexer.expect_identifier()?;
+                    path.push(ident);
+                }
+
+                if self.lexer.consume_punctuation("(")? {
+                    let mut params = Vec::new();
+                    if self.lexer.consume_punctuation(")")? {
+                        return Ok(Expression::FnCall { path, params });
+                    }
+
+                    return loop {
+                        let start = self.location();
+                        params.push(self.parse_expr()?);
+                        
+                        if self.lexer.consume_punctuation(")")? {
+                            break Ok(Expression::FnCall { path, params });
+                        }
+                        
+                        if !self.lexer.consume_punctuation(",")? {
+                            let token = self.lexer.peek()?;
+                            TokenMismatch::report(
+                                self,
+                                start,
+                                vec![
+                                    ExpectedToken::Punctuation(Punctuation::Comma),
+                                    ExpectedToken::Punctuation(Punctuation::RParent),
+                                ],
+                                token,
+                            );
+                            break Err(ParserError::ParserError);
+                        }
+                    };
+                }
+
+                if path.len() == 1 {
+                    Expression::Var(path[0].clone())
+                } else {
+                    todo!()
+                }
+            },
 
             Token::Eof => {
                 UnexpectedEOF::report(self, start);
@@ -65,40 +108,13 @@ impl FileParser {
                 KeywordNotAllowedInOperatorExpression::report(self, start, kw);
                 return Err(ParserError::ParserError);
             }
+
             Token::Punc(punc) => {
                 InvalidPunctuation::report(self, start, punc);
                 return Err(ParserError::ParserError);
             }
-        })
-    }
-
-    /// Try to wrap provided identifier in function call.
-    fn maybe_function_call(&mut self, name: Identifier) -> Result<Expression, ParserError> {
-        if self.lexer.consume_punctuation("(")? {
-            let mut params = Vec::new();
-            loop {
-                let start = self.location();
-                params.push(self.parse_expr()?);
-                if self.lexer.consume_punctuation(")")? {
-                    return Ok(Expression::FnCall { name, params });
-                } else if self.lexer.consume_punctuation(",")? {
-                } else {
-                    let token = self.lexer.peek()?;
-                    TokenMismatch::report(
-                        self,
-                        start,
-                        vec![
-                            ExpectedToken::Punctuation(Punctuation::Comma),
-                            ExpectedToken::Punctuation(Punctuation::RParent),
-                        ],
-                        token,
-                    );
-                    return Err(ParserError::ParserError);
-                }
-            }
-        } else {
-            Ok(Expression::Var(name))
-        }
+        };
+        Ok(token)
     }
 
     /// Parse block. Opening brace is expected to be consumed beforehand.

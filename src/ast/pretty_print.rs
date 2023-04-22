@@ -3,6 +3,8 @@ use std::{
     io::{Result, Write},
 };
 
+use itertools::Itertools;
+
 use crate::item_table::ItemTable;
 
 use super::{
@@ -158,9 +160,10 @@ impl Printer {
                     Ok(())
                 })?;
             }
-            Expression::FnCall { name, params } => {
-                self.println(format!("FNCALL `{name}`"))?;
+            Expression::FnCall { path, params } => {
+                let path = path.into_iter().map(|s| &s.0).join("::");
 
+                self.println(format!("FNCALL `{path}`"))?;
                 self.with_indent(|printer| {
                     for param in params {
                         printer.print_expr(param)?;

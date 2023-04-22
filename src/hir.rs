@@ -50,7 +50,7 @@ enum Expression {
     },
     Loop(Block),
     Literal(Literal),
-    FnCall(Identifier, Vec<Expression>),
+    FnCall(Vec<Identifier>, Vec<Expression>),
     Var(VarId),
 }
 

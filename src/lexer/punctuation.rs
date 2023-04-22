@@ -80,6 +80,7 @@ macro_rules! punc {
 punc![
     Semicolon = ";",
     Colon = ":",
+    Path = "::",
     LBrace = "{",
     RBrace = "}",
     LParent = "(",
