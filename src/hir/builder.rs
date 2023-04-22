@@ -16,7 +16,7 @@ use crate::{
 use super::{
     scope::Scope,
     types::{TypeError, TypeTable, TypeId},
-    Expression, Function, FunctionId, Hir, Statement,
+    Expression, Function, FunctionId, Hir, Statement, Block,
 };
 
 use thiserror::Error;
@@ -27,6 +27,7 @@ pub struct HirBuilder {
     function_mapping: HashMap<ItemPath, FunctionId>,
     functions: Vec<Function>,
     errors: Vec<TranslationError>,
+    scope: Scope,
 }
 
 impl HirBuilder {
@@ -96,43 +97,39 @@ impl HirBuilder {
                 Some(type_) => Some(self.type_table.get(type_)?),
                 None => None,
             },
-            body: self.translate_block(Scope::new(), body)?,
+            body: self.translate_block(body)?,
         })
     }
 
-    fn translate_block(
-        &mut self,
-        scope: Scope,
-        block: AstBlock,
-    ) -> Result<hir::Block, TranslationError> {
-        let scope = scope.child();
-        let mut result = Vec::new();
-        for stmt in block.statements {
-            let stmt = self.translate_stmt(scope.clone(), stmt)?;
-            result.push(stmt);
-        }
-        if let Some(expr) = block.expression {
-            let expr = self.translate_expr(scope, *expr)?;
-            result.push(hir::Statement::Return(expr))
-        }
-        Ok(hir::Block(result))
+    fn translate_block(&mut self, block: AstBlock) -> Result<Block, TranslationError> {
+        self.scope = self.scope.child();
+        let block = {
+            let mut result = Vec::new();
+            for stmt in block.statements {
+                let stmt = self.translate_stmt(stmt)?;
+                result.push(stmt);
+            }
+            if let Some(expr) = block.expression {
+                let expr = self.translate_expr(*expr)?;
+                result.push(hir::Statement::Return(expr))
+            }
+            Ok(hir::Block(result))
+        };
+        self.scope = self.scope.parent().unwrap_or_default();
+        block
     }
 
-    fn translate_stmt(
-        &mut self,
-        scope: Scope,
-        stmt: AstStatement,
-    ) -> Result<hir::Statement, TranslationError> {
+    fn translate_stmt(&mut self, stmt: AstStatement) -> Result<Statement, TranslationError> {
         match stmt {
             AstStatement::ExprStmt(expr) => {
-                self.translate_expr(scope, expr).map(Statement::ExprStmt)
+                self.translate_expr(expr).map(Statement::ExprStmt)
             }
             AstStatement::LetStmt(LetStatement { name, type_, value }) => {
                 let Some(type_) = type_ else { return Err(TranslationError::TypeInference)};
                 let type_ = self.type_table.get(type_)?;
                 let value = value
                     .map(|v| *v)
-                    .and_then(|expr| self.translate_expr(scope, expr).ok())
+                    .and_then(|expr| self.translate_expr(expr).ok())
                     .map(Box::new);
                 Ok(hir::Statement::LetStmt { name, type_, value })
             }
@@ -146,14 +143,10 @@ impl HirBuilder {
         }
     }
 
-    fn translate_expr(
-        &mut self,
-        scope: Scope,
-        expr: AstExpression,
-    ) -> Result<hir::Expression, TranslationError> {
+    fn translate_expr(&mut self, expr: AstExpression) -> Result<Expression, TranslationError> {
         Ok(match expr {
             AstExpression::Block(block) => {
-                hir::Expression::Block(self.translate_block(scope, block)?)
+                hir::Expression::Block(self.translate_block(block)?)
             }
             AstExpression::If {condition, body, else_body} => todo!(),
             AstExpression::While { condition, body } => todo!(),
@@ -163,7 +156,7 @@ impl HirBuilder {
             AstExpression::FnCall { path, params: ast_params } => {
                 let mut params = Vec::with_capacity(ast_params.capacity());
                 for param in ast_params {
-                    params.push(self.translate_expr(scope.clone(), param)?);
+                    params.push(self.translate_expr(param)?);
                 }
                 Expression::FnCall(path, params)
             }

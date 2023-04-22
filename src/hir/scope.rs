@@ -43,6 +43,12 @@ impl Scope {
     }
 }
 
+impl Default for Scope {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct ScopeInner {
     parent: Option<Scope>,
