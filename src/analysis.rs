@@ -1,3 +1,0 @@
-//! Analysis
-
-pub mod scope;
