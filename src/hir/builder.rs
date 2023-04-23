@@ -170,14 +170,18 @@ impl HirBuilder {
                     params.push(self.translate_expr(param)?);
                 }
                 
-                let mut context_path = self.current_function.clone()
+                let path = {
+                    let mut context_path = self.current_function.clone()
                     .expect("`current_function` should be set");
-                context_path.pop();
-                for segment in path {
-                    context_path.push(segment);
-                }
-                let Some(id) = self.function_mapping.get(&context_path).copied() else {
-                    return Err(TranslationError::FunctionNotFound(context_path.clone()));
+                    context_path.pop();
+                    let Some(path) = path.to_absolute(&context_path) else {
+                        todo!();
+                    };
+                    path
+                };
+
+                let Some(id) = self.function_mapping.get(&path).copied() else {
+                    return Err(TranslationError::FunctionNotFound(path.clone()));
                 };
                 Expression::FnCall(id, params)
             }

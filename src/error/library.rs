@@ -59,6 +59,12 @@ pub mod parser {
         /// Keyword is not allowed in operator expression.
         deny KeywordNotAllowedInOperatorExpression { kw: Keyword }
         = "keyword `{kw}` is not allowed in operator expression";
+
+        /// `super` keyword may only be used in leading segments of the path.
+        deny InvalidSuperKw = "`super` keyword may only be used in leading segments of the path";
+
+        /// `crate` keyword may only be used as the first segment of the path.
+        deny InvalidCrateKw = "`crate` keyword may only be used as the first segment of the path.";
     }
 }
 

@@ -8,14 +8,14 @@ use crate::{
             lexer::{TokenMismatch, UnexpectedEOF},
             parser::{
                 AssignmentInExpressionPosition, InvalidPunctuation,
-                KeywordNotAllowedInOperatorExpression,
+                KeywordNotAllowedInOperatorExpression, InvalidCrateKw, InvalidSuperKw,
             },
         },
         ExpectedToken, ReportProvider,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
     parser::{operator_expression::postfix::PostfixNotation, FileParser, ParserError},
-    Identifier,
+    Identifier, path::{RelativePath, RelativePathStart},
 };
 
 use super::operator_expression::Tree;
@@ -56,10 +56,29 @@ impl FileParser {
             Token::Kw(False) => Expression::Literal(Literal::Boolean(false)),
 
             Token::Ident(ident) => {
-                let mut path = vec![Identifier(ident)];
+                let path_start = match ident.as_str() {
+                    "super" => RelativePathStart::Super(1),
+                    "crate" => RelativePathStart::Crate,
+                    _ => RelativePathStart::Identifier(Identifier(ident)),
+                };
+                let mut path = RelativePath::new(path_start);
                 while self.lexer.consume_punctuation("::")? {
                     let ident = self.lexer.expect_identifier()?;
-                    path.push(ident);
+                    match ident.0.as_str() {
+                        "super" if path.other.len() != 0 => {
+                            InvalidSuperKw::report(self, start);
+                            return Err(ParserError::ParserError);
+                        }
+                        "super" if matches!(path.start, RelativePathStart::Super(_)) => {
+                            let RelativePathStart::Super(ref mut n) = path.start else { unreachable!(); };
+                            *n += 1;
+                        }
+                        "crate" => {
+                            InvalidCrateKw::report(self, start);
+                            return Err(ParserError::ParserError);
+                        }
+                        _ => path.push(ident),
+                    };
                 }
 
                 if self.lexer.consume_punctuation("(")? {
@@ -92,10 +111,14 @@ impl FileParser {
                     };
                 }
 
-                if path.len() == 1 {
-                    Expression::Var(path[0].clone())
-                } else {
-                    todo!()
+                match path {
+                    RelativePath {
+                        start: RelativePathStart::Identifier(ident),
+                        other,
+                    } if other.is_empty() => {
+                        Expression::Var(ident)
+                    }
+                    _ => todo!(),
                 }
             },
 

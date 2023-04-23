@@ -4,7 +4,8 @@ use crate::{
         number::Number,
         operator::{BinaryOp, UnaryOp},
     },
-    Identifier
+    Identifier,
+    path::RelativePath,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -38,7 +39,7 @@ pub enum Expression {
     },
 
     FnCall {
-        path: Vec<Identifier>,
+        path: RelativePath,
         params: Vec<Expression>,
     },
     Var(Identifier),
