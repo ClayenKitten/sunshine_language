@@ -13,7 +13,7 @@ use std::{
 
 use crate::ast::item::Item;
 
-use crate::path::ItemPath;
+use crate::path::AbsolutePath;
 
 /// Table of all known items.
 ///
@@ -22,8 +22,8 @@ use crate::path::ItemPath;
 /// [module documentation]: crate::item_table
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ItemTable {
-    pub declared: HashMap<ItemPath, Item>,
-    duplicated: Vec<(ItemPath, Item)>,
+    pub declared: HashMap<AbsolutePath, Item>,
+    duplicated: Vec<(AbsolutePath, Item)>,
 }
 
 impl ItemTable {
@@ -47,18 +47,18 @@ impl ItemTable {
     /// Add new entry to item table.
     ///
     /// `scope` is path to `item`'s parent.
-    pub fn declare(&mut self, mut scope: ItemPath, item: Item) {
+    pub fn declare(&mut self, mut scope: AbsolutePath, item: Item) {
         scope.push(item.name().clone());
         self.try_insert(scope, item);
     }
 
-    pub fn declare_anonymous(&mut self, scope: ItemPath, item: Item) {
+    pub fn declare_anonymous(&mut self, scope: AbsolutePath, item: Item) {
         self.try_insert(scope, item);
     }
 
     /// Try to insert provided [Item] to `declared`. If it already exists, push it to `duplicated`
     /// instead.
-    fn try_insert(&mut self, path: ItemPath, item: Item) {
+    fn try_insert(&mut self, path: AbsolutePath, item: Item) {
         match self.declared.entry(path) {
             Entry::Vacant(entry) => {
                 entry.insert(item);
@@ -67,22 +67,22 @@ impl ItemTable {
         }
     }
 
-    pub fn items(&self) -> hash_map::Values<ItemPath, Item> {
+    pub fn items(&self) -> hash_map::Values<AbsolutePath, Item> {
         self.declared.values()
     }
 
-    pub fn iter(&self) -> hash_map::Iter<ItemPath, Item> {
+    pub fn iter(&self) -> hash_map::Iter<AbsolutePath, Item> {
         self.declared.iter()
     }
 
-    pub fn iter_mut(&mut self) -> hash_map::IterMut<ItemPath, Item> {
+    pub fn iter_mut(&mut self) -> hash_map::IterMut<AbsolutePath, Item> {
         self.declared.iter_mut()
     }
 }
 
 impl IntoIterator for ItemTable {
-    type Item = (ItemPath, Item);
-    type IntoIter = hash_map::IntoIter<ItemPath, Item>;
+    type Item = (AbsolutePath, Item);
+    type IntoIter = hash_map::IntoIter<AbsolutePath, Item>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.declared.into_iter()

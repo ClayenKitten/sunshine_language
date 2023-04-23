@@ -9,7 +9,7 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::{path::ItemPath, util::MonotonicVec};
+use crate::{path::AbsolutePath, util::MonotonicVec};
 
 /// The structure that holds the whole source code of the compiled program.
 #[derive(Debug)]
@@ -51,7 +51,7 @@ impl SourceMap {
     }
 
     /// Inserts new source file to the map and returns its id.
-    pub fn insert(&mut self, path: ItemPath) -> Result<SourceId, SourceError> {
+    pub fn insert(&mut self, path: AbsolutePath) -> Result<SourceId, SourceError> {
         let mut source_path = self.root.clone();
         source_path.extend(path.into_path_buf().iter());
         self.insert_path(source_path)

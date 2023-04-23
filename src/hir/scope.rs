@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{path::ItemPath, Identifier};
+use crate::{path::AbsolutePath, Identifier};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Scope(Rc<RefCell<ScopeInner>>);
@@ -23,12 +23,12 @@ impl Scope {
     }
 
     /// Inserts variable in the scope.
-    pub fn insert(&mut self, var: Identifier, type_: ItemPath) {
+    pub fn insert(&mut self, var: Identifier, type_: AbsolutePath) {
         self.0.borrow_mut().vars.insert(var, type_);
     }
 
     /// Looks variable up in the scope or one of its parents.
-    pub fn lookup(&self, var: &Identifier) -> Option<ItemPath> {
+    pub fn lookup(&self, var: &Identifier) -> Option<AbsolutePath> {
         self.0
             .borrow()
             .vars
@@ -52,5 +52,5 @@ impl Default for Scope {
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct ScopeInner {
     parent: Option<Scope>,
-    vars: HashMap<Identifier, ItemPath>,
+    vars: HashMap<Identifier, AbsolutePath>,
 }

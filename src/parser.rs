@@ -17,7 +17,7 @@ use crate::{
     ast::item::{Item, Visibility},
     context::Context,
     input_stream::InputStream,
-    path::ItemPath,
+    path::AbsolutePath,
     item_table::ItemTable,
     lexer::{Lexer, LexerError},
     source::{SourceError, SourceId},
@@ -33,7 +33,7 @@ impl Parser {
     pub fn new(main: PathBuf, context: Context) -> Result<Self, SourceError> {
         Ok(Parser {
             pending: vec![PendingFile::Specific {
-                scope: ItemPath::new(context.metadata.crate_name.clone()),
+                scope: AbsolutePath::new(context.metadata.crate_name.clone()),
                 path: main,
             }],
             context,
@@ -69,7 +69,7 @@ impl Parser {
     }
 
     /// Parse one file at default location.
-    pub fn parse_file(&mut self, path: ItemPath) -> Result<ParsedFile, ParserErrorExt> {
+    pub fn parse_file(&mut self, path: AbsolutePath) -> Result<ParsedFile, ParserErrorExt> {
         let id = self.context.source.lock().unwrap().insert(path.clone())?;
         self.parse_file_by_id(path, id)
     }
@@ -77,7 +77,7 @@ impl Parser {
     /// Parse one file with specified location.
     pub fn parse_file_by_path(
         &mut self,
-        scope: ItemPath,
+        scope: AbsolutePath,
         path: PathBuf,
     ) -> Result<ParsedFile, ParserErrorExt> {
         let id = self.context.source.lock().unwrap().insert_path(path)?;
@@ -86,7 +86,7 @@ impl Parser {
 
     fn parse_file_by_id(
         &mut self,
-        scope: ItemPath,
+        scope: AbsolutePath,
         id: SourceId,
     ) -> Result<ParsedFile, ParserErrorExt> {
         self.context
@@ -108,13 +108,13 @@ impl Parser {
 pub struct FileParser {
     pub item_table: ItemTable,
     pub lexer: Lexer,
-    scope: ItemPath,
+    scope: AbsolutePath,
     pending: Vec<PendingFile>,
     pub context: Context,
 }
 
 impl FileParser {
-    pub fn new(lexer: Lexer, scope: ItemPath, context: Context) -> Self {
+    pub fn new(lexer: Lexer, scope: AbsolutePath, context: Context) -> Self {
         Self {
             item_table: ItemTable::new(),
             lexer,
@@ -132,7 +132,7 @@ impl FileParser {
         Self {
             item_table: ItemTable::new(),
             lexer: Lexer::new(InputStream::new(src, None), context.clone()),
-            scope: ItemPath::new(Identifier(String::from("crate"))),
+            scope: AbsolutePath::new(Identifier(String::from("crate"))),
             pending: Vec::new(),
             context,
         }
@@ -199,6 +199,6 @@ pub struct ParsedFile {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PendingFile {
-    General(ItemPath),
-    Specific { scope: ItemPath, path: PathBuf },
+    General(AbsolutePath),
+    Specific { scope: AbsolutePath, path: PathBuf },
 }

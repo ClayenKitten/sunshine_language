@@ -10,7 +10,7 @@ use crate::{
         statement::Statement as AstStatement,
     },
     hir,
-    path::ItemPath,
+    path::AbsolutePath,
     item_table::ItemTable,
 };
 
@@ -25,11 +25,11 @@ use thiserror::Error;
 #[derive(Debug, Default)]
 pub struct HirBuilder {
     type_table: TypeTable,
-    function_mapping: HashMap<ItemPath, FunctionId>,
+    function_mapping: HashMap<AbsolutePath, FunctionId>,
     functions: Vec<Function>,
     errors: Vec<TranslationError>,
     scope: Scope,
-    current_function: Option<ItemPath>,
+    current_function: Option<AbsolutePath>,
 }
 
 impl HirBuilder {
@@ -46,7 +46,7 @@ impl HirBuilder {
 
     pub fn populate(&mut self, item_table: ItemTable) {
         let mut strukts: Vec<(TypeId, Vec<Field>)> = Vec::new();
-        let mut functions: Vec<(ItemPath, AstFunction)> = Vec::new();
+        let mut functions: Vec<(AbsolutePath, AstFunction)> = Vec::new();
 
         for (path, item) in item_table.into_iter() {
             match item.kind {
@@ -187,7 +187,7 @@ pub enum TranslationError {
     #[error("type inference is not implemented yet, so type annotation is required for every variable binding")]
     TypeInference,
     #[error("function {0} is not found")]
-    FunctionNotFound(ItemPath),
+    FunctionNotFound(AbsolutePath),
     #[error(transparent)]
     TypeError(#[from] TypeError),
 }
