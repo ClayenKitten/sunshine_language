@@ -17,7 +17,7 @@ use crate::{
 use super::{
     scope::Scope,
     types::{TypeError, TypeTable, TypeId},
-    Expression, Function, FunctionId, Hir, Statement, Block,
+    Expression, Function, FunctionId, Hir, Statement, Block, FunctionSignature,
 };
 
 use thiserror::Error;
@@ -94,7 +94,8 @@ impl HirBuilder {
             return_type,
             body,
         } = func;
-        Ok(Function {
+
+        let signature = FunctionSignature {
             params: params
                 .into_iter()
                 .map(|Parameter { name, type_ }| Ok::<_, TypeError>((name, self.type_table.get(type_)?)))
@@ -103,6 +104,10 @@ impl HirBuilder {
                 Some(type_) => Some(self.type_table.get(type_)?),
                 None => None,
             },
+        };
+
+        Ok(Function {
+            signature,
             body: self.translate_block(body)?,
         })
     }
