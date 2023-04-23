@@ -1,6 +1,4 @@
-use itertools::Itertools;
 use std::fmt::Display;
-use std::iter::once;
 use std::path::PathBuf;
 use std::slice;
 use std::str::FromStr;
@@ -65,12 +63,11 @@ impl AbsolutePath {
 
 impl Display for AbsolutePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        #[allow(unstable_name_collisions)]
-        once(&self.krate)
-            .chain(self.other.iter())
-            .map(|ident| ident.0.as_str())
-            .intersperse("::")
-            .try_for_each(|s| write!(f, "{s}"))
+        write!(f, "{}", self.krate)?;
+        for entry in self.other.iter() {
+            write!(f, "::{}", entry)?;
+        }
+        Ok(())
     }
 }
 
