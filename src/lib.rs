@@ -9,5 +9,6 @@ pub mod lexer;
 pub mod parser;
 pub mod source;
 pub mod util;
+pub mod path;
 
 pub use identifier::Identifier;

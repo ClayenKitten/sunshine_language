@@ -17,7 +17,8 @@ use crate::{
     ast::item::{Item, Visibility},
     context::Context,
     input_stream::InputStream,
-    item_table::{path::ItemPath, ItemTable},
+    path::ItemPath,
+    item_table::ItemTable,
     lexer::{Lexer, LexerError},
     source::{SourceError, SourceId},
 };

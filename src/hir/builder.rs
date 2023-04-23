@@ -10,7 +10,8 @@ use crate::{
         statement::Statement as AstStatement,
     },
     hir,
-    item_table::{path::ItemPath, ItemTable},
+    path::ItemPath,
+    item_table::ItemTable,
 };
 
 use super::{

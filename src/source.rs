@@ -9,7 +9,7 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::{item_table::path::ItemPath, util::MonotonicVec};
+use crate::{path::ItemPath, util::MonotonicVec};
 
 /// The structure that holds the whole source code of the compiled program.
 #[derive(Debug)]
