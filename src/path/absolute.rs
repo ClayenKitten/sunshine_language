@@ -113,11 +113,11 @@ mod test {
 
     #[test]
     fn display() {
-        let mut path = AbsolutePath::new(Identifier(String::from("crate")));
+        let mut path = AbsolutePath::new(Identifier(String::from("my_crate")));
         path.push(Identifier(String::from("module1_name")));
         path.push(Identifier(String::from("module2_name")));
         assert_eq!(
-            String::from("crate::module1_name::module2_name"),
+            String::from("my_crate::module1_name::module2_name"),
             path.to_string()
         );
     }

@@ -5,6 +5,7 @@ mod absolute;
 mod relative;
 
 pub use absolute::AbsolutePath;
+pub use relative::{RelativePath, RelativePathStart};
 
 #[derive(Debug, PartialEq, Eq, Error)]
 pub enum PathParsingError {
