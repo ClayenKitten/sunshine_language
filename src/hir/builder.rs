@@ -149,7 +149,9 @@ impl HirBuilder {
                 operator,
                 expression,
             } => todo!(),
-            AstStatement::Return(_) => todo!(),
+            AstStatement::Return(expr) => {
+                self.translate_expr(expr).map(Statement::Return)
+            }
             AstStatement::Break => todo!(),
         }
     }
