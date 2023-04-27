@@ -13,11 +13,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::{
-    input_stream::Location,
-    lexer::Token,
-    source::{SourceId, SourceMap},
-};
+use crate::{lexer::Token, source::SourceMap, util::Span};
 
 /// Interface to report errors conveniently.
 #[derive(Debug)]
@@ -88,7 +84,7 @@ impl Display for ErrorReporter {
 /// Error that may be reported.
 pub trait ReportableError: Error {
     fn severity(&self) -> Severity;
-    fn span(&self) -> ErrorSpan;
+    fn span(&self) -> Span;
 }
 
 /// How severe is the error.
@@ -98,14 +94,6 @@ pub enum Severity {
     Warn,
     /// Compilation failed.
     Deny,
-}
-
-/// Location of the error.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ErrorSpan {
-    pub source: Option<SourceId>,
-    pub start: Location,
-    pub end: Location,
 }
 
 impl Token {

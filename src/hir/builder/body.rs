@@ -7,8 +7,8 @@ use crate::{
         statement::Statement as AstStatement,
     },
     hir::{
-        scope::Scope, Block, Expression, Function, FunctionSignature, HirBuilder,
-        Statement, TranslationError,
+        scope::Scope, Block, Expression, Function, FunctionSignature, HirBuilder, Statement,
+        TranslationError,
     },
     path::AbsolutePath,
 };

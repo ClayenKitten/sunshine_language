@@ -1,8 +1,10 @@
 //! Various utility functions and types.
 
 mod monotonic;
+mod span;
 
 pub use monotonic::MonotonicVec;
+pub use span::Span;
 
 /// Count number of token trees.
 macro_rules! count {

@@ -12,7 +12,7 @@ macro_rules! define_error {
         $(#[doc = $doc])*
         #[derive(Debug)]
         pub struct $name {
-            span: crate::error::ErrorSpan,
+            span: crate::util::Span,
             $($(
                 $field: $type,
             )*)?
@@ -25,7 +25,7 @@ macro_rules! define_error {
                 $($($field: $type,)*)?
             ) {
                 let error = Self {
-                    span: crate::error::ErrorSpan {
+                    span: crate::util::Span {
                         source: provider.source(),
                         start,
                         end: provider.location(),
@@ -41,7 +41,7 @@ macro_rules! define_error {
                 severity!($severity)
             }
 
-            fn span(&self) -> crate::error::ErrorSpan {
+            fn span(&self) -> crate::util::Span {
                 self.span
             }
         }
