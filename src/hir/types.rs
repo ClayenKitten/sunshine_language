@@ -39,7 +39,12 @@ impl TypeTable {
     }
 
     /// Adds field to defined struct.
-    pub(super) fn add_field(&mut self, strukt: TypeId, name: Identifier, type_: Identifier) -> TypeResult<()> {
+    pub(super) fn add_field(
+        &mut self,
+        strukt: TypeId,
+        name: Identifier,
+        type_: Identifier,
+    ) -> TypeResult<()> {
         let type_ = self.get(type_)?;
         if let TypeId::Compound(index) = strukt {
             self.fields[index as usize].insert(name, type_);

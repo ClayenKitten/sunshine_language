@@ -1,13 +1,13 @@
 use std::fmt::Display;
 
-use crate::Identifier;
 use super::AbsolutePath;
+use crate::Identifier;
 
 /// A relative path that is interpreted differently depending on context.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RelativePath {
     pub(crate) start: RelativePathStart,
-    pub(crate) other: Vec<Identifier>
+    pub(crate) other: Vec<Identifier>,
 }
 
 /// First segment of the relative path
@@ -27,7 +27,7 @@ impl Display for RelativePathStart {
                 s.pop();
                 s.pop();
                 write!(f, "{s}")
-            },
+            }
             RelativePathStart::Identifier(s) => write!(f, "{s}"),
         }
     }
@@ -50,13 +50,11 @@ impl RelativePath {
     }
 
     /// Try to map relative path to absolute based on context.
-    /// 
+    ///
     /// Returns `None` if the resulting path is invalid (e. g. `super` used on root level).
     pub fn to_absolute(&self, context: &AbsolutePath) -> Option<AbsolutePath> {
         let mut path = match &self.start {
-            RelativePathStart::Crate => {
-                AbsolutePath::new(context.krate.clone())
-            }
+            RelativePathStart::Crate => AbsolutePath::new(context.krate.clone()),
             RelativePathStart::Super(n) => {
                 let mut path = context.clone();
                 for _ in 0..*n {
@@ -89,7 +87,10 @@ impl Display for RelativePath {
 
 #[cfg(test)]
 mod test {
-    use crate::{path::relative::{RelativePath, RelativePathStart}, Identifier};
+    use crate::{
+        path::relative::{RelativePath, RelativePathStart},
+        Identifier,
+    };
 
     #[test]
     fn display_start_with_crate() {

@@ -14,11 +14,7 @@
 pub mod infix;
 pub mod postfix;
 
-use crate::{
-    Identifier,
-    ast::expression::Expression,
-    lexer::operator::AssignOp,
-};
+use crate::{ast::expression::Expression, lexer::operator::AssignOp, Identifier};
 
 /// A tree of expressions that may be preceded by assignment.
 pub type Tree = MaybeAssignment<Expression>;

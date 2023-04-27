@@ -7,15 +7,16 @@ use crate::{
         library::{
             lexer::{TokenMismatch, UnexpectedEOF},
             parser::{
-                AssignmentInExpressionPosition, InvalidPunctuation,
-                KeywordNotAllowedInOperatorExpression, InvalidCrateKw, InvalidSuperKw,
+                AssignmentInExpressionPosition, InvalidCrateKw, InvalidPunctuation, InvalidSuperKw,
+                KeywordNotAllowedInOperatorExpression,
             },
         },
         ExpectedToken, ReportProvider,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
     parser::{operator_expression::postfix::PostfixNotation, FileParser, ParserError},
-    Identifier, path::{RelativePath, RelativePathStart},
+    path::{RelativePath, RelativePathStart},
+    Identifier,
 };
 
 use super::operator_expression::Tree;
@@ -90,11 +91,11 @@ impl FileParser {
                     return loop {
                         let start = self.location();
                         params.push(self.parse_expr()?);
-                        
+
                         if self.lexer.consume_punctuation(")")? {
                             break Ok(Expression::FnCall { path, params });
                         }
-                        
+
                         if !self.lexer.consume_punctuation(",")? {
                             let token = self.lexer.peek()?;
                             TokenMismatch::report(
@@ -115,12 +116,10 @@ impl FileParser {
                     RelativePath {
                         start: RelativePathStart::Identifier(ident),
                         other,
-                    } if other.is_empty() => {
-                        Expression::Var(ident)
-                    }
+                    } if other.is_empty() => Expression::Var(ident),
                     _ => todo!(),
                 }
-            },
+            }
 
             Token::Eof => {
                 UnexpectedEOF::report(self, start);

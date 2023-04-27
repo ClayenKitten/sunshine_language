@@ -4,8 +4,8 @@ use crate::{
         number::Number,
         operator::{BinaryOp, UnaryOp},
     },
-    Identifier,
     path::RelativePath,
+    Identifier,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

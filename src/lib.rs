@@ -7,8 +7,8 @@ pub mod input_stream;
 pub mod item_table;
 pub mod lexer;
 pub mod parser;
+pub mod path;
 pub mod source;
 pub mod util;
-pub mod path;
 
 pub use identifier::Identifier;

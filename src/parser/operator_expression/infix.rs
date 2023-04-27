@@ -2,7 +2,6 @@
 use std::collections::VecDeque;
 
 use crate::{
-    Identifier,
     ast::expression::Expression as AstExpression,
     error::{
         library::parser::{
@@ -12,6 +11,7 @@ use crate::{
     },
     lexer::operator::{AssignOp, BinaryOp, UnaryOp},
     parser::{FileParser, ParserError},
+    Identifier,
 };
 
 use super::MaybeAssignment;
@@ -128,13 +128,13 @@ pub enum InfixEntry {
 #[cfg(test)]
 mod tests {
     use crate::{
-        Identifier,
         ast::expression::{Expression, Literal},
         lexer::{
             number::{Base, Number},
             operator::{BinaryOp, UnaryOp},
         },
         parser::FileParser,
+        Identifier,
     };
 
     use super::InfixNotation;

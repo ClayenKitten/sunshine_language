@@ -60,7 +60,7 @@ fn main() -> anyhow::Result<()> {
                         for err in errors {
                             println!("{}", err);
                         }
-                    },
+                    }
                 };
             }
             Err(_) => {

@@ -2,9 +2,9 @@
 //!
 //! AST to HIR translation includes type checking and desugaring.
 
+mod builder;
 pub mod scope;
 pub mod types;
-mod builder;
 
 pub use builder::{HirBuilder, TranslationError};
 
