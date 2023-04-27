@@ -3,11 +3,11 @@ use std::{
     io::{Result, Write},
 };
 
-use crate::item_table::ItemTable;
+use crate::{item_table::ItemTable, path::AbsolutePath};
 
 use super::{
     expression::{Block, Expression, Literal},
-    item::{ItemKind, Module, Visibility},
+    item::{ItemKind, Module, Visibility, Item},
     statement::{LetStatement, Statement},
 };
 
@@ -17,17 +17,33 @@ pub fn print_table(w: impl Write + 'static, table: &ItemTable) -> Result<()> {
         indent: 0,
     };
     for (path, item) in table.declared.iter() {
-        printer.println(format!("[{path}]"))?;
+        printer.print_item(path, item)?;
+    }
+    Ok(())
+}
+
+struct Printer {
+    writer: Box<dyn Write>,
+    indent: usize,
+}
+
+impl Printer {
+    /// Width of a single indentation.
+    const IDENT_WIDTH: usize = 4;
+
+    fn print_item(&mut self, path: &AbsolutePath, item: &Item) -> Result<()> {
+        self.println(format!("[{path}]"))?;
         if let Visibility::Public = item.visibility {
-            write!(printer.writer, "PUB ")?
+            write!(self.writer, "PUB ")?
         }
+        let span = format!("@ {}/{}", item.span.start, item.span.end);
         match &item.kind {
             ItemKind::Module(Module::Inline(name) | Module::Loadable(name)) => {
-                writeln!(printer.writer, "MOD {name};")?
+                writeln!(self.writer, "MOD {name}; {span}")?
             }
             ItemKind::Struct(s) => {
-                printer.println(format!("STRUCT {}", s.name))?;
-                printer.with_indent(|printer| {
+                self.println(format!("STRUCT {} {span}", s.name))?;
+                self.with_indent(|printer| {
                     for field in s.fields.iter() {
                         printer.println(format!("{}: {}", field.name, field.type_,))?;
                     }
@@ -35,8 +51,8 @@ pub fn print_table(w: impl Write + 'static, table: &ItemTable) -> Result<()> {
                 })?;
             }
             ItemKind::Function(func) => {
-                printer.println(format!("FN `{}`", func.name))?;
-                printer.with_indent(|printer| {
+                self.println(format!("FN `{}` {span}", func.name))?;
+                self.with_indent(|printer| {
                     if !func.params.is_empty() {
                         printer.println("PARAMS")?;
                         printer.with_indent(|printer| {
@@ -55,19 +71,9 @@ pub fn print_table(w: impl Write + 'static, table: &ItemTable) -> Result<()> {
                 })?;
             }
         }
-        printer.newline()?;
+        self.newline()?;
+        Ok(())
     }
-    Ok(())
-}
-
-struct Printer {
-    writer: Box<dyn Write>,
-    indent: usize,
-}
-
-impl Printer {
-    /// Width of a single indentation.
-    const IDENT_WIDTH: usize = 4;
 
     fn print_stmt(&mut self, stmt: &Statement) -> Result<()> {
         match stmt {
