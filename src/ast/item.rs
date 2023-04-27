@@ -1,9 +1,10 @@
-use crate::{ast::expression::Block, Identifier};
+use crate::{ast::expression::Block, Identifier, util::Span};
 
 /// An Item is a static component of the package.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Item {
     pub kind: ItemKind,
+    pub span: Span,
     pub visibility: Visibility,
 }
 
@@ -24,9 +25,10 @@ impl Item {
         }
     }
 
-    pub fn new(item: impl Into<ItemKind>, visibility: Visibility) -> Self {
+    pub fn new(item: impl Into<ItemKind>, span: Span, visibility: Visibility) -> Self {
         Self {
             kind: item.into(),
+            span,
             visibility,
         }
     }

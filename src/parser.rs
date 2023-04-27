@@ -20,7 +20,7 @@ use crate::{
     item_table::ItemTable,
     lexer::{Lexer, LexerError},
     path::AbsolutePath,
-    source::{SourceError, SourceId},
+    source::{SourceError, SourceId}, error::ReportProvider, util::Span,
 };
 
 /// Interface to compute a [ItemTable] of the whole project.
@@ -139,10 +139,19 @@ impl FileParser {
     }
 
     pub fn parse(mut self) -> Result<ParsedFile, ParserErrorExt> {
+        let start = self.location();
         match self.parse_top_module(self.scope.last().clone()) {
             Ok(module) => {
-                self.item_table
-                    .declare_anonymous(self.scope.clone(), Item::new(module, Visibility::Public));
+                let item = Item::new(
+                    module,
+                    Span {
+                        source: self.source(),
+                        start,
+                        end: self.location(),
+                    },
+                    Visibility::Public,
+                );
+                self.item_table.declare_anonymous(self.scope.clone(), item);
                 Ok(ParsedFile {
                     item_table: self.item_table,
                     pending: self.pending,

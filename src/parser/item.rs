@@ -1,11 +1,11 @@
 use crate::{
-    ast::item::{Field, Function, Item, Module, Parameter, Struct, Visibility},
+    ast::item::{Field, Function, Item, Module, Parameter, Struct, Visibility, ItemKind},
     error::{
         library::{lexer::TokenMismatch, parser::ExpectedItem},
         ExpectedToken, ReportProvider,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
-    Identifier,
+    Identifier, util::Span,
 };
 
 use super::{FileParser, ParserError, PendingFile};
@@ -28,16 +28,25 @@ impl FileParser {
             Visibility::default()
         };
 
-        let item = if self.lexer.consume_keyword(Keyword::Fn)? {
-            Item::new(self.parse_fn()?, visibility)
+        let item_kind: ItemKind = if self.lexer.consume_keyword(Keyword::Fn)? {
+            self.parse_fn()?.into()
         } else if self.lexer.consume_keyword(Keyword::Struct)? {
-            Item::new(self.parse_struct()?, visibility)
+            self.parse_struct()?.into()
         } else if self.lexer.consume_keyword(Keyword::Mod)? {
-            Item::new(self.parse_module()?, visibility)
+            self.parse_module()?.into()
         } else {
             ExpectedItem::report(self, start);
             return Err(ParserError::ParserError);
         };
+
+        let span = Span {
+            source: self.source(),
+            start,
+            end: self.location(),
+        };
+
+        let item = Item::new(item_kind, span, visibility);
+
         self.item_table.declare(self.scope.clone(), item);
         Ok(())
     }
