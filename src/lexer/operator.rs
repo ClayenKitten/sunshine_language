@@ -96,3 +96,15 @@ impl BinaryOp {
         }
     }
 }
+
+impl AssignOp {
+    pub fn to_respective_binary_op(&self) -> Option<BinaryOp> {
+        match self {
+            AssignOp::Assign => None,
+            AssignOp::AddAssign => Some(BinaryOp::Add),
+            AssignOp::SubAssign => Some(BinaryOp::Sub),
+            AssignOp::MulAssign => Some(BinaryOp::Mul),
+            AssignOp::DivAssign => Some(BinaryOp::Div),
+        }
+    }
+}

@@ -9,6 +9,7 @@ use crate::{
     },
     item_table::ItemTable,
     path::AbsolutePath,
+    Identifier,
 };
 
 use self::body::BodyBuilder;
@@ -86,6 +87,8 @@ impl HirBuilder {
 pub enum TranslationError {
     #[error("type inference is not implemented yet, so type annotation is required for every variable binding")]
     TypeInference,
+    #[error("variable `{0}` is not declared")]
+    VariableNotDeclared(Identifier),
     #[error("function {0} is not found")]
     FunctionNotFound(AbsolutePath),
     #[error(transparent)]

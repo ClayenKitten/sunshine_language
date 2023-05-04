@@ -91,7 +91,28 @@ impl<'b> BodyBuilder<'b> {
                 let var = self.scope.insert(name, type_);
                 Ok(Statement::LetStmt { var, type_, value })
             }
-            AstStatement::Assignment { .. } => todo!(),
+            AstStatement::Assignment {
+                assignee,
+                operator,
+                mut expression,
+            } => {
+                let Some((var, _)) = self.scope.lookup(&assignee) else {
+                    return Err(TranslationError::VariableNotDeclared(assignee))
+                };
+
+                if let Some(operator) = operator.to_respective_binary_op() {
+                    expression = AstExpression::Binary {
+                        op: operator,
+                        left: Box::new(AstExpression::Var(assignee)),
+                        right: Box::new(expression),
+                    };
+                }
+
+                Ok(Statement::Assignment {
+                    assignee: var,
+                    value: self.translate_expr(expression)?,
+                })
+            }
             AstStatement::Return(expr) => self.translate_expr(expr).map(Statement::Return),
             AstStatement::Break => todo!(),
         }

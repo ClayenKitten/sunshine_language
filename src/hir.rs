@@ -12,7 +12,10 @@ use std::collections::HashMap;
 
 use crate::{ast::expression::Literal, Identifier};
 
-use self::{types::{TypeId, TypeTable}, scope::VarId};
+use self::{
+    scope::VarId,
+    types::{TypeId, TypeTable},
+};
 
 #[derive(Debug, Default)]
 pub struct Hir {
@@ -64,7 +67,7 @@ enum Statement {
         value: Option<Box<Expression>>,
     },
     Assignment {
-        assignee: Identifier,
+        assignee: VarId,
         value: Expression,
     },
     Return(Expression),
