@@ -147,7 +147,10 @@ impl<'b> BodyBuilder<'b> {
                 };
                 Expression::FnCall(id, params)
             }
-            AstExpression::Var(_) => todo!(),
+            AstExpression::Var(var) => match self.scope.lookup(&var) {
+                Some((var, _)) => Expression::Var(var),
+                None => return Err(TranslationError::VariableNotDeclared(var)),
+            },
             AstExpression::Literal(lit) => Expression::Literal(lit),
         })
     }
