@@ -8,9 +8,7 @@ pub mod types;
 
 pub use builder::{HirBuilder, TranslationError};
 
-use std::collections::HashMap;
-
-use crate::{ast::expression::Literal, Identifier};
+use crate::ast::expression::Literal;
 
 use self::{
     scope::VarId,
@@ -40,7 +38,7 @@ pub struct Function {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionSignature {
-    pub params: HashMap<Identifier, TypeId>,
+    pub params: Vec<(VarId, TypeId)>,
     pub return_type: Option<TypeId>,
 }
 

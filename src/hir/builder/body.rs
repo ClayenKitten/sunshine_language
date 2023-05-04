@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     ast::{
         expression::Block as AstBlock, expression::Expression as AstExpression,
@@ -41,9 +39,11 @@ impl<'b> BodyBuilder<'b> {
             body,
         } = func;
 
-        let mut parameters = HashMap::with_capacity(params.len());
+        let mut parameters = Vec::with_capacity(params.len());
         for Parameter { name, type_ } in params {
-            parameters.insert(name, self.parent.type_table.get(type_)?);
+            let type_id = self.parent.type_table.get(type_)?;
+            let var_id = self.scope.insert(name, type_id);
+            parameters.push((var_id, type_id));
         }
 
         let signature = FunctionSignature {
