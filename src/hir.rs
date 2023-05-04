@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 use crate::{ast::expression::Literal, Identifier};
 
-use self::types::{TypeId, TypeTable};
+use self::{types::{TypeId, TypeTable}, scope::VarId};
 
 #[derive(Debug, Default)]
 pub struct Hir {
@@ -25,9 +25,6 @@ impl Hir {
         self.functions.get(id.0 as usize)
     }
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct VarId(u32);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FunctionId(u32);
