@@ -88,7 +88,8 @@ impl<'b> BodyBuilder<'b> {
                     .map(|v| *v)
                     .and_then(|expr| self.translate_expr(expr).ok())
                     .map(Box::new);
-                Ok(Statement::LetStmt { name, type_, value })
+                let var = self.scope.insert(name, type_);
+                Ok(Statement::LetStmt { var, type_, value })
             }
             AstStatement::Assignment { .. } => todo!(),
             AstStatement::Return(expr) => self.translate_expr(expr).map(Statement::Return),

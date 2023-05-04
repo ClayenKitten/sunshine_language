@@ -59,7 +59,7 @@ enum Expression {
 enum Statement {
     ExprStmt(Expression),
     LetStmt {
-        name: Identifier,
+        var: VarId,
         type_: TypeId,
         value: Option<Box<Expression>>,
     },
