@@ -66,7 +66,7 @@ impl FileParser {
                 while self.lexer.consume_punctuation("::")? {
                     let ident = self.lexer.expect_identifier()?;
                     match ident.0.as_str() {
-                        "super" if path.other.len() != 0 => {
+                        "super" if !path.other.is_empty() => {
                             InvalidSuperKw::report(self, start);
                             return Err(ParserError::ParserError);
                         }

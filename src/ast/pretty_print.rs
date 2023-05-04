@@ -7,7 +7,7 @@ use crate::{item_table::ItemTable, path::AbsolutePath};
 
 use super::{
     expression::{Block, Expression, Literal},
-    item::{ItemKind, Module, Visibility, Item},
+    item::{Item, ItemKind, Module, Visibility},
     statement::{LetStatement, Statement},
 };
 
@@ -101,7 +101,7 @@ impl Printer {
                     printer.println(format!("OPERATOR `{operator}`"))?;
                     Ok(())
                 })?;
-                self.println(format!("VALUE"))?;
+                self.println("VALUE".to_string())?;
                 self.with_indent(|printer| printer.print_expr(expression))?;
             }
             Statement::Return(expr) => {

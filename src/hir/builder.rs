@@ -71,7 +71,7 @@ impl HirBuilder {
 
         for (mut path, function) in functions {
             path.pop();
-            match BodyBuilder::translate(&self, path, function) {
+            match BodyBuilder::translate(self, path, function) {
                 Ok(function) => self.functions.push(function),
                 Err(error) => self.errors.push(error),
             }

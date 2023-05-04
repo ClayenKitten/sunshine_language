@@ -143,7 +143,7 @@ impl<'b> BodyBuilder<'b> {
                 };
 
                 let Some(id) = self.parent.function_mapping.get(&path).copied() else {
-                    return Err(TranslationError::FunctionNotFound(path.clone()));
+                    return Err(TranslationError::FunctionNotFound(path));
                 };
                 Expression::FnCall(id, params)
             }

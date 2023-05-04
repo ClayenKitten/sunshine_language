@@ -24,7 +24,7 @@ impl TypeTable {
             .or_else(|| {
                 PrimitiveType::from_str(id.borrow().as_str())
                     .ok()
-                    .map(|t| TypeId::Primitive(t))
+                    .map(TypeId::Primitive)
             })
             .ok_or_else(|| TypeError::NotFound(id.borrow().clone()))
     }

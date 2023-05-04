@@ -58,9 +58,7 @@ impl RelativePath {
             RelativePathStart::Super(n) => {
                 let mut path = context.clone();
                 for _ in 0..*n {
-                    if path.pop().is_none() {
-                        return None;
-                    }
+                    path.pop()?;
                 }
                 path
             }
