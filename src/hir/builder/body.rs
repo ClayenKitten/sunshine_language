@@ -60,7 +60,11 @@ impl<'b> BodyBuilder<'b> {
         })
     }
 
-    fn translate_block(&mut self, block: AstBlock, is_loop: bool) -> Result<Block, TranslationError> {
+    fn translate_block(
+        &mut self,
+        block: AstBlock,
+        is_loop: bool,
+    ) -> Result<Block, TranslationError> {
         if is_loop {
             self.scope = self.scope.child_loop();
         } else {
@@ -124,29 +128,38 @@ impl<'b> BodyBuilder<'b> {
                 } else {
                     Err(TranslationError::InvalidBreak)
                 }
-            },
+            }
         }
     }
 
     fn translate_expr(&mut self, expr: AstExpression) -> Result<Expression, TranslationError> {
         Ok(match expr {
             AstExpression::Block(block) => Expression::Block(self.translate_block(block, false)?),
-            AstExpression::If { .. } => todo!(),
+            AstExpression::If {
+                condition,
+                body,
+                else_body,
+            } => Expression::If {
+                condition: Box::new(self.translate_expr(*condition)?),
+                body: self.translate_block(body, false)?,
+                else_body: match else_body {
+                    Some(else_body) => Some(self.translate_block(else_body, false)?),
+                    None => None,
+                },
+            },
             AstExpression::While { condition, body } => {
                 let condition = self.translate_expr(*condition)?;
                 let mut body = self.translate_block(body, true)?;
                 body.0.insert(
                     0,
-                    Statement::ExprStmt(
-                        Expression::If {
-                            condition: Box::new(condition),
-                            body: Block(vec![Statement::Break]),
-                            else_body: None,
-                        }
-                    )
+                    Statement::ExprStmt(Expression::If {
+                        condition: Box::new(condition),
+                        body: Block(vec![Statement::Break]),
+                        else_body: None,
+                    }),
                 );
                 Expression::Loop(body)
-            },
+            }
             AstExpression::For { .. } => todo!(),
             AstExpression::Unary { .. } => todo!(),
             AstExpression::Binary { .. } => todo!(),
