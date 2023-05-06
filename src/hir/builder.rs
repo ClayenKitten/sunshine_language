@@ -91,6 +91,8 @@ pub enum TranslationError {
     VariableNotDeclared(Identifier),
     #[error("function {0} is not found")]
     FunctionNotFound(AbsolutePath),
+    #[error("break may not be used outside of the loop")]
+    InvalidBreak,
     #[error(transparent)]
     TypeError(#[from] TypeError),
 }

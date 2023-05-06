@@ -30,6 +30,7 @@ use crate::{hir::types::TypeId, Identifier};
 pub struct Scope {
     inner: Rc<RefCell<ScopeInner>>,
     latest_id: Rc<Cell<u32>>,
+    loop_context: bool,
 }
 
 impl Scope {
@@ -42,6 +43,7 @@ impl Scope {
                 types: HashMap::new(),
             })),
             latest_id: Rc::new(Cell::new(0)),
+            loop_context: false,
         }
     }
 
@@ -54,6 +56,20 @@ impl Scope {
                 types: HashMap::new(),
             })),
             latest_id: Rc::clone(&self.latest_id),
+            loop_context: self.loop_context,
+        }
+    }
+
+    /// Creates a child scope that is inside loop.
+    pub fn child_loop(&self) -> Self {
+        Scope {
+            inner: Rc::new(RefCell::new(ScopeInner {
+                parent: Some(self.clone()),
+                mapping: HashMap::new(),
+                types: HashMap::new(),
+            })),
+            latest_id: Rc::clone(&self.latest_id),
+            loop_context: true,
         }
     }
 
@@ -91,6 +107,13 @@ impl Scope {
     /// Gets the parent scope if there is one.
     pub fn parent(&self) -> Option<Scope> {
         self.inner.borrow().parent.clone()
+    }
+
+    /// Checks if current scope is in loop context.
+    ///
+    /// That, for example, defines if `break` may be used.
+    pub fn is_loop(&self) -> bool {
+        self.loop_context
     }
 }
 
