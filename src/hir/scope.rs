@@ -6,7 +6,26 @@ use std::{
 
 use crate::{hir::types::TypeId, Identifier};
 
-/// The scope is a portion of code that defines where variables are valid.
+/// The scope is a portion of code that defines where local variable names are accessible.
+///
+/// # Lexical scoping
+///
+/// Sunshine language follows lexical scoping rules for variables.
+/// As such, only variables defined in the same or parent scope may be
+/// accessed.
+///
+/// ```
+/// fn example() {
+///     let a: u8 = 5;
+///     // Variable may be accessed in the same scope it was defined.
+///     if a < 5 {
+///         // It may be accessed in the child scope as well.
+///         let b = a + 5;
+///     }
+///     // However, variable cannot be accessed in the outer scope.
+///     let c = a + b;
+/// }
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Scope {
     inner: Rc<RefCell<ScopeInner>>,
