@@ -23,6 +23,7 @@ use crate::{hir::types::TypeId, Identifier};
 ///         let b = a + 5;
 ///     }
 ///     // However, variable cannot be accessed in the outer scope.
+///     # let b = 0;
 ///     let c = a + b;
 /// }
 /// ```
