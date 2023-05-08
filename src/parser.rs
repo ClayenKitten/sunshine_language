@@ -16,11 +16,13 @@ use thiserror::Error;
 use crate::{
     ast::item::{Item, Visibility},
     context::Context,
+    error::ReportProvider,
     input_stream::InputStream,
     item_table::ItemTable,
     lexer::{Lexer, LexerError},
     path::AbsolutePath,
-    source::{SourceError, SourceId}, error::ReportProvider, util::Span,
+    source::{SourceError, SourceId},
+    util::Span,
 };
 
 /// Interface to compute a [ItemTable] of the whole project.

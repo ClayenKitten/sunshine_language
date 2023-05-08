@@ -1,11 +1,12 @@
 use crate::{
-    ast::item::{Field, Function, Item, Module, Parameter, Struct, Visibility, ItemKind},
+    ast::item::{Field, Function, Item, ItemKind, Module, Parameter, Struct, Visibility},
     error::{
         library::{lexer::TokenMismatch, parser::ExpectedItem},
         ExpectedToken, ReportProvider,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
-    Identifier, util::Span,
+    util::Span,
+    Identifier,
 };
 
 use super::{FileParser, ParserError, PendingFile};

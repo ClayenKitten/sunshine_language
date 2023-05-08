@@ -1,4 +1,4 @@
-use crate::{ast::expression::Block, Identifier, util::Span};
+use crate::{ast::expression::Block, util::Span, Identifier};
 
 /// An Item is a static component of the package.
 #[derive(Debug, Clone, PartialEq, Eq)]
