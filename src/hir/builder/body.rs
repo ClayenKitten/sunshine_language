@@ -81,10 +81,19 @@ impl<'b> BodyBuilder<'b> {
             AstStatement::LetStmt(LetStatement { name, type_, value }) => {
                 let Some(type_) = type_ else { return Err(TranslationError::TypeInference)};
                 let type_ = self.parent.type_table.get(type_)?;
-                let value = value
-                    .map(|v| *v)
-                    .and_then(|expr| self.translate_expr(expr).ok())
-                    .map(Box::new);
+                let value = match value {
+                    Some(value) => {
+                        let value = self.translate_expr(*value)?;
+                        if value.type_ != Some(type_) {
+                            return Err(TranslationError::TypeMismatch {
+                                expected: Some(type_),
+                                received: value.type_,
+                            });
+                        }
+                        Some(Box::new(value))
+                    }
+                    None => None,
+                };
                 let var = self.scope.insert(name, type_);
                 Ok(Statement::LetStmt { var, type_, value })
             }
