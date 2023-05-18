@@ -69,7 +69,7 @@ impl<'b> BodyBuilder<'b> {
                 let expr = self.translate_expr(*expr)?;
                 tail = Some(Box::new(expr));
             }
-            Ok(Block(statements, tail))
+            Ok(Block { statements, tail })
         };
         self.scope = self.scope.parent().expect("Scope should have parent");
         block
@@ -266,13 +266,16 @@ impl<'b> BodyBuilder<'b> {
             });
         }
         let mut body = self.translate_block(body, true)?;
-        body.0.insert(
+        body.statements.insert(
             0,
             Statement::ExprStmt(Expression {
                 type_: None,
                 kind: ExpressionKind::If {
                     condition: Box::new(condition),
-                    body: Block(vec![Statement::Break], None),
+                    body: Block {
+                        statements: vec![Statement::Break],
+                        tail: None,
+                    },
                     else_body: None,
                 },
             }),

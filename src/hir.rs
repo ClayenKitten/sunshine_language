@@ -74,10 +74,13 @@ enum Statement {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Block(Vec<Statement>, Option<Box<Expression>>);
+pub struct Block {
+    statements: Vec<Statement>,
+    tail: Option<Box<Expression>>,
+}
 
 impl Block {
     pub fn type_id(&self) -> Option<TypeId> {
-        self.1.as_ref().and_then(|expr| expr.type_)
+        self.tail.as_ref().and_then(|expr| expr.type_)
     }
 }
