@@ -11,7 +11,7 @@ use crate::{
         Block, Expression, ExpressionKind, HirBuilder, Statement, TranslationError,
     },
     lexer::number::Number,
-    path::AbsolutePath,
+    path::{AbsolutePath, RelativePath},
 };
 
 use super::PartiallyParsedFunction;
@@ -134,63 +134,9 @@ impl<'b> BodyBuilder<'b> {
                 condition,
                 body,
                 else_body,
-            } => {
-                let condition = self.translate_expr(*condition)?;
-                if condition.type_ != Some(TypeId::BOOL) {
-                    return Err(TranslationError::TypeMismatch {
-                        expected: Some(TypeId::BOOL),
-                        received: condition.type_,
-                    });
-                }
-
-                let body = self.translate_block(body, false)?;
-                let else_body = match else_body {
-                    Some(else_body) => {
-                        let else_body = self.translate_block(else_body, false)?;
-                        if body.type_id() != else_body.type_id() {
-                            return Err(TranslationError::IfBranchTypeMismatch {
-                                body: body.type_id(),
-                                else_body: else_body.type_id(),
-                            });
-                        }
-                        Some(else_body)
-                    }
-                    None => None,
-                };
-
-                Expression {
-                    type_: body.type_id(),
-                    kind: ExpressionKind::If {
-                        condition: Box::new(condition),
-                        body,
-                        else_body,
-                    },
-                }
-            }
+            } => self.translate_if_expr(*condition, body, else_body)?,
             AstExpression::While { condition, body } => {
-                let condition = self.translate_expr(*condition)?;
-                if condition.type_ != Some(TypeId::BOOL) {
-                    return Err(TranslationError::TypeMismatch {
-                        expected: Some(TypeId::BOOL),
-                        received: condition.type_,
-                    });
-                }
-                let mut body = self.translate_block(body, true)?;
-                body.0.insert(
-                    0,
-                    Statement::ExprStmt(Expression {
-                        type_: None,
-                        kind: ExpressionKind::If {
-                            condition: Box::new(condition),
-                            body: Block(vec![Statement::Break], None),
-                            else_body: None,
-                        },
-                    }),
-                );
-                Expression {
-                    type_: None,
-                    kind: ExpressionKind::Loop(body),
-                }
+                self.translate_while_loop(*condition, body)?
             }
             AstExpression::For { .. } => todo!(),
             AstExpression::Unary { .. } => todo!(),
@@ -198,44 +144,7 @@ impl<'b> BodyBuilder<'b> {
             AstExpression::FnCall {
                 path,
                 params: ast_args,
-            } => {
-                let path = {
-                    let Some(path) = path.to_absolute(&self.module) else {
-                        todo!();
-                    };
-                    path
-                };
-                let Some((func_id, params, return_type)) = self.parent.query_function_info(&path) else {
-                    return Err(TranslationError::FunctionNotFound(path));
-                };
-
-                if ast_args.len() != params.len() {
-                    return Err(TranslationError::ArgumentCountMismatch {
-                        expected: params.len(),
-                        received: ast_args.len(),
-                    });
-                }
-
-                let args = ast_args
-                    .into_iter()
-                    .zip(params.iter())
-                    .map(|(arg, expected)| {
-                        let arg = self.translate_expr(arg)?;
-                        if arg.type_ != Some(*expected) {
-                            return Err(TranslationError::TypeMismatch {
-                                expected: Some(*expected),
-                                received: arg.type_,
-                            });
-                        }
-                        Ok(arg)
-                    })
-                    .collect::<Result<_, _>>()?;
-
-                Expression {
-                    type_: return_type,
-                    kind: ExpressionKind::FnCall(func_id, args),
-                }
-            }
+            } => self.translate_fn_call(path, ast_args)?,
             AstExpression::Var(var) => match self.scope.lookup(&var) {
                 Some((var, type_)) => Expression {
                     type_: Some(type_),
@@ -259,6 +168,118 @@ impl<'b> BodyBuilder<'b> {
                     kind: ExpressionKind::Literal(lit),
                 }
             }
+        })
+    }
+
+    fn translate_if_expr(
+        &mut self,
+        condition: AstExpression,
+        body: AstBlock,
+        else_body: Option<AstBlock>,
+    ) -> Result<Expression, TranslationError> {
+        let condition = self.translate_expr(condition)?;
+        if condition.type_ != Some(TypeId::BOOL) {
+            return Err(TranslationError::TypeMismatch {
+                expected: Some(TypeId::BOOL),
+                received: condition.type_,
+            });
+        }
+
+        let body = self.translate_block(body, false)?;
+        let else_body = match else_body {
+            Some(else_body) => {
+                let else_body = self.translate_block(else_body, false)?;
+                if body.type_id() != else_body.type_id() {
+                    return Err(TranslationError::IfBranchTypeMismatch {
+                        body: body.type_id(),
+                        else_body: else_body.type_id(),
+                    });
+                }
+                Some(else_body)
+            }
+            None => None,
+        };
+
+        Ok(Expression {
+            type_: body.type_id(),
+            kind: ExpressionKind::If {
+                condition: Box::new(condition),
+                body,
+                else_body,
+            },
+        })
+    }
+
+    fn translate_fn_call(
+        &mut self,
+        path: RelativePath,
+        args: Vec<AstExpression>,
+    ) -> Result<Expression, TranslationError> {
+        let path = {
+            let Some(path) = path.to_absolute(&self.module) else {
+                todo!();
+            };
+            path
+        };
+        let Some((func_id, params, return_type)) = self.parent.query_function_info(&path) else {
+            return Err(TranslationError::FunctionNotFound(path));
+        };
+
+        if args.len() != params.len() {
+            return Err(TranslationError::ArgumentCountMismatch {
+                expected: params.len(),
+                received: args.len(),
+            });
+        }
+
+        let args = args
+            .into_iter()
+            .zip(params.iter())
+            .map(|(arg, expected)| {
+                let arg = self.translate_expr(arg)?;
+                if arg.type_ != Some(*expected) {
+                    return Err(TranslationError::TypeMismatch {
+                        expected: Some(*expected),
+                        received: arg.type_,
+                    });
+                }
+                Ok(arg)
+            })
+            .collect::<Result<_, _>>()?;
+
+        Ok(Expression {
+            type_: return_type,
+            kind: ExpressionKind::FnCall(func_id, args),
+        })
+    }
+
+    fn translate_while_loop(
+        &mut self,
+        condition: AstExpression,
+        body: AstBlock,
+    ) -> Result<Expression, TranslationError> {
+        let condition = self.translate_expr(condition)?;
+        if condition.type_ != Some(TypeId::BOOL) {
+            return Err(TranslationError::TypeMismatch {
+                expected: Some(TypeId::BOOL),
+                received: condition.type_,
+            });
+        }
+        let mut body = self.translate_block(body, true)?;
+        body.0.insert(
+            0,
+            Statement::ExprStmt(Expression {
+                type_: None,
+                kind: ExpressionKind::If {
+                    condition: Box::new(condition),
+                    body: Block(vec![Statement::Break], None),
+                    else_body: None,
+                },
+            }),
+        );
+        Ok(Expression {
+            type_: None,
+            kind: ExpressionKind::Loop(body),
         })
     }
 }
