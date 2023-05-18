@@ -1,13 +1,19 @@
 use crate::{
     ast::{
-        expression::Block as AstBlock, expression::Expression as AstExpression,
-        item::Function as AstFunction, item::Parameter, statement::LetStatement,
+        expression::Block as AstBlock,
+        expression::{Expression as AstExpression, Literal},
+        item::Function as AstFunction,
+        item::Parameter,
+        statement::LetStatement,
         statement::Statement as AstStatement,
     },
     hir::{
-        scope::Scope, Block, Expression, Function, FunctionSignature, HirBuilder, Statement,
+        scope::Scope,
+        types::{PrimitiveType, TypeId},
+        Block, Expression, ExpressionKind, Function, FunctionSignature, HirBuilder, Statement,
         TranslationError,
     },
+    lexer::number::Number,
     path::AbsolutePath,
 };
 
@@ -54,10 +60,15 @@ impl<'b> BodyBuilder<'b> {
             },
         };
 
-        Ok(Function {
-            signature,
-            body: self.translate_block(body, false)?,
-        })
+        let body = self.translate_block(body, false)?;
+        if body.type_id() != signature.return_type {
+            return Err(TranslationError::TypeMismatch {
+                expected: signature.return_type,
+                received: body.type_id(),
+            });
+        }
+
+        Ok(Function { signature, body })
     }
 
     fn translate_block(
@@ -71,16 +82,17 @@ impl<'b> BodyBuilder<'b> {
             self.scope = self.scope.child();
         }
         let block = {
-            let mut result = Vec::new();
+            let mut tail = None;
+            let mut statements = Vec::new();
             for stmt in block.statements {
                 let stmt = self.translate_stmt(stmt)?;
-                result.push(stmt);
+                statements.push(stmt);
             }
             if let Some(expr) = block.expression {
                 let expr = self.translate_expr(*expr)?;
-                result.push(Statement::Return(expr))
+                tail = Some(Box::new(expr));
             }
-            Ok(Block(result))
+            Ok(Block(statements, tail))
         };
         self.scope = self.scope.parent().expect("Scope should have parent");
         block
@@ -134,31 +146,62 @@ impl<'b> BodyBuilder<'b> {
 
     fn translate_expr(&mut self, expr: AstExpression) -> Result<Expression, TranslationError> {
         Ok(match expr {
-            AstExpression::Block(block) => Expression::Block(self.translate_block(block, false)?),
+            AstExpression::Block(block) => {
+                let block = self.translate_block(block, false)?;
+                Expression {
+                    type_: block.type_id(),
+                    kind: ExpressionKind::Block(block),
+                }
+            }
             AstExpression::If {
                 condition,
                 body,
                 else_body,
-            } => Expression::If {
-                condition: Box::new(self.translate_expr(*condition)?),
-                body: self.translate_block(body, false)?,
-                else_body: match else_body {
-                    Some(else_body) => Some(self.translate_block(else_body, false)?),
-                    None => None,
-                },
-            },
+            } => {
+                let condition = self.translate_expr(*condition)?;
+                if condition.type_ != Some(TypeId::BOOL) {
+                    return Err(TranslationError::TypeMismatch {
+                        expected: Some(TypeId::BOOL),
+                        received: condition.type_,
+                    });
+                }
+                let body = self.translate_block(body, false)?;
+                let else_body = else_body
+                    .map(|body| self.translate_block(body, false))
+                    .transpose()?;
+                Expression {
+                    type_: body.type_id(),
+                    kind: ExpressionKind::If {
+                        condition: Box::new(condition),
+                        body,
+                        else_body,
+                    },
+                }
+            }
             AstExpression::While { condition, body } => {
                 let condition = self.translate_expr(*condition)?;
+                if condition.type_ != Some(TypeId::BOOL) {
+                    return Err(TranslationError::TypeMismatch {
+                        expected: Some(TypeId::BOOL),
+                        received: condition.type_,
+                    });
+                }
                 let mut body = self.translate_block(body, true)?;
                 body.0.insert(
                     0,
-                    Statement::ExprStmt(Expression::If {
-                        condition: Box::new(condition),
-                        body: Block(vec![Statement::Break]),
-                        else_body: None,
+                    Statement::ExprStmt(Expression {
+                        type_: None,
+                        kind: ExpressionKind::If {
+                            condition: Box::new(condition),
+                            body: Block(vec![Statement::Break], None),
+                            else_body: None,
+                        },
                     }),
                 );
-                Expression::Loop(body)
+                Expression {
+                    type_: None,
+                    kind: ExpressionKind::Loop(body),
+                }
             }
             AstExpression::For { .. } => todo!(),
             AstExpression::Unary { .. } => todo!(),
@@ -182,13 +225,35 @@ impl<'b> BodyBuilder<'b> {
                 let Some(id) = self.parent.function_mapping.get(&path).copied() else {
                     return Err(TranslationError::FunctionNotFound(path));
                 };
-                Expression::FnCall(id, params)
+                let type_ = self.parent.functions[id.0 as usize].signature.return_type;
+                Expression {
+                    type_,
+                    kind: ExpressionKind::FnCall(id, params),
+                }
             }
             AstExpression::Var(var) => match self.scope.lookup(&var) {
-                Some((var, _)) => Expression::Var(var),
+                Some((var, type_)) => Expression {
+                    type_: Some(type_),
+                    kind: ExpressionKind::Var(var),
+                },
                 None => return Err(TranslationError::VariableNotDeclared(var)),
             },
-            AstExpression::Literal(lit) => Expression::Literal(lit),
+            AstExpression::Literal(lit) => {
+                let type_ = match lit {
+                    Literal::Number(Number { fraction: None, .. }) => {
+                        TypeId::Primitive(PrimitiveType::I32)
+                    }
+                    Literal::Number(Number {
+                        fraction: Some(_), ..
+                    }) => TypeId::Primitive(PrimitiveType::F32),
+                    Literal::String(_) => todo!(),
+                    Literal::Boolean(_) => TypeId::Primitive(PrimitiveType::Bool),
+                };
+                Expression {
+                    type_: Some(type_),
+                    kind: ExpressionKind::Literal(lit),
+                }
+            }
         })
     }
 }

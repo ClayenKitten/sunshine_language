@@ -59,6 +59,10 @@ pub enum TypeId {
     Compound(u32),
 }
 
+impl TypeId {
+    pub const BOOL: TypeId = TypeId::Primitive(PrimitiveType::Bool);
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PrimitiveType {
     Bool,
@@ -72,6 +76,7 @@ pub enum PrimitiveType {
     U32,
     U64,
     Usize,
+    F32,
 }
 
 impl FromStr for PrimitiveType {
@@ -91,6 +96,7 @@ impl FromStr for PrimitiveType {
             "i32" => I32,
             "i64" => I64,
             "isize" => Isize,
+            "f32" => F32,
             _ => return Err(()),
         })
     }

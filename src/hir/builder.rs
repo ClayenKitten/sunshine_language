@@ -87,6 +87,11 @@ impl HirBuilder {
 pub enum TranslationError {
     #[error("type inference is not implemented yet, so type annotation is required for every variable binding")]
     TypeInference,
+    #[error("type does not match. Expected {expected:?}, received {received:?}.")]
+    TypeMismatch {
+        expected: Option<TypeId>,
+        received: Option<TypeId>,
+    },
     #[error("variable `{0}` is not declared")]
     VariableNotDeclared(Identifier),
     #[error("function {0} is not found")]
