@@ -4,8 +4,9 @@ use std::collections::HashMap;
 
 use crate::{
     ast::{
+        expression::Block as AstBlock,
         item::Function as AstFunction,
-        item::{Field, ItemKind},
+        item::{Field, ItemKind, Parameter},
     },
     item_table::ItemTable,
     path::AbsolutePath,
@@ -16,7 +17,7 @@ use self::body::BodyBuilder;
 
 use super::{
     types::{TypeError, TypeId, TypeTable},
-    Function, FunctionId, Hir,
+    Block, Function, FunctionId, FunctionSignature, Hir,
 };
 
 use thiserror::Error;
@@ -24,21 +25,41 @@ use thiserror::Error;
 #[derive(Debug, Default)]
 pub struct HirBuilder {
     type_table: TypeTable,
-    function_mapping: HashMap<AbsolutePath, FunctionId>,
-    functions: Vec<Function>,
     errors: Vec<TranslationError>,
+
+    mapping: HashMap<AbsolutePath, FunctionId>,
+    signatures: Vec<FunctionSignature>,
+    bodies: Vec<Block>,
 }
 
 impl HirBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn build(self) -> Result<Hir, Vec<TranslationError>> {
-        if self.errors.is_empty() {
-            Ok(Hir {
-                type_table: self.type_table,
-                functions: self.functions,
-            })
-        } else {
-            Err(self.errors)
+        if !self.errors.is_empty() {
+            return Err(self.errors);
         }
+
+        let HirBuilder {
+            type_table,
+            signatures,
+            bodies,
+            ..
+        } = self;
+        debug_assert_eq!(signatures.len(), bodies.len());
+
+        let functions = signatures
+            .into_iter()
+            .zip(bodies)
+            .map(|(signature, body)| Function { signature, body })
+            .collect();
+
+        Ok(Hir {
+            type_table,
+            functions,
+        })
     }
 
     pub fn populate(&mut self, item_table: ItemTable) {
@@ -53,8 +74,8 @@ impl HirBuilder {
                     strukts.push((id, strukt.fields));
                 }
                 ItemKind::Function(function) => {
-                    let id = FunctionId(self.function_mapping.len() as u32);
-                    self.function_mapping.insert(path.clone(), id);
+                    let id = FunctionId(self.mapping.len() as u32);
+                    self.mapping.insert(path.clone(), id);
                     functions.push((path, function));
                 }
             }
@@ -69,18 +90,71 @@ impl HirBuilder {
             }
         }
 
-        for (mut path, function) in functions {
-            path.pop();
-            match BodyBuilder::translate(self, path, function) {
-                Ok(function) => self.functions.push(function),
+        let mut partial_functions = Vec::with_capacity(functions.len());
+        for (path, function) in functions {
+            match self.partially_translate_function(path, function) {
+                Ok(partial) => {
+                    let signature = FunctionSignature {
+                        params: partial.params.iter().map(|(_, type_id)| *type_id).collect(),
+                        return_type: partial.return_type,
+                    };
+                    self.signatures.push(signature);
+                    partial_functions.push(partial);
+                }
+                Err(err) => self.errors.push(err),
+            }
+        }
+
+        for partial in partial_functions {
+            match BodyBuilder::translate(self, partial) {
+                Ok(body) => self.bodies.push(body),
                 Err(error) => self.errors.push(error),
             }
         }
     }
 
-    pub fn new() -> Self {
-        Self::default()
+    fn partially_translate_function(
+        &self,
+        mut path: AbsolutePath,
+        func: AstFunction,
+    ) -> Result<PartiallyParsedFunction, TranslationError> {
+        let mut partial_func = PartiallyParsedFunction {
+            module: {
+                path.pop();
+                path
+            },
+            params: Vec::with_capacity(func.params.len()),
+            return_type: None,
+            body: func.body,
+        };
+
+        for Parameter { name, type_ } in func.params {
+            let type_id = self.type_table.get(type_)?;
+            partial_func.params.push((name, type_id))
+        }
+        partial_func.return_type = func
+            .return_type
+            .map(|type_| self.type_table.get(type_))
+            .transpose()?;
+
+        Ok(partial_func)
     }
+
+    fn query_function_signature(
+        &self,
+        path: &AbsolutePath,
+    ) -> Option<(FunctionId, &FunctionSignature)> {
+        let id = self.mapping.get(path).copied()?;
+        let signature = &self.signatures[id.0 as usize];
+        Some((id, signature))
+    }
+}
+
+struct PartiallyParsedFunction {
+    pub module: AbsolutePath,
+    pub params: Vec<(Identifier, TypeId)>,
+    pub return_type: Option<TypeId>,
+    pub body: AstBlock,
 }
 
 #[derive(Debug, Error)]
@@ -92,6 +166,8 @@ pub enum TranslationError {
         expected: Option<TypeId>,
         received: Option<TypeId>,
     },
+    #[error("incorrect number of arguments provided for function. Expected {expected:?}, received {received:?}.")]
+    ArgumentCountMismatch { expected: usize, received: usize },
     #[error("variable `{0}` is not declared")]
     VariableNotDeclared(Identifier),
     #[error("function {0} is not found")]

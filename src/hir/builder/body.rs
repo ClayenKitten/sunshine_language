@@ -2,20 +2,19 @@ use crate::{
     ast::{
         expression::Block as AstBlock,
         expression::{Expression as AstExpression, Literal},
-        item::Function as AstFunction,
-        item::Parameter,
         statement::LetStatement,
         statement::Statement as AstStatement,
     },
     hir::{
         scope::Scope,
         types::{PrimitiveType, TypeId},
-        Block, Expression, ExpressionKind, Function, FunctionSignature, HirBuilder, Statement,
-        TranslationError,
+        Block, Expression, ExpressionKind, HirBuilder, Statement, TranslationError,
     },
     lexer::number::Number,
     path::AbsolutePath,
 };
+
+use super::PartiallyParsedFunction;
 
 pub(super) struct BodyBuilder<'b> {
     parent: &'b HirBuilder,
@@ -26,49 +25,27 @@ pub(super) struct BodyBuilder<'b> {
 impl<'b> BodyBuilder<'b> {
     pub fn translate(
         parent: &'b HirBuilder,
-        module: AbsolutePath,
-        function: AstFunction,
-    ) -> Result<Function, TranslationError> {
+        partial: PartiallyParsedFunction,
+    ) -> Result<Block, TranslationError> {
         let mut builder = Self {
             parent,
-            module,
+            module: partial.module,
             scope: Scope::new(),
         };
-        builder.translate_function(function)
-    }
 
-    fn translate_function(&mut self, func: AstFunction) -> Result<Function, TranslationError> {
-        let AstFunction {
-            name: _,
-            params,
-            return_type,
-            body,
-        } = func;
-
-        let mut parameters = Vec::with_capacity(params.len());
-        for Parameter { name, type_ } in params {
-            let type_id = self.parent.type_table.get(type_)?;
-            let var_id = self.scope.insert(name, type_id);
-            parameters.push((var_id, type_id));
+        for (name, type_id) in partial.params {
+            builder.scope.insert(name, type_id);
         }
 
-        let signature = FunctionSignature {
-            params: parameters,
-            return_type: match return_type {
-                Some(type_) => Some(self.parent.type_table.get(type_)?),
-                None => None,
-            },
-        };
-
-        let body = self.translate_block(body, false)?;
-        if body.type_id() != signature.return_type {
+        let body = builder.translate_block(partial.body, false)?;
+        if body.type_id() != partial.return_type {
             return Err(TranslationError::TypeMismatch {
-                expected: signature.return_type,
+                expected: partial.return_type,
                 received: body.type_id(),
             });
         }
 
-        Ok(Function { signature, body })
+        Ok(body)
     }
 
     fn translate_block(
@@ -208,27 +185,43 @@ impl<'b> BodyBuilder<'b> {
             AstExpression::Binary { .. } => todo!(),
             AstExpression::FnCall {
                 path,
-                params: ast_params,
+                params: ast_args,
             } => {
-                let mut params = Vec::with_capacity(ast_params.capacity());
-                for param in ast_params {
-                    params.push(self.translate_expr(param)?);
-                }
-
                 let path = {
                     let Some(path) = path.to_absolute(&self.module) else {
                         todo!();
                     };
                     path
                 };
-
-                let Some(id) = self.parent.function_mapping.get(&path).copied() else {
+                let Some((func_id, signature)) = self.parent.query_function_signature(&path) else {
                     return Err(TranslationError::FunctionNotFound(path));
                 };
-                let type_ = self.parent.functions[id.0 as usize].signature.return_type;
+
+                if ast_args.len() != signature.params.len() {
+                    return Err(TranslationError::ArgumentCountMismatch {
+                        expected: signature.params.len(),
+                        received: ast_args.len(),
+                    });
+                }
+
+                let args = ast_args
+                    .into_iter()
+                    .zip(signature.params.iter())
+                    .map(|(arg, expected)| {
+                        let arg = self.translate_expr(arg)?;
+                        if arg.type_ != Some(*expected) {
+                            return Err(TranslationError::TypeMismatch {
+                                expected: Some(*expected),
+                                received: arg.type_,
+                            });
+                        }
+                        Ok(arg)
+                    })
+                    .collect::<Result<_, _>>()?;
+
                 Expression {
-                    type_,
-                    kind: ExpressionKind::FnCall(id, params),
+                    type_: signature.return_type,
+                    kind: ExpressionKind::FnCall(func_id, args),
                 }
             }
             AstExpression::Var(var) => match self.scope.lookup(&var) {

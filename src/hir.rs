@@ -38,7 +38,7 @@ pub struct Function {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionSignature {
-    pub params: Vec<(VarId, TypeId)>,
+    pub params: Vec<TypeId>,
     pub return_type: Option<TypeId>,
 }
 
