@@ -166,6 +166,11 @@ pub enum TranslationError {
         expected: Option<TypeId>,
         received: Option<TypeId>,
     },
+    #[error("`if` and `else` have incompatible types. Expected {body:?}, found {else_body:?}.")]
+    IfBranchTypeMismatch {
+        body: Option<TypeId>,
+        else_body: Option<TypeId>,
+    },
     #[error("incorrect number of arguments provided for function. Expected {expected:?}, received {received:?}.")]
     ArgumentCountMismatch { expected: usize, received: usize },
     #[error("variable `{0}` is not declared")]

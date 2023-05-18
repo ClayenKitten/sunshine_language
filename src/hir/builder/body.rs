@@ -142,10 +142,22 @@ impl<'b> BodyBuilder<'b> {
                         received: condition.type_,
                     });
                 }
+
                 let body = self.translate_block(body, false)?;
-                let else_body = else_body
-                    .map(|body| self.translate_block(body, false))
-                    .transpose()?;
+                let else_body = match else_body {
+                    Some(else_body) => {
+                        let else_body = self.translate_block(else_body, false)?;
+                        if body.type_id() != else_body.type_id() {
+                            return Err(TranslationError::IfBranchTypeMismatch {
+                                body: body.type_id(),
+                                else_body: else_body.type_id(),
+                            });
+                        }
+                        Some(else_body)
+                    }
+                    None => None,
+                };
+
                 Expression {
                     type_: body.type_id(),
                     kind: ExpressionKind::If {
