@@ -205,20 +205,20 @@ impl<'b> BodyBuilder<'b> {
                     };
                     path
                 };
-                let Some((func_id, signature)) = self.parent.query_function_signature(&path) else {
+                let Some((func_id, params, return_type)) = self.parent.query_function_info(&path) else {
                     return Err(TranslationError::FunctionNotFound(path));
                 };
 
-                if ast_args.len() != signature.params.len() {
+                if ast_args.len() != params.len() {
                     return Err(TranslationError::ArgumentCountMismatch {
-                        expected: signature.params.len(),
+                        expected: params.len(),
                         received: ast_args.len(),
                     });
                 }
 
                 let args = ast_args
                     .into_iter()
-                    .zip(signature.params.iter())
+                    .zip(params.iter())
                     .map(|(arg, expected)| {
                         let arg = self.translate_expr(arg)?;
                         if arg.type_ != Some(*expected) {
@@ -232,7 +232,7 @@ impl<'b> BodyBuilder<'b> {
                     .collect::<Result<_, _>>()?;
 
                 Expression {
-                    type_: signature.return_type,
+                    type_: return_type,
                     kind: ExpressionKind::FnCall(func_id, args),
                 }
             }

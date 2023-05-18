@@ -17,7 +17,7 @@ use self::body::BodyBuilder;
 
 use super::{
     types::{TypeError, TypeId, TypeTable},
-    Block, Function, FunctionId, FunctionSignature, Hir,
+    Block, Function, FunctionId, Hir,
 };
 
 use thiserror::Error;
@@ -28,7 +28,7 @@ pub struct HirBuilder {
     errors: Vec<TranslationError>,
 
     mapping: HashMap<AbsolutePath, FunctionId>,
-    signatures: Vec<FunctionSignature>,
+    signatures: Vec<(Vec<TypeId>, Option<TypeId>)>,
     bodies: Vec<Block>,
 }
 
@@ -53,7 +53,11 @@ impl HirBuilder {
         let functions = signatures
             .into_iter()
             .zip(bodies)
-            .map(|(signature, body)| Function { signature, body })
+            .map(|((params, return_type), body)| Function {
+                params,
+                return_type,
+                body,
+            })
             .collect();
 
         Ok(Hir {
@@ -94,11 +98,9 @@ impl HirBuilder {
         for (path, function) in functions {
             match self.partially_translate_function(path, function) {
                 Ok(partial) => {
-                    let signature = FunctionSignature {
-                        params: partial.params.iter().map(|(_, type_id)| *type_id).collect(),
-                        return_type: partial.return_type,
-                    };
-                    self.signatures.push(signature);
+                    let params = partial.params.iter().map(|(_, type_id)| *type_id).collect();
+                    let return_type = partial.return_type;
+                    self.signatures.push((params, return_type));
                     partial_functions.push(partial);
                 }
                 Err(err) => self.errors.push(err),
@@ -140,13 +142,13 @@ impl HirBuilder {
         Ok(partial_func)
     }
 
-    fn query_function_signature(
+    fn query_function_info(
         &self,
         path: &AbsolutePath,
-    ) -> Option<(FunctionId, &FunctionSignature)> {
+    ) -> Option<(FunctionId, &[TypeId], Option<TypeId>)> {
         let id = self.mapping.get(path).copied()?;
         let signature = &self.signatures[id.0 as usize];
-        Some((id, signature))
+        Some((id, signature.0.as_slice(), signature.1))
     }
 }
 

@@ -32,14 +32,9 @@ pub struct FunctionId(u32);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Function {
-    pub signature: FunctionSignature,
-    pub body: Block,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FunctionSignature {
     pub params: Vec<TypeId>,
     pub return_type: Option<TypeId>,
+    pub body: Block,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
