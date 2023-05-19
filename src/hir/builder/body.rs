@@ -19,6 +19,7 @@ use super::PartiallyParsedFunction;
 pub(super) struct BodyBuilder<'b> {
     parent: &'b HirBuilder,
     module: AbsolutePath,
+    return_type: Option<TypeId>,
     scope: Scope,
 }
 
@@ -30,6 +31,7 @@ impl<'b> BodyBuilder<'b> {
         let mut builder = Self {
             parent,
             module: partial.module,
+            return_type: partial.return_type,
             scope: Scope::new(),
         };
 
@@ -119,7 +121,16 @@ impl<'b> BodyBuilder<'b> {
                     value: self.translate_expr(expression)?,
                 })
             }
-            AstStatement::Return(expr) => self.translate_expr(expr).map(Statement::Return),
+            AstStatement::Return(expr) => {
+                let expr = self.translate_expr(expr)?;
+                if expr.type_ != self.return_type {
+                    return Err(TranslationError::TypeMismatch {
+                        expected: self.return_type,
+                        received: expr.type_,
+                    });
+                }
+                Ok(Statement::Return(expr))
+            }
             AstStatement::Break => {
                 if self.scope.is_loop() {
                     Ok(Statement::Break)
