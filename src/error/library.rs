@@ -1,4 +1,14 @@
 //! Library of error codes.
+//!
+//! # Reporting errors
+//!
+//! Error reports are created via [ReportProvider](super::ReportProvider).
+//!
+//! ```ignore
+//! ErrorCode::report(&report_provider, start_position, ..parameters);
+//! ```
+//!
+//! Every error has its own list of additional `parameters`.
 
 #[macro_use]
 mod r#macro;
@@ -120,5 +130,16 @@ pub mod lexer {
 
         /// End of file wasn't expected.
         deny UnexpectedEOF = "unexpected EOF";
+    }
+}
+
+/// Errors issued by HIR translation.
+pub mod hir {
+    use crate::hir::types::TypeId;
+
+    define_error! {
+        /// Types don't match.
+        deny TypeMismatch { expected: Option<TypeId>, found: Option<TypeId> }
+        = "types don't match. Expected to get {expected:?}, got {found:?}";
     }
 }
