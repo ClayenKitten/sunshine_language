@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
-use crate::{input_stream::Location, lexer::Lexer, parser::FileParser, source::SourceId};
-
-use super::ErrorReporter;
+use crate::{
+    error::error_reporter::ErrorReporter, input_stream::Location, lexer::Lexer, parser::FileParser,
+    source::SourceId,
+};
 
 /// A struct that has all information required to report a error.
 pub trait ReportProvider {
