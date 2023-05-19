@@ -104,7 +104,7 @@ impl<'b> BodyBuilder<'b> {
                 operator,
                 mut expression,
             } => {
-                let Some((var, _)) = self.scope.lookup(&assignee) else {
+                let Some((var, type_id)) = self.scope.lookup(&assignee) else {
                     return Err(TranslationError::VariableNotDeclared(assignee))
                 };
 
@@ -116,9 +116,17 @@ impl<'b> BodyBuilder<'b> {
                     };
                 }
 
+                let value = self.translate_expr(expression)?;
+                if value.type_ != Some(type_id) {
+                    return Err(TranslationError::TypeMismatch {
+                        expected: Some(type_id),
+                        received: value.type_,
+                    });
+                }
+
                 Ok(Statement::Assignment {
                     assignee: var,
-                    value: self.translate_expr(expression)?,
+                    value,
                 })
             }
             AstStatement::Return(expr) => {
