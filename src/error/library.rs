@@ -101,9 +101,7 @@ pub mod lexer {
                 found.pretty_print()
             ),
         };
-    }
 
-    define_error! {
         /// String literal wasn't terminated.
         deny UnterminatedString = "string literal wasn't terminated";
 
