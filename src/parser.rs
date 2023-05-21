@@ -5,21 +5,19 @@ mod item;
 pub mod operator_expression;
 mod statement;
 
-use std::{fmt::Display, path::PathBuf};
+use std::path::PathBuf;
 
 pub use expression::*;
 pub use item::*;
 pub use statement::*;
 
-use thiserror::Error;
-
 use crate::{
     ast::item::{Item, Visibility},
     context::Context,
-    error::ReportProvider,
+    error::{CompilerError, ReportProvider},
     input_stream::InputStream,
     item_table::ItemTable,
-    lexer::{Lexer, LexerError},
+    lexer::Lexer,
     path::AbsolutePath,
     source::{SourceError, SourceId},
     util::Span,
@@ -43,7 +41,7 @@ impl Parser {
     }
 
     /// Parse the whole package.
-    pub fn parse(&mut self) -> Result<ItemTable, Vec<ParserError>> {
+    pub fn parse(&mut self) -> Result<ItemTable, Vec<CompilerError>> {
         let mut table = ItemTable::new();
         let mut errors = Vec::new();
         while let Some(file) = self.pending.pop() {
@@ -57,8 +55,7 @@ impl Parser {
                     table.extend(parsed.item_table);
                 }
                 Err(err) => {
-                    self.pending.extend(err.pending);
-                    errors.push(err.inner);
+                    errors.push(err);
                 }
             }
         }
@@ -71,7 +68,7 @@ impl Parser {
     }
 
     /// Parse one file at default location.
-    pub fn parse_file(&mut self, path: AbsolutePath) -> Result<ParsedFile, ParserErrorExt> {
+    pub fn parse_file(&mut self, path: AbsolutePath) -> Result<ParsedFile, CompilerError> {
         let id = self.context.source.lock().unwrap().insert(path.clone())?;
         self.parse_file_by_id(path, id)
     }
@@ -81,7 +78,7 @@ impl Parser {
         &mut self,
         scope: AbsolutePath,
         path: PathBuf,
-    ) -> Result<ParsedFile, ParserErrorExt> {
+    ) -> Result<ParsedFile, CompilerError> {
         let id = self.context.source.lock().unwrap().insert_path(path)?;
         self.parse_file_by_id(scope, id)
     }
@@ -90,19 +87,17 @@ impl Parser {
         &mut self,
         scope: AbsolutePath,
         id: SourceId,
-    ) -> Result<ParsedFile, ParserErrorExt> {
-        self.context
-            .source
-            .lock()
-            .unwrap()
-            .get(id)
-            .read()
-            .map_err(ParserError::SourceError)
-            .map(|s| InputStream::new(s, Some(id)))
-            .map(|input| Lexer::new(input, self.context.clone()))
-            .map(|lexer| FileParser::new(lexer, scope, self.context.clone()))
-            .map_err(|e| e.into())
-            .and_then(|parser| parser.parse())
+    ) -> Result<ParsedFile, CompilerError> {
+        let mut source_map = self.context.source.lock().unwrap();
+        let file = source_map.get(id).read()?;
+        let stream = InputStream::new(file, Some(id));
+        let lexer = Lexer::new(stream, self.context.clone());
+        let parser = FileParser::new(lexer, scope, self.context.clone());
+
+        parser.parse().map_err(|(err, pending)| {
+            self.pending.extend(pending);
+            err
+        })
     }
 }
 
@@ -140,7 +135,7 @@ impl FileParser {
         }
     }
 
-    pub fn parse(mut self) -> Result<ParsedFile, ParserErrorExt> {
+    pub fn parse(mut self) -> Result<ParsedFile, (CompilerError, Vec<PendingFile>)> {
         let start = self.location();
         match self.parse_top_module(self.scope.last().clone()) {
             Ok(module) => {
@@ -159,47 +154,9 @@ impl FileParser {
                     pending: self.pending,
                 })
             }
-            Err(inner) => Err(ParserErrorExt {
-                pending: self.pending,
-                inner,
-            }),
+            Err(err) => Err((err, self.pending)),
         }
     }
-}
-
-/// Error that has occured during parsing.
-///
-/// Wrapper over [ParserError] with additional payload of pending files.
-#[derive(Debug, Error)]
-pub struct ParserErrorExt {
-    pending: Vec<PendingFile>,
-    inner: ParserError,
-}
-
-impl Display for ParserErrorExt {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner)
-    }
-}
-
-impl<T: Into<ParserError>> From<T> for ParserErrorExt {
-    fn from(value: T) -> Self {
-        Self {
-            pending: Vec::default(),
-            inner: value.into(),
-        }
-    }
-}
-
-/// Error that has occured during parsing.
-#[derive(Debug, Error)]
-pub enum ParserError {
-    #[error("")]
-    ParserError,
-    #[error("lexer error occured: {0}")]
-    LexerError(#[from] LexerError),
-    #[error("source error occured: {0}")]
-    SourceError(#[from] SourceError),
 }
 
 /// Result of the file parse.

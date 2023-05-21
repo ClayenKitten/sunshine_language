@@ -1,14 +1,16 @@
 //! Declarative macroses used to generate error library.
 
 macro_rules! define_error {
-    ($(
-        $(#[doc = $doc:expr])*
-        $severity:ident $name:ident
-        $({$($field:ident: $type:ty),*})?
-        = $message:expr
-        $(=> $into:ty = $into_by:expr)*
-        ;
-    )*) => ($(
+    (
+        $(
+            $(#[doc = $doc:expr])*
+            $severity:ident $name:ident
+            $({$($field:ident: $type:ty),*})?
+            = $message:expr
+            $(=> $into:ty = $into_by:expr)*
+            ;
+        )*
+    ) => ($(
         $(#[doc = $doc])*
         #[derive(Debug)]
         pub struct $name {
@@ -23,7 +25,7 @@ macro_rules! define_error {
                 provider: &impl crate::error::ReportProvider,
                 start: crate::input_stream::Location,
                 $($($field: $type,)*)?
-            ) {
+            ) -> Result<std::convert::Infallible, crate::error::CompilerError> {
                 let error = Self {
                     span: crate::util::Span {
                         source: provider.source(),
@@ -33,6 +35,7 @@ macro_rules! define_error {
                     $($($field,)*)?
                 };
                 provider.error_reporter().report(error);
+                Err(crate::error::CompilerError)
             }
         }
 

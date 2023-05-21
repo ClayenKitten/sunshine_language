@@ -11,10 +11,10 @@ use crate::{
                 KeywordNotAllowedInOperatorExpression,
             },
         },
-        ExpectedToken, ReportProvider,
+        CompilerError, ExpectedToken, ReportProvider,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
-    parser::{operator_expression::postfix::PostfixNotation, FileParser, ParserError},
+    parser::{operator_expression::postfix::PostfixNotation, FileParser},
     path::{RelativePath, RelativePathStart},
     Identifier,
 };
@@ -26,21 +26,18 @@ use super::operator_expression::Tree;
 /// [Expression]: crate::ast::expression::Expression
 impl FileParser {
     /// Parse expression.
-    pub fn parse_expr(&mut self) -> Result<Expression, ParserError> {
+    pub fn parse_expr(&mut self) -> Result<Expression, CompilerError> {
         let start = self.location();
         let infix = self.parse_infix()?;
         let postfix = PostfixNotation::from_infix(infix);
         match postfix.into_expression() {
             Ok(tree) => Ok(tree),
-            Err(e) => {
-                AssignmentInExpressionPosition::report(self, start);
-                Err(e)
-            }
+            Err(_) => AssignmentInExpressionPosition::report(self, start).map(|_| unreachable!()),
         }
     }
 
     /// Parse a single operand.
-    pub(super) fn parse_operand(&mut self) -> Result<Expression, ParserError> {
+    pub(super) fn parse_operand(&mut self) -> Result<Expression, CompilerError> {
         use {Keyword::*, Punctuation::*};
 
         let start = self.location();
@@ -67,16 +64,14 @@ impl FileParser {
                     let ident = self.lexer.expect_identifier()?;
                     match ident.0.as_str() {
                         "super" if !path.other.is_empty() => {
-                            InvalidSuperKw::report(self, start);
-                            return Err(ParserError::ParserError);
+                            return InvalidSuperKw::report(self, start).map(|_| unreachable!());
                         }
                         "super" if matches!(path.start, RelativePathStart::Super(_)) => {
                             let RelativePathStart::Super(ref mut n) = path.start else { unreachable!(); };
                             *n += 1;
                         }
                         "crate" => {
-                            InvalidCrateKw::report(self, start);
-                            return Err(ParserError::ParserError);
+                            return InvalidCrateKw::report(self, start).map(|_| unreachable!());
                         }
                         _ => path.push(ident),
                     };
@@ -98,7 +93,7 @@ impl FileParser {
 
                         if !self.lexer.consume_punctuation(",")? {
                             let token = self.lexer.peek()?;
-                            TokenMismatch::report(
+                            break TokenMismatch::report(
                                 self,
                                 start,
                                 vec![
@@ -106,8 +101,8 @@ impl FileParser {
                                     ExpectedToken::Punctuation(Punctuation::RParent),
                                 ],
                                 token,
-                            );
-                            break Err(ParserError::ParserError);
+                            )
+                            .map(|_| unreachable!());
                         }
                     };
                 }
@@ -122,25 +117,23 @@ impl FileParser {
             }
 
             Token::Eof => {
-                UnexpectedEOF::report(self, start);
-                return Err(ParserError::ParserError);
+                return UnexpectedEOF::report(self, start).map(|_| unreachable!());
             }
 
             Token::Kw(kw) => {
-                KeywordNotAllowedInOperatorExpression::report(self, start, kw);
-                return Err(ParserError::ParserError);
+                return KeywordNotAllowedInOperatorExpression::report(self, start, kw)
+                    .map(|_| unreachable!());
             }
 
             Token::Punc(punc) => {
-                InvalidPunctuation::report(self, start, punc);
-                return Err(ParserError::ParserError);
+                return InvalidPunctuation::report(self, start, punc).map(|_| unreachable!());
             }
         };
         Ok(token)
     }
 
     /// Parse block. Opening brace is expected to be consumed beforehand.
-    pub fn parse_block(&mut self) -> Result<Block, ParserError> {
+    pub fn parse_block(&mut self) -> Result<Block, CompilerError> {
         let mut buffer = Vec::new();
         let expr = loop {
             if self.lexer.consume_punctuation("}")? {
@@ -204,7 +197,7 @@ impl FileParser {
     }
 
     /// Parse if conditional. Keyword [if](Keyword::If) is expected to be consumed beforehand.
-    pub fn parse_if(&mut self) -> Result<Expression, ParserError> {
+    pub fn parse_if(&mut self) -> Result<Expression, CompilerError> {
         let condition = Box::new(self.parse_expr()?);
         self.lexer.expect_punctuation("{")?;
         let body = self.parse_block()?;
@@ -224,7 +217,7 @@ impl FileParser {
     }
 
     /// Parse while loop. Keyword [while](Keyword::While) is expected to be consumed beforehand.
-    pub fn parse_while(&mut self) -> Result<Expression, ParserError> {
+    pub fn parse_while(&mut self) -> Result<Expression, CompilerError> {
         let condition = Box::new(self.parse_expr()?);
         self.lexer.expect_punctuation("{")?;
         let body = self.parse_block()?;
@@ -232,7 +225,7 @@ impl FileParser {
     }
 
     /// Parse for loop. Keyword [for](Keyword::For) is expected to be consumed beforehand.
-    pub fn parse_for(&mut self) -> Result<Expression, ParserError> {
+    pub fn parse_for(&mut self) -> Result<Expression, CompilerError> {
         let var = self.lexer.expect_identifier()?;
         self.lexer.expect_keyword(Keyword::In)?;
         let expr = Box::new(self.parse_expr()?);

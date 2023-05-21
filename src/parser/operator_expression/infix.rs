@@ -7,10 +7,10 @@ use crate::{
         library::parser::{
             ChainedAssignment, ExpectedExpression, InvalidAssignee, UnclosedParenthesis,
         },
-        ReportProvider,
+        CompilerError, ReportProvider,
     },
     lexer::operator::{AssignOp, BinaryOp, UnaryOp},
-    parser::{FileParser, ParserError},
+    parser::FileParser,
     Identifier,
 };
 
@@ -32,7 +32,7 @@ impl FileParser {
     /// # Errors
     ///
     /// Error will only be produced if parenthesis mismatches or operator without following operand occurs.
-    pub fn parse_infix(&mut self) -> Result<InfixNotation, ParserError> {
+    pub fn parse_infix(&mut self) -> Result<InfixNotation, CompilerError> {
         let start = self.location();
         let mut depth = 0usize;
         let mut output = VecDeque::<InfixEntry>::new();
@@ -44,16 +44,13 @@ impl FileParser {
 
             if let Some(operator) = self.lexer.consume_assignment_operator()? {
                 if assignment.is_some() {
-                    ChainedAssignment::report(self, start);
-                    return Err(ParserError::ParserError);
+                    return ChainedAssignment::report(self, start).map(|_| unreachable!());
                 }
                 let Some(Operand(AstExpression::Var(assignee))) = output.pop_back() else {
-                    InvalidAssignee::report(self, start);
-                    return Err(ParserError::ParserError);
+                    return InvalidAssignee::report(self, start).map(|_| unreachable!());
                 };
                 if !output.is_empty() {
-                    InvalidAssignee::report(self, start);
-                    return Err(ParserError::ParserError);
+                    return InvalidAssignee::report(self, start).map(|_| unreachable!());
                 }
                 assignment = Some((assignee, operator));
             }
@@ -89,14 +86,12 @@ impl FileParser {
         }
 
         if depth != 0 {
-            UnclosedParenthesis::report(self, start);
-            return Err(ParserError::ParserError);
+            return UnclosedParenthesis::report(self, start).map(|_| unreachable!());
         }
 
         match output.front() {
             Some(InfixEntry::BinaryOperator(_)) | None => {
-                ExpectedExpression::report(self, start);
-                return Err(ParserError::ParserError);
+                return ExpectedExpression::report(self, start).map(|_| unreachable!());
             }
             _ => {}
         }

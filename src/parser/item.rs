@@ -2,14 +2,14 @@ use crate::{
     ast::item::{Field, Function, Item, ItemKind, Module, Parameter, Struct, Visibility},
     error::{
         library::{lexer::TokenMismatch, parser::ExpectedItem},
-        ExpectedToken, ReportProvider,
+        CompilerError, ExpectedToken, ReportProvider,
     },
     lexer::{keyword::Keyword, punctuation::Punctuation, Token},
     util::Span,
     Identifier,
 };
 
-use super::{FileParser, ParserError, PendingFile};
+use super::{FileParser, PendingFile};
 
 /// [Item]'s parsing.
 ///
@@ -20,7 +20,7 @@ impl FileParser {
     /// Stores resulting item in parser's [ItemTable].
     ///
     /// [ItemTable]: crate::item_table::ItemTable
-    pub fn parse_item(&mut self) -> Result<(), ParserError> {
+    pub fn parse_item(&mut self) -> Result<(), CompilerError> {
         let start = self.location();
 
         let visibility = if self.lexer.consume_keyword(Keyword::Pub)? {
@@ -36,8 +36,7 @@ impl FileParser {
         } else if self.lexer.consume_keyword(Keyword::Mod)? {
             self.parse_module()?.into()
         } else {
-            ExpectedItem::report(self, start);
-            return Err(ParserError::ParserError);
+            return ExpectedItem::report(self, start).map(|_| unreachable!());
         };
 
         let span = Span {
@@ -60,7 +59,7 @@ impl FileParser {
     }
 
     /// Parse module. Keyword [mod](Keyword::Mod) is expected to be consumed beforehand.
-    pub fn parse_module(&mut self) -> Result<Module, ParserError> {
+    pub fn parse_module(&mut self) -> Result<Module, CompilerError> {
         let name = self.lexer.expect_identifier()?;
 
         let start = self.location();
@@ -74,13 +73,13 @@ impl FileParser {
         }
         if !self.lexer.consume_punctuation("{")? {
             let found = self.lexer.peek()?;
-            TokenMismatch::report(
+            return TokenMismatch::report(
                 self,
                 start,
                 vec![Punctuation::LBrace.into(), Punctuation::Semicolon.into()],
                 found,
-            );
-            return Err(ParserError::ParserError);
+            )
+            .map(|_| unreachable!());
         }
         while !self.lexer.consume_punctuation("}")? {
             self.subscope(name.clone(), |parser| parser.parse_item())?;
@@ -89,7 +88,7 @@ impl FileParser {
     }
 
     /// Parse toplevel module.
-    pub fn parse_top_module(&mut self, name: Identifier) -> Result<Module, ParserError> {
+    pub fn parse_top_module(&mut self, name: Identifier) -> Result<Module, CompilerError> {
         while !self.lexer.is_eof() {
             self.parse_item()?;
         }
@@ -97,7 +96,7 @@ impl FileParser {
     }
 
     /// Parse structure. Keyword [struct](Keyword::Struct) is expected to be consumed beforehand.
-    pub fn parse_struct(&mut self) -> Result<Struct, ParserError> {
+    pub fn parse_struct(&mut self) -> Result<Struct, CompilerError> {
         let name = self.lexer.expect_identifier()?;
         let mut fields = Vec::new();
         self.lexer.expect_punctuation("{")?;
@@ -114,7 +113,7 @@ impl FileParser {
     }
 
     /// Parse a single field of struct. Returns `None` if closing brace met instead.
-    fn parse_field(&mut self) -> Result<Option<Field>, ParserError> {
+    fn parse_field(&mut self) -> Result<Option<Field>, CompilerError> {
         let Some(name) = self.lexer.consume_identifier()? else {
             self.lexer.expect_punctuation("}")?;
             return Ok(None);
@@ -126,7 +125,7 @@ impl FileParser {
     }
 
     /// Parse function from token stream. Keyword [fn](Keyword::Fn) is expected to be consumed beforehand.
-    pub fn parse_fn(&mut self) -> Result<Function, ParserError> {
+    pub fn parse_fn(&mut self) -> Result<Function, CompilerError> {
         let name = self.lexer.expect_identifier()?;
         self.lexer.expect_punctuation("(")?;
         let params = self.parse_params()?;
@@ -142,7 +141,7 @@ impl FileParser {
     }
 
     /// Parse parameters. Opening parenthesis is expected to be consumed beforehand.
-    fn parse_params(&mut self) -> Result<Vec<Parameter>, ParserError> {
+    fn parse_params(&mut self) -> Result<Vec<Parameter>, CompilerError> {
         let mut params = Vec::new();
         loop {
             let start = self.location();
@@ -150,13 +149,13 @@ impl FileParser {
                 Token::Ident(ident) => Identifier(ident),
                 Token::Punc(Punctuation::RParent) => break,
                 token => {
-                    TokenMismatch::report(
+                    return TokenMismatch::report(
                         self,
                         start,
                         vec![ExpectedToken::Identifier, Punctuation::RParent.into()],
                         token,
-                    );
-                    return Err(ParserError::ParserError);
+                    )
+                    .map(|_| unreachable!());
                 }
             };
             self.lexer.expect_punctuation(":")?;
@@ -173,7 +172,7 @@ impl FileParser {
     }
 
     /// Try to parse return type if any. Consumes opening brace `{` which is required for function body.
-    fn parse_return_type(&mut self) -> Result<Option<Identifier>, ParserError> {
+    fn parse_return_type(&mut self) -> Result<Option<Identifier>, CompilerError> {
         let start = self.location();
         match self.lexer.next()? {
             Token::Punc(Punctuation::Arrow) => {
@@ -182,15 +181,13 @@ impl FileParser {
                 Ok(Some(return_type))
             }
             Token::Punc(Punctuation::LBrace) => Ok(None),
-            token => {
-                TokenMismatch::report(
-                    self,
-                    start,
-                    vec![Punctuation::Arrow.into(), Punctuation::LBrace.into()],
-                    token,
-                );
-                Err(ParserError::ParserError)
-            }
+            token => TokenMismatch::report(
+                self,
+                start,
+                vec![Punctuation::Arrow.into(), Punctuation::LBrace.into()],
+                token,
+            )
+            .map(|_| unreachable!()),
         }
     }
 }

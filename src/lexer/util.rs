@@ -1,12 +1,11 @@
 use crate::{
-    error::{library::lexer::TokenMismatch, ExpectedToken, ReportProvider},
+    error::{library::lexer::TokenMismatch, CompilerError, ExpectedToken, ReportProvider},
     lexer::{
         keyword::Keyword,
         operator::{BinaryOp, UnaryOp},
         punctuation::Punctuation,
         Lexer, LexerError, Token,
     },
-    parser::ParserError,
     Identifier,
 };
 
@@ -80,38 +79,38 @@ impl Lexer {
     }
 
     /// Check if next token is provided punctuation or error otherwise.
-    pub fn expect_punctuation(&mut self, expected: &'static str) -> Result<(), ParserError> {
+    pub fn expect_punctuation(&mut self, expected: &'static str) -> Result<(), CompilerError> {
         let start = self.location();
         let found = self.next()?;
         if found == Token::Punc(Punctuation::new(expected)) {
             Ok(())
         } else {
-            TokenMismatch::report(self, start, vec![Punctuation::new(expected).into()], found);
-            Err(ParserError::ParserError)
+            TokenMismatch::report(self, start, vec![Punctuation::new(expected).into()], found)
+                .map(|_| unreachable!())
         }
     }
 
     /// Check if next token is provided punctuation or error otherwise.
-    pub fn expect_keyword(&mut self, keyword: Keyword) -> Result<(), ParserError> {
+    pub fn expect_keyword(&mut self, keyword: Keyword) -> Result<(), CompilerError> {
         let start = self.location();
         let found = self.next()?;
         if found == Token::Kw(keyword) {
             Ok(())
         } else {
-            TokenMismatch::report(self, start, vec![Keyword::In.into()], found);
-            Err(ParserError::ParserError)
+            TokenMismatch::report(self, start, vec![Keyword::In.into()], found)
+                .map(|_| unreachable!())
         }
     }
 
     /// Check if next token is identifier or error otherwise.
-    pub fn expect_identifier(&mut self) -> Result<Identifier, ParserError> {
+    pub fn expect_identifier(&mut self) -> Result<Identifier, CompilerError> {
         let start = self.location();
         let found = self.next()?;
         if let Token::Ident(ident) = found {
             Ok(Identifier(ident))
         } else {
-            TokenMismatch::report(self, start, vec![ExpectedToken::Identifier], found);
-            Err(ParserError::ParserError)
+            TokenMismatch::report(self, start, vec![ExpectedToken::Identifier], found)
+                .map(|_| unreachable!())
         }
     }
 }

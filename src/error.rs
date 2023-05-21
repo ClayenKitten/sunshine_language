@@ -8,15 +8,37 @@ mod report_provider;
 pub use error_reporter::*;
 pub use expected_token::*;
 pub use report_provider::*;
+use thiserror::Error;
 
 use std::error::Error;
 
-use crate::{lexer::Token, util::Span};
+use crate::{
+    lexer::{LexerError, Token},
+    source::SourceError,
+    util::Span,
+};
 
 /// Error that may be reported.
 pub trait ReportableError: Error {
     fn severity(&self) -> Severity;
     fn span(&self) -> Span;
+}
+
+/// Fatal error occured during compilation.
+#[derive(Debug, Clone, Copy, Error)]
+#[error("error occured during compilation")]
+pub struct CompilerError;
+
+impl From<LexerError> for CompilerError {
+    fn from(_value: LexerError) -> Self {
+        CompilerError
+    }
+}
+
+impl From<SourceError> for CompilerError {
+    fn from(_value: SourceError) -> Self {
+        CompilerError
+    }
 }
 
 /// How severe is the error.

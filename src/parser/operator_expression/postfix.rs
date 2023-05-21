@@ -3,8 +3,8 @@ use std::collections::VecDeque;
 
 use crate::{
     ast::expression::Expression,
+    error::CompilerError,
     lexer::operator::{BinaryOp, UnaryOp},
-    parser::ParserError,
 };
 
 use super::{
@@ -86,11 +86,11 @@ impl PostfixNotation {
     }
 
     /// Converts from postfix notation to expression tree, issuing a error if it is not possible.
-    pub fn into_expression(self) -> Result<Expression, ParserError> {
+    pub fn into_expression(self) -> Result<Expression, CompilerError> {
         if let PostfixNotation::Expression(mut expression) = self {
             Ok(Self::get_node(&mut expression))
         } else {
-            Err(ParserError::ParserError)
+            Err(CompilerError)
         }
     }
 
