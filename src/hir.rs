@@ -8,7 +8,10 @@ pub mod types;
 
 pub use builder::{HirBuilder, TranslationError};
 
-use crate::ast::expression::Literal;
+use crate::{
+    ast::expression::Literal,
+    lexer::operator::{BinaryOp, UnaryOp},
+};
 
 use self::{
     scope::VarId,
@@ -55,6 +58,15 @@ enum ExpressionKind {
     Literal(Literal),
     FnCall(FunctionId, Vec<Expression>),
     Var(VarId),
+    UnaryOp {
+        operator: UnaryOp,
+        value: Box<Expression>,
+    },
+    BinaryOp {
+        operator: BinaryOp,
+        left: Box<Expression>,
+        right: Box<Expression>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

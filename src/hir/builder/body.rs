@@ -167,8 +167,46 @@ impl<'b> BodyBuilder<'b> {
                 self.translate_while_loop(*condition, body)?
             }
             AstExpression::For { .. } => todo!(),
-            AstExpression::Unary { .. } => todo!(),
-            AstExpression::Binary { .. } => todo!(),
+            AstExpression::Unary { op, value } => {
+                let value = self.translate_expr(*value)?;
+                if value.type_ != Some(op.in_type()) {
+                    return Err(TranslationError::TypeMismatch {
+                        expected: Some(op.in_type()),
+                        received: value.type_,
+                    });
+                }
+                Expression {
+                    type_: Some(op.out_type()),
+                    kind: ExpressionKind::UnaryOp {
+                        operator: op,
+                        value: Box::new(value),
+                    },
+                }
+            }
+            AstExpression::Binary { op, left, right } => {
+                let left = self.translate_expr(*left)?;
+                if left.type_ != Some(op.in_type()) {
+                    return Err(TranslationError::TypeMismatch {
+                        expected: Some(op.in_type()),
+                        received: left.type_,
+                    });
+                }
+                let right = self.translate_expr(*right)?;
+                if right.type_ != Some(op.in_type()) {
+                    return Err(TranslationError::TypeMismatch {
+                        expected: Some(op.in_type()),
+                        received: right.type_,
+                    });
+                }
+                Expression {
+                    type_: Some(op.out_type()),
+                    kind: ExpressionKind::BinaryOp {
+                        operator: op,
+                        left: Box::new(left),
+                        right: Box::new(right),
+                    },
+                }
+            }
             AstExpression::FnCall {
                 path,
                 params: ast_args,
