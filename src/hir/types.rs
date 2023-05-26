@@ -61,6 +61,7 @@ pub enum TypeId {
 
 impl TypeId {
     pub const BOOL: TypeId = TypeId::Primitive(PrimitiveType::Bool);
+    pub const I32: TypeId = TypeId::Primitive(PrimitiveType::I32);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

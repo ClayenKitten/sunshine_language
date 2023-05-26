@@ -1,3 +1,5 @@
+use crate::hir::types::TypeId;
+
 macro_rules! define_operator {
     (
         $(
@@ -80,7 +82,71 @@ define_operator! {
     }
 }
 
+impl UnaryOp {
+    pub fn in_type(&self) -> TypeId {
+        match self {
+            UnaryOp::Add => TypeId::I32,
+            UnaryOp::Sub => TypeId::I32,
+            UnaryOp::Not => TypeId::BOOL,
+        }
+    }
+
+    pub fn out_type(&self) -> TypeId {
+        match self {
+            UnaryOp::Add => TypeId::I32,
+            UnaryOp::Sub => TypeId::I32,
+            UnaryOp::Not => TypeId::BOOL,
+        }
+    }
+}
+
 impl BinaryOp {
+    pub fn in_type(&self) -> TypeId {
+        match self {
+            BinaryOp::Add => TypeId::I32,
+            BinaryOp::Sub => TypeId::I32,
+            BinaryOp::Mul => TypeId::I32,
+            BinaryOp::Div => TypeId::I32,
+            BinaryOp::Mod => TypeId::I32,
+            BinaryOp::Rsh => todo!(),
+            BinaryOp::Lsh => todo!(),
+            BinaryOp::BinAnd => todo!(),
+            BinaryOp::BinOr => todo!(),
+            BinaryOp::BinXor => todo!(),
+            BinaryOp::And => TypeId::BOOL,
+            BinaryOp::Or => TypeId::BOOL,
+            BinaryOp::Eq => TypeId::I32,
+            BinaryOp::Neq => TypeId::I32,
+            BinaryOp::More => TypeId::I32,
+            BinaryOp::Less => TypeId::I32,
+            BinaryOp::MoreEq => TypeId::I32,
+            BinaryOp::LessEq => TypeId::I32,
+        }
+    }
+
+    pub fn out_type(&self) -> TypeId {
+        match self {
+            BinaryOp::Add => TypeId::I32,
+            BinaryOp::Sub => TypeId::I32,
+            BinaryOp::Mul => TypeId::I32,
+            BinaryOp::Div => TypeId::I32,
+            BinaryOp::Mod => TypeId::I32,
+            BinaryOp::Rsh => todo!(),
+            BinaryOp::Lsh => todo!(),
+            BinaryOp::BinAnd => todo!(),
+            BinaryOp::BinOr => todo!(),
+            BinaryOp::BinXor => todo!(),
+            BinaryOp::And => TypeId::BOOL,
+            BinaryOp::Or => TypeId::BOOL,
+            BinaryOp::Eq => TypeId::BOOL,
+            BinaryOp::Neq => TypeId::BOOL,
+            BinaryOp::More => TypeId::BOOL,
+            BinaryOp::Less => TypeId::BOOL,
+            BinaryOp::MoreEq => TypeId::BOOL,
+            BinaryOp::LessEq => TypeId::BOOL,
+        }
+    }
+
     pub fn priority(&self) -> usize {
         use BinaryOp::*;
         match self {
